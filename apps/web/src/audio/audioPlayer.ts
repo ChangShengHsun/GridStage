@@ -64,13 +64,23 @@ export async function setAudioBlob(blob: Blob): Promise<void> {
   await idbPut(AUDIO_KEY, blob);
 }
 
-/** Restore persisted audio on app start. Resolves true if audio exists. */
-export async function loadPersistedAudio(): Promise<boolean> {
-  if (audioEl !== null) return true;
-  const blob = await idbGet(AUDIO_KEY);
-  if (blob === null) return false;
-  attach(blob);
-  return true;
+let loadPromise: Promise<boolean> | null = null;
+
+/**
+ * Restore persisted audio on app start. Resolves true if audio exists.
+ * Concurrent calls (React StrictMode double-mounts effects) share one
+ * in-flight load, otherwise the second attach() would revoke the blob URL
+ * the first Audio element is still reading.
+ */
+export function loadPersistedAudio(): Promise<boolean> {
+  loadPromise ??= (async (): Promise<boolean> => {
+    if (audioEl !== null) return true;
+    const blob = await idbGet(AUDIO_KEY);
+    if (blob === null) return false;
+    attach(blob);
+    return true;
+  })();
+  return loadPromise;
 }
 
 export async function clearAudio(): Promise<void> {
