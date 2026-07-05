@@ -1,31 +1,60 @@
+import { useEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
+import { TopBar } from './components/TopBar';
+import { CastPanel } from './components/CastPanel';
+import { StageCanvas } from './components/StageCanvas';
+import { PropertiesPanel } from './components/PropertiesPanel';
+import { Timeline } from './components/Timeline';
+import { useAppHotkeys } from './hooks/useAppHotkeys';
+import { usePlayback } from './hooks/usePlayback';
+import { clearAudio, loadPersistedAudio, setAudioBlob } from './audio/audioPlayer';
 
 export function App(): ReactElement {
+  const { togglePlay } = usePlayback();
+  useAppHotkeys(togglePlay);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [audioVersion, setAudioVersion] = useState(0);
+
+  useEffect(() => {
+    void loadPersistedAudio().then((loaded) => {
+      if (loaded) setAudioVersion((v) => v + 1);
+    });
+  }, []);
+
   return (
     <div className="app">
-      <header className="topbar">
-        <span className="wordmark">
-          Open<em>Stage</em>
-        </span>
-        <span className="topbar-spacer" />
-      </header>
-      <aside className="cast-panel side-panel">
-        <div className="panel-title">Cast</div>
-        <p className="empty-note">No performers yet.</p>
-      </aside>
-      <main className="stage-area" aria-label="Stage canvas" />
-      <aside className="props-panel side-panel">
-        <div className="panel-title">Properties</div>
-        <p className="empty-note">Nothing selected.</p>
-      </aside>
-      <section className="timeline-panel" aria-label="Timeline">
-        <div className="timeline-toolbar">
-          <span className="panel-title" style={{ padding: 0 }}>
-            Timeline
-          </span>
-        </div>
-        <div className="timeline-body" />
-      </section>
+      <TopBar
+        onTogglePlay={togglePlay}
+        onExportPdf={() => {
+          // Implemented in the PDF export milestone.
+          void import('./export/pdf').then((m) => m.exportPerformancePdf());
+        }}
+      />
+      <CastPanel />
+      <main className="stage-area" aria-label="Stage canvas">
+        <StageCanvas />
+      </main>
+      <PropertiesPanel />
+      <Timeline
+        audioVersion={audioVersion}
+        onUploadAudio={() => fileInputRef.current?.click()}
+        onClearAudio={() => {
+          void clearAudio().then(() => setAudioVersion((v) => v + 1));
+        }}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="audio/*"
+        hidden
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file === undefined) return;
+          void setAudioBlob(file).then(() => setAudioVersion((v) => v + 1));
+          e.target.value = '';
+        }}
+      />
     </div>
   );
 }

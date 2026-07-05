@@ -199,6 +199,10 @@ input[type='number'] {
   font-size: 12px;
 }
 
+input[type='range'] {
+  accent-color: var(--tungsten);
+}
+
 input[type='color'] {
   border: 1px solid var(--panel-edge);
   border-radius: 4px;

@@ -6,7 +6,7 @@
  * - Stage coordinates are in meters. Origin is the upstage-left corner of the
  *   stage; x grows stage-right, y grows downstage (toward the audience).
  * - `rotation` is the performer's facing in degrees, 0 = facing the audience
- *   (downstage), counter-clockwise positive when viewed from above.
+ *   (downstage), clockwise positive on the top-down plan view.
  * - Times are milliseconds from the start of the performance audio.
  */
 
