@@ -162,5 +162,6 @@ export const zh: Messages = {
   layout: {
     resizeCast: '調整演出者面板寬度',
     resizeProps: '調整屬性面板寬度',
+    resizeTimeline: '調整時間軸高度',
   },
 };

@@ -21,6 +21,7 @@ export function App(): ReactElement {
   const t = useT();
   const castWidth = useLayout((s) => s.castWidth);
   const propsWidth = useLayout((s) => s.propsWidth);
+  const timelineHeight = useLayout((s) => s.timelineHeight);
   const { togglePlay } = usePlayback();
   useAppHotkeys(togglePlay);
 
@@ -40,10 +41,16 @@ export function App(): ReactElement {
     <div
       className={`app${isViewMode ? ' view-mode' : ''}`}
       // View mode's 0/1fr/0 columns come from CSS; don't override them.
-      style={isViewMode ? undefined : { gridTemplateColumns: `${castWidth}px 1fr ${propsWidth}px` }}
+      style={
+        isViewMode
+          ? { gridTemplateRows: `46px 1fr ${timelineHeight}px` }
+          : {
+              gridTemplateColumns: `${castWidth}px 1fr ${propsWidth}px`,
+              gridTemplateRows: `46px 1fr ${timelineHeight}px`,
+            }
+      }
     >
       <TopBar
-        onTogglePlay={togglePlay}
         onExportPdf={() => {
           // Implemented in the PDF export milestone.
           void import('./export/pdf').then((m) => m.exportPerformancePdf());
@@ -70,6 +77,7 @@ export function App(): ReactElement {
       <PropertiesPanel />
       <Timeline
         audioVersion={audioVersion}
+        onTogglePlay={togglePlay}
         onUploadAudio={() => fileInputRef.current?.click()}
         onClearAudio={() => {
           void clearAudio().then(() => setAudioVersion((v) => v + 1));
@@ -81,6 +89,7 @@ export function App(): ReactElement {
           <PanelResizer side="props" />
         </>
       )}
+      <PanelResizer side="timeline" />
       <input
         ref={fileInputRef}
         type="file"

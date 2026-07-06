@@ -163,5 +163,6 @@ export const en = {
   layout: {
     resizeCast: 'Resize cast panel',
     resizeProps: 'Resize properties panel',
+    resizeTimeline: 'Resize timeline height',
   },
 };

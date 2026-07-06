@@ -14,9 +14,13 @@ const DRAG_THRESHOLD_PX = 4;
 
 const clampZoom = (z: number): number => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z));
 
+/** 0.5×–2.0× in 0.1 steps ((5+i)/10 avoids float drift like 0.7000…01). */
+const PLAYBACK_SPEEDS = Array.from({ length: 16 }, (_, i) => (5 + i) / 10);
+
 interface TimelineProps {
   /** Bumped by the app whenever audio is loaded/cleared, to redraw the waveform. */
   audioVersion: number;
+  onTogglePlay: () => void;
   onUploadAudio: () => void;
   onClearAudio: () => void;
 }
@@ -31,11 +35,14 @@ interface DragState {
 
 export function Timeline({
   audioVersion,
+  onTogglePlay,
   onUploadAudio,
   onClearAudio,
 }: TimelineProps): ReactElement {
   const t = useT();
   const formations = useEditor((s) => s.formations);
+  const playbackRate = useEditor((s) => s.playbackRate);
+  const setPlaybackRate = useEditor((s) => s.setPlaybackRate);
   const beatMarkersMs = useEditor((s) => s.performance.beatMarkersMs);
   const bpm = useEditor((s) => s.performance.bpm);
   const selectedFormationId = useEditor((s) => s.selectedFormationId);
@@ -251,6 +258,22 @@ export function Timeline({
         >
           {t.timeline.tapBeat}
         </button>
+        <button type="button" className="btn btn-primary" onClick={onTogglePlay}>
+          {isPlaying ? t.topbar.pause : t.topbar.play}
+        </button>
+        <select
+          aria-label={t.topbar.playbackSpeedAria}
+          title={t.topbar.playbackSpeedAria}
+          value={playbackRate.toFixed(1)}
+          style={{ width: 66 }}
+          onChange={(e) => setPlaybackRate(Number(e.target.value))}
+        >
+          {PLAYBACK_SPEEDS.map((rate) => (
+            <option key={rate} value={rate.toFixed(1)}>
+              {rate.toFixed(1)}×
+            </option>
+          ))}
+        </select>
         <div className="zoom-controls">
           <button
             type="button"

@@ -10,16 +10,23 @@ import { persist } from 'zustand/middleware';
  */
 export const DEFAULT_CAST_W = 216;
 export const DEFAULT_PROPS_W = 248;
+export const DEFAULT_TIMELINE_H = 210;
 const MIN_PANEL_W = 160;
 const MAX_PANEL_W = 420;
+const MIN_TIMELINE_H = 130;
+const MAX_TIMELINE_H = 520;
 
 const clampWidth = (px: number): number => Math.min(MAX_PANEL_W, Math.max(MIN_PANEL_W, px));
+const clampTimelineH = (px: number): number =>
+  Math.min(MAX_TIMELINE_H, Math.max(MIN_TIMELINE_H, px));
 
 interface LayoutState {
   castWidth: number;
   propsWidth: number;
+  timelineHeight: number;
   setCastWidth: (px: number) => void;
   setPropsWidth: (px: number) => void;
+  setTimelineHeight: (px: number) => void;
 }
 
 export const useLayout = create<LayoutState>()(
@@ -27,8 +34,10 @@ export const useLayout = create<LayoutState>()(
     (set) => ({
       castWidth: DEFAULT_CAST_W,
       propsWidth: DEFAULT_PROPS_W,
+      timelineHeight: DEFAULT_TIMELINE_H,
       setCastWidth: (px) => set({ castWidth: clampWidth(px) }),
       setPropsWidth: (px) => set({ propsWidth: clampWidth(px) }),
+      setTimelineHeight: (px) => set({ timelineHeight: clampTimelineH(px) }),
     }),
     { name: 'openstage-layout' },
   ),

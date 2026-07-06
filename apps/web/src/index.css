@@ -58,15 +58,24 @@ body {
   position: relative; /* anchors the .panel-resize overlays */
 }
 
-/* Sidebar drag handles; top/bottom match grid-template-rows above. */
+/* Panel drag handles overlaid on the grid (bottom set inline from state). */
 .panel-resize {
   position: absolute;
-  top: 46px;
-  bottom: 210px;
-  width: 7px;
-  cursor: col-resize;
   z-index: 20;
   touch-action: none;
+}
+
+.panel-resize-col {
+  top: 46px;
+  width: 7px;
+  cursor: col-resize;
+}
+
+.panel-resize-row {
+  left: 0;
+  right: 0;
+  height: 7px;
+  cursor: row-resize;
 }
 
 .panel-resize:hover,

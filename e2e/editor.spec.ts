@@ -61,7 +61,7 @@ test.beforeEach(async ({ page }) => {
 test('app shell renders', async ({ page }) => {
   await expect(page.locator('.wordmark')).toHaveText('OpenStage');
   await expect(page.getByLabel('Stage canvas')).toBeVisible();
-  await expect(page.getByLabel('Timeline')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Timeline' })).toBeVisible();
 });
 
 test('add, drag and rotate a performer; doc survives reload', async ({ page }) => {
@@ -156,6 +156,26 @@ test('sidebars resize by dragging and the width persists', async ({ page }) => {
   await page.reload();
   await page.getByText('Add performer').waitFor();
   expect(Math.abs(((await page.locator('.cast-panel').boundingBox())?.width ?? 0) - 320)).toBeLessThanOrEqual(8);
+});
+
+test('timeline height resizes by dragging and persists', async ({ page }) => {
+  const timeline = page.locator('.timeline-panel');
+  expect(Math.round((await timeline.boundingBox())?.height ?? 0)).toBe(210);
+
+  const handle = page.getByLabel('Resize timeline height');
+  const box = await handle.boundingBox();
+  const grabX = (box?.x ?? 0) + 300;
+  await page.mouse.move(grabX, (box?.y ?? 0) + 3);
+  await page.mouse.down();
+  await page.mouse.move(grabX, 600, { steps: 5 }); // drag up -> taller timeline
+  await page.mouse.up();
+  const grown = (await timeline.boundingBox())?.height ?? 0;
+  expect(grown).toBeGreaterThan(260);
+
+  await page.reload();
+  await page.getByText('Add performer').waitFor();
+  const after = (await page.locator('.timeline-panel').boundingBox())?.height ?? 0;
+  expect(Math.abs(after - grown)).toBeLessThanOrEqual(8);
 });
 
 test('audio upload, beat markers, waveform persistence', async ({ page }) => {
