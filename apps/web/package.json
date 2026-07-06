@@ -14,6 +14,7 @@
     "@fontsource-variable/bricolage-grotesque": "^5.2.0",
     "@fontsource-variable/instrument-sans": "^5.2.0",
     "@fontsource/ibm-plex-mono": "^5.2.0",
+    "@openstage/path-planner": "workspace:*",
     "@openstage/shared-types": "workspace:*",
     "jspdf": "^3.0.0",
     "konva": "^10.0.0",

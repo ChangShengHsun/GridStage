@@ -84,6 +84,9 @@ importers:
       '@fontsource/ibm-plex-mono':
         specifier: ^5.2.0
         version: 5.2.7
+      '@openstage/path-planner':
+        specifier: workspace:*
+        version: link:../../packages/path-planner
       '@openstage/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types

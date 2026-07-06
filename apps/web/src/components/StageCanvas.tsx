@@ -5,6 +5,7 @@ import type Konva from 'konva';
 import { useEditor } from '../state/store';
 import { byOrder, posesAtTime } from '../state/interpolate';
 import type { StagePose } from '../state/interpolate';
+import { findCrossings } from '@openstage/path-planner';
 import { isCollabActive, setAwarenessCursor } from '../collab/collab';
 import { usePeers } from '../hooks/usePeers';
 import { isViewMode } from '../state/viewMode';
@@ -191,32 +192,57 @@ export function StageCanvas(): ReactElement {
           />
         </Layer>
 
-        {/* Ghosts: where everyone stood in the previous formation. */}
-        {!isPlaying && previous !== undefined && (
-          <Layer listening={false} opacity={0.35}>
-            {performers.map((p) => {
-              const prev = previousPositions[p.id];
-              const curr = editPositions[p.id];
-              if (prev === undefined) return null;
-              const prevPx = toPx(prev.x, prev.y);
-              const currPx = curr !== undefined ? toPx(curr.x, curr.y) : null;
-              return (
-                <Group key={p.id}>
-                  {currPx !== null && (
-                    <Line
-                      points={[prevPx.x, prevPx.y, currPx.x, currPx.y]}
-                      stroke={p.color}
-                      strokeWidth={1}
-                      dash={[3, 5]}
-                      opacity={0.7}
-                    />
-                  )}
-                  <Circle x={prevPx.x} y={prevPx.y} radius={4} stroke={p.color} strokeWidth={1.5} />
-                </Group>
-              );
-            })}
-          </Layer>
-        )}
+        {/* Ghosts: where everyone stood in the previous formation, with
+            collision warnings on crossing walk paths. */}
+        {!isPlaying &&
+          previous !== undefined &&
+          (() => {
+            const walkers = performers.filter(
+              (p) => previousPositions[p.id] !== undefined && editPositions[p.id] !== undefined,
+            );
+            const paths = walkers.map((p) => {
+              const from = previousPositions[p.id];
+              const to = editPositions[p.id];
+              return {
+                from: { x: from?.x ?? 0, y: from?.y ?? 0 },
+                to: { x: to?.x ?? 0, y: to?.y ?? 0 },
+              };
+            });
+            const crossing = new Set(findCrossings(paths).flat());
+            return (
+              <Layer listening={false}>
+                {performers.map((p) => {
+                  const prev = previousPositions[p.id];
+                  if (prev === undefined) return null;
+                  const prevPx = toPx(prev.x, prev.y);
+                  const walkerIndex = walkers.findIndex((w) => w.id === p.id);
+                  const curr = editPositions[p.id];
+                  const currPx = curr !== undefined ? toPx(curr.x, curr.y) : null;
+                  const collides = walkerIndex !== -1 && crossing.has(walkerIndex);
+                  return (
+                    <Group key={p.id} opacity={collides ? 0.9 : 0.35}>
+                      {currPx !== null && (
+                        <Line
+                          points={[prevPx.x, prevPx.y, currPx.x, currPx.y]}
+                          stroke={collides ? '#d95f5f' : p.color}
+                          strokeWidth={collides ? 2 : 1}
+                          dash={collides ? undefined : [3, 5]}
+                          opacity={0.8}
+                        />
+                      )}
+                      <Circle
+                        x={prevPx.x}
+                        y={prevPx.y}
+                        radius={4}
+                        stroke={collides ? '#d95f5f' : p.color}
+                        strokeWidth={1.5}
+                      />
+                    </Group>
+                  );
+                })}
+              </Layer>
+            );
+          })()}
 
         <Layer>
           {performers.map((p) => {

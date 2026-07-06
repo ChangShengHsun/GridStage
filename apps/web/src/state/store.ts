@@ -14,7 +14,9 @@ import {
   DEFAULT_TRANSITION_MS,
   PERFORMER_COLORS,
 } from '@openstage/shared-types';
+import { planTransition } from '@openstage/path-planner';
 import { reindexByStart } from './formationOrder';
+import { byOrder } from './interpolate';
 import { templateSpots } from './templates';
 import type { TemplateKind } from './templates';
 import type { RosterRow } from './csv';
@@ -60,6 +62,11 @@ interface EditorState extends DocState {
   pushHistory: () => void;
   /** Arrange the selected formation's performers into a template shape. */
   applyTemplate: (kind: TemplateKind) => void;
+  /**
+   * Reassign the selected formation's spots among performers so total travel
+   * from the previous formation is minimal (Hungarian matching).
+   */
+  untangleFromPrevious: () => void;
 
   setPosition: (formationId: string, performerId: string, x: number, y: number) => void;
   /** Same, but WITHOUT recording history — for continuous drag frames. */
@@ -415,6 +422,42 @@ export const useEditor = create<EditorState>()(
               updated[p.id] = { ...existing, x: spot.x, y: spot.y };
             });
             return { positions: { ...s.positions, [fid]: updated } };
+          }),
+
+        untangleFromPrevious: () =>
+          mutateDoc((s) => {
+            const ordered = byOrder(s.formations);
+            const index = ordered.findIndex((f) => f.id === s.selectedFormationId);
+            const previous = index > 0 ? ordered[index - 1] : undefined;
+            const current = ordered[index];
+            if (previous === undefined || current === undefined) return {};
+            const prevPositions = s.positions[previous.id] ?? {};
+            const currPositions = s.positions[current.id] ?? {};
+            const ids = s.performers
+              .map((p) => p.id)
+              .filter(
+                (pid) => prevPositions[pid] !== undefined && currPositions[pid] !== undefined,
+              );
+            if (ids.length < 2) return {};
+            const fromSpots = ids.map((pid) => {
+              const pos = prevPositions[pid];
+              return { x: pos?.x ?? 0, y: pos?.y ?? 0 };
+            });
+            // The formation's SPOTS (position + facing) stay fixed; who stands
+            // where is what gets reshuffled.
+            const spots = ids.map((pid) => currPositions[pid]);
+            const { assignment } = planTransition(
+              fromSpots,
+              spots.map((pos) => ({ x: pos?.x ?? 0, y: pos?.y ?? 0 })),
+            );
+            const updated = { ...currPositions };
+            ids.forEach((pid, i) => {
+              const target = spots[assignment[i] ?? i];
+              const existing = updated[pid];
+              if (target === undefined || existing === undefined) return;
+              updated[pid] = { ...existing, x: target.x, y: target.y, rotation: target.rotation };
+            });
+            return { positions: { ...s.positions, [current.id]: updated } };
           }),
 
         setPosition: (formationId, performerId, x, y) =>

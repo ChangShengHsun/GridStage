@@ -190,6 +190,38 @@ test('zoom widens the timeline content', async ({ page }) => {
   expect(after).toBeGreaterThan(before * 1.8);
 });
 
+test('untangle swaps crossing walk paths to the minimal-travel assignment', async ({ page }) => {
+  await page.getByText('Add performer').click(); // D1 @ (1.5, 6.5)
+  await page.getByText('Add performer').click(); // D2 @ (3, 6.5)
+  await page.getByText('Add formation').click(); // F2 copies F1
+
+  const drag = async (fx: number, fy: number, tx: number, ty: number): Promise<void> => {
+    const from = meterToPx(fx, fy);
+    const to = meterToPx(tx, ty);
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(to.x, to.y, { steps: 8 });
+    await page.mouse.up();
+  };
+  // Send D1 far right and D2 to the middle — their paths cross.
+  await drag(1.5, 6.5, 9, 2);
+  await drag(3, 6.5, 5, 2);
+
+  // Deselect so the Formation section (with the button) is visible.
+  await page.getByLabel('Stage canvas').click({ position: { x: 15, y: 15 } });
+  await page.getByRole('button', { name: 'Untangle from previous' }).click();
+
+  const state = await readDoc(page);
+  const f2 = state.formations.find((f) => f.orderIndex === 1);
+  const [d1, d2] = state.performers;
+  if (f2 === undefined || d1 === undefined || d2 === undefined) throw new Error('setup failed');
+  const p1 = state.positions[f2.id]?.[d1.id];
+  const p2 = state.positions[f2.id]?.[d2.id];
+  // Spots swapped: D1 takes (5,2), D2 takes (9,2) — no more crossing.
+  expect(Math.abs((p1?.x ?? 0) - 5)).toBeLessThan(0.4);
+  expect(Math.abs((p2?.x ?? 0) - 9)).toBeLessThan(0.4);
+});
+
 test('view mode hides editing UI and blocks dragging', async ({ page }) => {
   await page.getByText('Add performer').click();
   await page.goto('/?mode=view');

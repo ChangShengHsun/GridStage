@@ -147,11 +147,13 @@ function FormationSection(): ReactElement | null {
   const removeFormation = useEditor((s) => s.removeFormation);
   const moveFormation = useEditor((s) => s.moveFormation);
   const applyTemplate = useEditor((s) => s.applyTemplate);
+  const untangleFromPrevious = useEditor((s) => s.untangleFromPrevious);
   const hasPerformers = useEditor((s) => s.performers.length > 0);
   const [templateKind, setTemplateKind] = useState<TemplateKind>('line');
 
   const formation = formations.find((f) => f.id === selectedFormationId);
   if (formation === undefined) return null;
+  const isFirst = ![...formations].some((f) => f.orderIndex < formation.orderIndex);
 
   return (
     <>
@@ -245,6 +247,19 @@ function FormationSection(): ReactElement | null {
             </button>
           </div>
         </div>
+        <button
+          type="button"
+          className="btn"
+          disabled={isFirst || !hasPerformers}
+          title={
+            isFirst
+              ? 'No previous formation to walk from'
+              : 'Swap who takes which spot so total walking distance is minimal (red paths = crossings)'
+          }
+          onClick={untangleFromPrevious}
+        >
+          Untangle from previous
+        </button>
         <button
           type="button"
           className="btn btn-danger"
