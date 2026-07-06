@@ -128,6 +128,7 @@ export function TopBar({ onTogglePlay, onExportPdf }: TopBarProps): ReactElement
       <select
         aria-label={t.locale.label}
         value={locale}
+        style={{ width: 96 }}
         onChange={(e) => setLocale(e.target.value === 'zh' ? 'zh' : 'en')}
       >
         <option value="en">{t.locale.english}</option>

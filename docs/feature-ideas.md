@@ -50,6 +50,33 @@ L (multi-day / needs design discussion).
 - **PNG snapshot of current formation** (S) — one button, reuses the video
   exporter's draw function.
 - **GIF export** (M) — roadmap V3b, see handoff guide.
+- **3D video export** (M) — REQUESTED BY IVAN. Add a 2D/3D dropdown next to
+  the "Export video" button. 2D reuses today's canvas path. 3D records the
+  three.js view: render `Stage3D`'s scene to an offscreen/WebGL canvas driven
+  by the same realtime clock as `export/video.ts`, then `canvas.captureStream`
+  + MediaRecorder (audio mixed the same way). Cleanest structure: lift the
+  playback/record loop out of `video.ts` so both a 2D-canvas renderer and a
+  3D-three renderer plug into it. Effort is M mostly because three's render
+  loop must be pumped manually per frame (no React reconciler during capture).
+
+## Lighting (requested by Ivan — a whole feature area, needs design first)
+
+- **Stage lighting + light plot / cue sheet (編光表)** (L) — set colored
+  lights on the stage and attach lighting cues to the timeline. This is a
+  real subsystem, not a one-file change; propose a staged plan to Ivan before
+  building (his >10-file rule). Suggested phases:
+  1. *Data model* — a `lights` array on the performance (position, color,
+     intensity, beam angle, on/off) persisted like formations; and a
+     `lightingCues` list keyed to time (or to formations), each cue setting
+     light states. Extend `shared-types` + the `store.ts` persist `merge`.
+  2. *2D overlay* — draw light positions/beams on `StageCanvas`, editable in
+     a new PropertiesPanel section; cue state interpolates over the timeline
+     like poses do (`interpolate.ts` pattern).
+  3. *3D wash* — map each light to a three.js `SpotLight`/`PointLight` in
+     `Stage3D` so the wash is visible in preview (and in 3D video export).
+  4. *Cue sheet export* — a printable PDF table (cue #, time/8-count, which
+     lights, color/intensity), same jsPDF approach as the walk charts.
+  Ties into: 3D video export (lit preview), count-based ruler (cue timing).
 
 ## Collaboration
 
@@ -71,3 +98,6 @@ L (multi-day / needs design discussion).
 2. Mirror formation + swap performers (cheap, high daily value)
 3. Individual walk sheets PDF (the printable artifact teams want most)
 4. Count-based ruler (differentiator for the dance audience)
+
+Ivan-requested, queued: 3D video export (M, near-term) and stage
+lighting + cue sheet (L, needs a staged plan first).

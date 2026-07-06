@@ -145,6 +145,8 @@ body {
   padding: 5px 10px;
   cursor: pointer;
   transition: border-color 120ms ease-out;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn:hover {
