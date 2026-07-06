@@ -42,6 +42,7 @@ export const zh: Messages = {
     exportPdf: '匯出 PDF',
     exportVideo: '匯出影片',
     exportVideoTitle: '把播放動畫錄製成影片檔（即時錄製，需與演出等長的時間）',
+    videoModeAria: '影片匯出視角（2D 或 3D）',
     exportVideoCancel: (percent: number): string => `取消 ${percent}%`,
     videoExportFailed: '影片匯出失敗',
   },

@@ -41,6 +41,7 @@ export const en = {
     exportPdf: 'Export PDF',
     exportVideo: 'Export video',
     exportVideoTitle: 'Record the playback animation to a movie file (runs in real time)',
+    videoModeAria: 'Video export view (2D or 3D)',
     exportVideoCancel: (percent: number): string => `Cancel ${percent}%`,
     videoExportFailed: 'Video export failed',
   },

@@ -27,6 +27,7 @@ export function TopBar({ onExportPdf }: TopBarProps): ReactElement {
   const [userName, setUserName] = useState(() => getLocalUser().name);
   const [shareNote, setShareNote] = useState('');
   const [videoProgress, setVideoProgress] = useState<number | null>(null);
+  const [videoMode, setVideoMode] = useState<'2d' | '3d'>('2d');
   const videoAbortRef = useRef<AbortController | null>(null);
 
   const onExportVideo = (): void => {
@@ -39,7 +40,11 @@ export function TopBar({ onExportPdf }: TopBarProps): ReactElement {
     setVideoProgress(0);
     void import('../export/video')
       .then((m) =>
-        m.exportPerformanceVideo({ onProgress: setVideoProgress, signal: controller.signal }),
+        m.exportPerformanceVideo({
+          mode: videoMode,
+          onProgress: setVideoProgress,
+          signal: controller.signal,
+        }),
       )
       .catch((err: unknown) => {
         setShareNote(err instanceof Error ? err.message : t.topbar.videoExportFailed);
@@ -165,6 +170,16 @@ export function TopBar({ onExportPdf }: TopBarProps): ReactElement {
       <button type="button" className="btn" onClick={onExportPdf}>
         {t.topbar.exportPdf}
       </button>
+      <select
+        aria-label={t.topbar.videoModeAria}
+        value={videoMode}
+        disabled={videoProgress !== null}
+        style={{ width: 58 }}
+        onChange={(e) => setVideoMode(e.target.value === '3d' ? '3d' : '2d')}
+      >
+        <option value="2d">2D</option>
+        <option value="3d">3D</option>
+      </select>
       <button
         type="button"
         className="btn"

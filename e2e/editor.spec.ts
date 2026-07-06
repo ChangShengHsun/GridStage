@@ -484,3 +484,15 @@ test('video export records the show and downloads a movie', async ({ page }) => 
   expect((await stat(filePath)).size).toBeGreaterThan(10_000);
   await expect(page.getByRole('button', { name: 'Export video' })).toBeVisible();
 });
+
+test('3D video export records the perspective view', async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.getByText('Add performer').click();
+  await page.getByLabel('Video export view (2D or 3D)').selectOption('3d');
+
+  const downloadPromise = page.waitForEvent('download', { timeout: 45_000 });
+  await page.getByRole('button', { name: 'Export video' }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/-3d\.(webm|mp4)$/);
+  expect((await stat(await download.path())).size).toBeGreaterThan(10_000);
+});
