@@ -90,6 +90,9 @@ interface EditorState extends DocState {
   setPlayhead: (ms: number) => void;
   setIsPlaying: (playing: boolean) => void;
 
+  /** Replace the whole document (version-history restore); undoable. */
+  restoreDoc: (doc: DocState) => void;
+
   undo: () => void;
   redo: () => void;
 }
@@ -610,6 +613,12 @@ export const useEditor = create<EditorState>()(
 
         setPlayhead: (ms) => set({ playheadMs: Math.max(0, ms) }),
         setIsPlaying: (playing) => set({ isPlaying: playing }),
+
+        restoreDoc: (doc) =>
+          mutateDoc(() => ({
+            ...snapshotDoc(doc),
+            selectedPerformerIds: [],
+          })),
 
         undo: () => {
           if (undoOverride.undo !== null) {

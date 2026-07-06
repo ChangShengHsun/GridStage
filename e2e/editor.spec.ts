@@ -283,6 +283,27 @@ test('view mode hides editing UI and blocks dragging', async ({ page }) => {
   expect(after).toEqual(before);
 });
 
+test('version history: snapshot, mutate, restore', async ({ page }) => {
+  await page.getByText('Add performer').click();
+  await page.getByLabel('Stage canvas').click({ position: { x: 15, y: 15 } });
+
+  await page.getByRole('button', { name: 'Save snapshot' }).click();
+  await page.getByRole('button', { name: 'Restore' }).waitFor();
+
+  // Mutate: add two more performers.
+  await page.getByText('Add performer').click();
+  await page.getByText('Add performer').click();
+  expect((await readDoc(page)).performers).toHaveLength(3);
+
+  await page.getByLabel('Stage canvas').click({ position: { x: 15, y: 15 } });
+  await page.getByRole('button', { name: 'Restore' }).click();
+  expect((await readDoc(page)).performers).toHaveLength(1);
+
+  // Restore is one undo step away from the pre-restore state.
+  await page.keyboard.press('Control+z');
+  expect((await readDoc(page)).performers).toHaveLength(3);
+});
+
 test('PDF export downloads a file', async ({ page }) => {
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export PDF' }).click();

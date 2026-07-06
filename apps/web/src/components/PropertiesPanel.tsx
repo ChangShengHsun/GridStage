@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useEditor } from '../state/store';
 import { TEMPLATE_LABELS } from '../state/templates';
 import type { TemplateKind } from '../state/templates';
+import { deleteSnapshot, listSnapshots, saveSnapshot } from '../state/history';
+import type { Snapshot } from '../state/history';
 import { CommentsSection } from './CommentsSection';
 
 /** Parse a number input, returning null for empty/invalid text. */
@@ -328,6 +330,77 @@ function StageSection(): ReactElement {
   );
 }
 
+function HistorySection(): ReactElement {
+  const restoreDoc = useEditor((s) => s.restoreDoc);
+  const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
+
+  const refresh = useCallback(() => {
+    void listSnapshots().then(setSnapshots);
+  }, []);
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  return (
+    <>
+      <div className="panel-title">History</div>
+      <div className="panel-section">
+        <button
+          type="button"
+          className="btn"
+          onClick={() => {
+            const s = useEditor.getState();
+            const name = `${s.performance.title} · ${new Date().toLocaleTimeString()}`;
+            void saveSnapshot(name, {
+              performance: s.performance,
+              performers: s.performers,
+              formations: s.formations,
+              positions: s.positions,
+              comments: s.comments,
+            }).then(refresh);
+          }}
+        >
+          Save snapshot
+        </button>
+        {snapshots.length === 0 && <span className="mono">No snapshots yet.</span>}
+        {snapshots.map((snap) => (
+          <div key={snap.id} className="comment-row">
+            <div className="comment-head">
+              <span className="comment-author">
+                {new Date(snap.createdAt).toLocaleString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </span>
+              <button
+                type="button"
+                className="comment-delete"
+                aria-label={`Delete snapshot ${snap.name}`}
+                onClick={() => {
+                  void deleteSnapshot(snap.id).then(refresh);
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="comment-text">{snap.name}</div>
+            <button
+              type="button"
+              className="btn"
+              style={{ marginTop: 4 }}
+              onClick={() => restoreDoc(snap.doc)}
+            >
+              Restore
+            </button>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
 export function PropertiesPanel(): ReactElement {
   const hasPerformerSelection = useEditor((s) => s.selectedPerformerIds.length > 0);
 
@@ -335,6 +408,7 @@ export function PropertiesPanel(): ReactElement {
     <aside className="props-panel side-panel">
       {hasPerformerSelection ? <PerformerSection /> : <FormationSection />}
       <StageSection />
+      <HistorySection />
     </aside>
   );
 }
