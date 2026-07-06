@@ -4,6 +4,7 @@ import type { Formation } from '@openstage/shared-types';
 import { useEditor } from '../state/store';
 import { byOrder, showEndMs } from '../state/interpolate';
 import { audioDurationMs, getAudioElement, getWaveformPeaks } from '../audio/audioPlayer';
+import { useT } from '../i18n';
 
 const MIN_TIMELINE_MS = 30_000;
 const WAVEFORM_BINS = 600;
@@ -33,6 +34,7 @@ export function Timeline({
   onUploadAudio,
   onClearAudio,
 }: TimelineProps): ReactElement {
+  const t = useT();
   const formations = useEditor((s) => s.formations);
   const beatMarkersMs = useEditor((s) => s.performance.beatMarkersMs);
   const bpm = useEditor((s) => s.performance.bpm);
@@ -224,36 +226,36 @@ export function Timeline({
   const ordered = byOrder(formations);
   const eightMarks: number[] = [];
   if (beatMs !== null) {
-    for (let t = 0; t <= totalMs; t += beatMs * 8) eightMarks.push(t);
+    for (let markMs = 0; markMs <= totalMs; markMs += beatMs * 8) eightMarks.push(markMs);
   }
 
   return (
-    <section className="timeline-panel" aria-label="Timeline">
+    <section className="timeline-panel" aria-label={t.timeline.panelAria}>
       <div className="timeline-toolbar">
         <button type="button" className="btn edit-only" onClick={addFormation}>
-          Add formation
+          {t.timeline.addFormation}
         </button>
         <button type="button" className="btn edit-only" onClick={onUploadAudio}>
-          {hasAudio ? 'Replace audio' : 'Upload audio'}
+          {hasAudio ? t.timeline.replaceAudio : t.timeline.uploadAudio}
         </button>
         {hasAudio && (
           <button type="button" className="btn btn-danger edit-only" onClick={onClearAudio}>
-            Remove audio
+            {t.timeline.removeAudio}
           </button>
         )}
         <button
           type="button"
           className="btn edit-only"
-          title="Drop a beat marker at the playhead (great while music plays)"
+          title={t.timeline.tapBeatTitle}
           onClick={() => addBeatMarker(useEditor.getState().playheadMs)}
         >
-          Tap beat
+          {t.timeline.tapBeat}
         </button>
         <div className="zoom-controls">
           <button
             type="button"
             className="btn"
-            aria-label="Zoom out"
+            aria-label={t.timeline.zoomOut}
             disabled={zoom <= MIN_ZOOM}
             onClick={() => zoomBy(1 / 1.5)}
           >
@@ -265,7 +267,7 @@ export function Timeline({
           <button
             type="button"
             className="btn"
-            aria-label="Zoom in"
+            aria-label={t.timeline.zoomIn}
             disabled={zoom >= MAX_ZOOM}
             onClick={() => zoomBy(1.5)}
           >
@@ -273,7 +275,7 @@ export function Timeline({
           </button>
         </div>
         <span className="mono" style={{ marginLeft: 'auto' }}>
-          {isPlaying ? 'playing' : 'drag formations to move · Ctrl+scroll to zoom'}
+          {isPlaying ? t.timeline.playing : t.timeline.hint}
         </span>
       </div>
       <div ref={bodyRef} className="timeline-body">
@@ -282,7 +284,7 @@ export function Timeline({
           className="timeline-content"
           style={{ width: contentWidth }}
           role="slider"
-          aria-label="Playhead position"
+          aria-label={t.timeline.playheadAria}
           aria-valuemin={0}
           aria-valuemax={Math.round(totalMs)}
           aria-valuenow={Math.round(playheadMs)}
@@ -308,12 +310,12 @@ export function Timeline({
             style={{ position: 'absolute', left: 0, top: 36, width: '100%', height: 70 }}
           />
           {/* 8-count ruler */}
-          {eightMarks.map((t, i) => (
+          {eightMarks.map((markMs, i) => (
             <div
-              key={t}
+              key={markMs}
               style={{
                 position: 'absolute',
-                left: msToPx(t),
+                left: msToPx(markMs),
                 top: 0,
                 bottom: 0,
                 width: 1,
@@ -329,16 +331,16 @@ export function Timeline({
             </div>
           ))}
           {/* beat markers */}
-          {beatMarkersMs.map((t) => (
+          {beatMarkersMs.map((markMs) => (
             <button
-              key={t}
+              key={markMs}
               type="button"
               data-skip-scrub="true"
-              aria-label={`Remove beat marker at ${(t / 1000).toFixed(1)}s`}
-              onClick={() => removeBeatMarker(t)}
+              aria-label={t.timeline.removeBeatAria((markMs / 1000).toFixed(1))}
+              onClick={() => removeBeatMarker(markMs)}
               style={{
                 position: 'absolute',
-                left: msToPx(t) - 2,
+                left: msToPx(markMs) - 2,
                 top: 30,
                 width: 5,
                 height: 82,
@@ -373,7 +375,7 @@ export function Timeline({
                     role="button"
                     tabIndex={0}
                     aria-pressed={selected}
-                    aria-label={`Formation ${f.name}, starts at ${(f.startTimeMs / 1000).toFixed(1)}s`}
+                    aria-label={t.timeline.formationAria(f.name, (f.startTimeMs / 1000).toFixed(1))}
                     data-skip-scrub="true"
                     onPointerDown={(e) => onFormationPointerDown(e, f)}
                     onPointerMove={onFormationPointerMove}

@@ -2,6 +2,7 @@ import { useEditor } from '../state/store';
 import { formatEightCount, formatTimecode, posesAtTime, showEndMs } from '../state/interpolate';
 import { getAudioBlob } from '../audio/audioPlayer';
 import { safeFilename } from './filename';
+import { messages } from '../i18n';
 
 // 720p at 30fps — plenty for sharing a formation preview in a group chat.
 const W = 1280;
@@ -38,8 +39,9 @@ export async function exportPerformanceVideo({
   signal,
 }: VideoExportOptions): Promise<void> {
   const s = useEditor.getState();
+  const msg = messages();
   const durationMs = showEndMs(s.formations);
-  if (durationMs <= 0) throw new Error('Nothing to export — add a formation first');
+  if (durationMs <= 0) throw new Error(msg.videoExport.errNothingToExport);
 
   const mimeType = [
     'video/mp4;codecs=avc1.42E01F,mp4a.40.2',
@@ -47,7 +49,7 @@ export async function exportPerformanceVideo({
     'video/webm;codecs=vp9,opus',
     'video/webm',
   ].find((candidate) => MediaRecorder.isTypeSupported(candidate));
-  if (mimeType === undefined) throw new Error('This browser cannot record video');
+  if (mimeType === undefined) throw new Error(msg.videoExport.errUnsupported);
 
   const canvas = document.createElement('canvas');
   canvas.width = W;
@@ -126,7 +128,7 @@ export async function exportPerformanceVideo({
       ctx.fillStyle = DIM;
       ctx.font = `13px ${SANS}`;
       ctx.textAlign = 'center';
-      ctx.fillText('AUDIENCE', W / 2, originY + stageH + 28);
+      ctx.fillText(msg.stage.audience, W / 2, originY + stageH + 28);
 
       const poses = posesAtTime(s.formations, s.positions, tMs);
       for (const performer of s.performers) {

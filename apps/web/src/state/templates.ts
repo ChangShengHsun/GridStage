@@ -6,13 +6,7 @@
  */
 
 export type TemplateKind = 'line' | 'v' | 'circle' | 'grid';
-
-export const TEMPLATE_LABELS: Record<TemplateKind, string> = {
-  line: 'Line',
-  v: 'V shape',
-  circle: 'Circle',
-  grid: 'Grid',
-};
+// Template display labels live in the i18n dictionaries (i18n/en.ts).
 
 export interface Spot {
   x: number;

@@ -6,6 +6,7 @@ import { getLocalUser, setLocalUserName } from '../state/user';
 import { collabRoom, isCollabActive, setAwarenessUser } from '../collab/collab';
 import { usePeers } from '../hooks/usePeers';
 import { isViewMode } from '../state/viewMode';
+import { useLocaleStore, useT } from '../i18n';
 
 interface TopBarProps {
   onTogglePlay: () => void;
@@ -13,6 +14,9 @@ interface TopBarProps {
 }
 
 export function TopBar({ onTogglePlay, onExportPdf }: TopBarProps): ReactElement {
+  const t = useT();
+  const locale = useLocaleStore((s) => s.locale);
+  const setLocale = useLocaleStore((s) => s.setLocale);
   const title = useEditor((s) => s.performance.title);
   const bpm = useEditor((s) => s.performance.bpm);
   const setTitle = useEditor((s) => s.setTitle);
@@ -40,7 +44,7 @@ export function TopBar({ onTogglePlay, onExportPdf }: TopBarProps): ReactElement
         m.exportPerformanceVideo({ onProgress: setVideoProgress, signal: controller.signal }),
       )
       .catch((err: unknown) => {
-        setShareNote(err instanceof Error ? err.message : 'Video export failed');
+        setShareNote(err instanceof Error ? err.message : t.topbar.videoExportFailed);
         window.setTimeout(() => setShareNote(''), 4000);
       })
       .finally(() => setVideoProgress(null));
@@ -55,7 +59,7 @@ export function TopBar({ onTogglePlay, onExportPdf }: TopBarProps): ReactElement
       return;
     }
     void navigator.clipboard.writeText(window.location.href).then(
-      () => setShareNote('Link copied'),
+      () => setShareNote(t.topbar.linkCopied),
       () => setShareNote(window.location.href),
     );
     window.setTimeout(() => setShareNote(''), 2500);
@@ -68,25 +72,35 @@ export function TopBar({ onTogglePlay, onExportPdf }: TopBarProps): ReactElement
       </span>
       <input
         type="text"
-        aria-label="Performance title"
+        aria-label={t.topbar.performanceTitleAria}
         value={title}
         readOnly={isViewMode}
         onChange={(e) => setTitle(e.target.value)}
         style={{ width: 200 }}
       />
-      <button type="button" className="btn edit-only" onClick={undo} title="Undo (Ctrl+Z)">
-        Undo
+      <button
+        type="button"
+        className="btn edit-only"
+        onClick={undo}
+        title={t.topbar.undoTitle}
+      >
+        {t.topbar.undo}
       </button>
-      <button type="button" className="btn edit-only" onClick={redo} title="Redo (Ctrl+Shift+Z)">
-        Redo
+      <button
+        type="button"
+        className="btn edit-only"
+        onClick={redo}
+        title={t.topbar.redoTitle}
+      >
+        {t.topbar.redo}
       </button>
       <span className="topbar-spacer" />
       {isCollabActive() && (
-        <span className="presence" aria-label={`${peers.length + 1} people in session`}>
+        <span className="presence" aria-label={t.topbar.peopleInSession(peers.length + 1)}>
           <span
             className="presence-dot"
             style={{ background: getLocalUser().color }}
-            title={`${getLocalUser().name} (you)`}
+            title={t.topbar.youTag(getLocalUser().name)}
           />
           {peers.map((p) => (
             <span
@@ -100,8 +114,8 @@ export function TopBar({ onTogglePlay, onExportPdf }: TopBarProps): ReactElement
       )}
       <input
         type="text"
-        aria-label="Your display name"
-        title="Your name on comments and live sessions"
+        aria-label={t.topbar.displayNameAria}
+        title={t.topbar.displayNameTitle}
         value={userName}
         style={{ width: 110 }}
         onChange={(e) => setUserName(e.target.value)}
@@ -111,25 +125,33 @@ export function TopBar({ onTogglePlay, onExportPdf }: TopBarProps): ReactElement
           setAwarenessUser(user.name, user.color);
         }}
       />
+      <select
+        aria-label={t.locale.label}
+        value={locale}
+        onChange={(e) => setLocale(e.target.value === 'zh' ? 'zh' : 'en')}
+      >
+        <option value="en">{t.locale.english}</option>
+        <option value="zh">{t.locale.chinese}</option>
+      </select>
       <button type="button" className="btn edit-only" onClick={onShare}>
-        {isCollabActive() ? `Copy link · ${collabRoom() ?? ''}` : 'Share live'}
+        {isCollabActive() ? t.topbar.copyLink(collabRoom() ?? '') : t.topbar.shareLive}
       </button>
       {isCollabActive() && !isViewMode && (
         <button
           type="button"
           className="btn"
-          title="Copy a view-only link (hides editing UI — not access control)"
+          title={t.topbar.viewLinkTitle}
           onClick={() => {
             const url = new URL(window.location.href);
             url.searchParams.set('mode', 'view');
             void navigator.clipboard.writeText(url.toString()).then(
-              () => setShareNote('View link copied'),
+              () => setShareNote(t.topbar.viewLinkCopied),
               () => setShareNote(url.toString()),
             );
             window.setTimeout(() => setShareNote(''), 2500);
           }}
         >
-          View link
+          {t.topbar.viewLink}
         </button>
       )}
       {shareNote !== '' && (
@@ -137,23 +159,25 @@ export function TopBar({ onTogglePlay, onExportPdf }: TopBarProps): ReactElement
           {shareNote}
         </span>
       )}
-      <span className="timecode" aria-label="Playhead time">
+      <span className="timecode" aria-label={t.topbar.playheadAria}>
         {formatTimecode(playheadMs)}
         {bpm !== null ? `  ${formatEightCount(playheadMs, bpm)}` : ''}
       </span>
       <button type="button" className="btn btn-primary" onClick={onTogglePlay}>
-        {isPlaying ? 'Pause' : 'Play'}
+        {isPlaying ? t.topbar.pause : t.topbar.play}
       </button>
       <button type="button" className="btn" onClick={onExportPdf}>
-        Export PDF
+        {t.topbar.exportPdf}
       </button>
       <button
         type="button"
         className="btn"
         onClick={onExportVideo}
-        title="Record the playback animation to a movie file (runs in real time)"
+        title={t.topbar.exportVideoTitle}
       >
-        {videoProgress === null ? 'Export video' : `Cancel ${Math.round(videoProgress * 100)}%`}
+        {videoProgress === null
+          ? t.topbar.exportVideo
+          : t.topbar.exportVideoCancel(Math.round(videoProgress * 100))}
       </button>
     </header>
   );

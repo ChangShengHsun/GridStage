@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useEditor } from '../state/store';
-import { TEMPLATE_LABELS } from '../state/templates';
 import type { TemplateKind } from '../state/templates';
 import { deleteSnapshot, listSnapshots, saveSnapshot } from '../state/history';
 import type { Snapshot } from '../state/history';
 import { CommentsSection } from './CommentsSection';
+import { useT } from '../i18n';
 
 /** Parse a number input, returning null for empty/invalid text. */
 function num(value: string): number | null {
@@ -14,6 +14,7 @@ function num(value: string): number | null {
 }
 
 function PerformerSection(): ReactElement | null {
+  const t = useT();
   const performers = useEditor((s) => s.performers);
   const selectedPerformerIds = useEditor((s) => s.selectedPerformerIds);
   const selectedFormationId = useEditor((s) => s.selectedFormationId);
@@ -30,10 +31,8 @@ function PerformerSection(): ReactElement | null {
   if (selectedPerformerIds.length > 1) {
     return (
       <>
-        <div className="panel-title">Performers</div>
-        <p className="empty-note">
-          {selectedPerformerIds.length} selected. Arrow keys nudge, [ and ] rotate.
-        </p>
+        <div className="panel-title">{t.performer.titleMany}</div>
+        <p className="empty-note">{t.performer.multiSelected(selectedPerformerIds.length)}</p>
       </>
     );
   }
@@ -41,10 +40,10 @@ function PerformerSection(): ReactElement | null {
 
   return (
     <>
-      <div className="panel-title">Performer</div>
+      <div className="panel-title">{t.performer.titleOne}</div>
       <div className="panel-section">
         <div className="field">
-          <label htmlFor="perf-name">Name</label>
+          <label htmlFor="perf-name">{t.performer.name}</label>
           <input
             id="perf-name"
             type="text"
@@ -53,17 +52,17 @@ function PerformerSection(): ReactElement | null {
           />
         </div>
         <div className="field">
-          <label htmlFor="perf-role">Role</label>
+          <label htmlFor="perf-role">{t.performer.role}</label>
           <input
             id="perf-role"
             type="text"
             value={performer.role}
-            placeholder="e.g. captain, flyer"
+            placeholder={t.performer.rolePlaceholder}
             onChange={(e) => updatePerformer(performer.id, { role: e.target.value })}
           />
         </div>
         <div className="field">
-          <label htmlFor="perf-color">Color</label>
+          <label htmlFor="perf-color">{t.performer.color}</label>
           <input
             id="perf-color"
             type="color"
@@ -75,7 +74,7 @@ function PerformerSection(): ReactElement | null {
           <>
             <div style={{ display: 'flex', gap: 8 }}>
               <div className="field" style={{ flex: 1 }}>
-                <label htmlFor="pos-x">X (m)</label>
+                <label htmlFor="pos-x">{t.performer.xLabel}</label>
                 <input
                   id="pos-x"
                   type="number"
@@ -88,7 +87,7 @@ function PerformerSection(): ReactElement | null {
                 />
               </div>
               <div className="field" style={{ flex: 1 }}>
-                <label htmlFor="pos-y">Y (m)</label>
+                <label htmlFor="pos-y">{t.performer.yLabel}</label>
                 <input
                   id="pos-y"
                   type="number"
@@ -102,7 +101,7 @@ function PerformerSection(): ReactElement | null {
               </div>
             </div>
             <div className="field">
-              <label htmlFor="pos-rot">Facing (° — 0 = audience)</label>
+              <label htmlFor="pos-rot">{t.performer.facingLabel}</label>
               <input
                 id="pos-rot"
                 type="range"
@@ -116,7 +115,7 @@ function PerformerSection(): ReactElement | null {
               />
               <input
                 type="number"
-                aria-label="Facing degrees"
+                aria-label={t.performer.facingDegreesAria}
                 min={0}
                 max={359}
                 value={Math.round(pos.rotation)}
@@ -133,7 +132,7 @@ function PerformerSection(): ReactElement | null {
           className="btn btn-danger"
           onClick={() => removePerformer(performer.id)}
         >
-          Remove from cast
+          {t.performer.removeFromCast}
         </button>
       </div>
       <CommentsSection performerId={performer.id} />
@@ -142,6 +141,7 @@ function PerformerSection(): ReactElement | null {
 }
 
 function FormationSection(): ReactElement | null {
+  const t = useT();
   const formations = useEditor((s) => s.formations);
   const selectedFormationId = useEditor((s) => s.selectedFormationId);
   const updateFormation = useEditor((s) => s.updateFormation);
@@ -159,10 +159,10 @@ function FormationSection(): ReactElement | null {
 
   return (
     <>
-      <div className="panel-title">Formation</div>
+      <div className="panel-title">{t.formation.title}</div>
       <div className="panel-section">
         <div className="field">
-          <label htmlFor="form-name">Name</label>
+          <label htmlFor="form-name">{t.formation.name}</label>
           <input
             id="form-name"
             type="text"
@@ -172,7 +172,7 @@ function FormationSection(): ReactElement | null {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <div className="field" style={{ flex: 1 }}>
-            <label htmlFor="form-start">Start (s)</label>
+            <label htmlFor="form-start">{t.formation.startLabel}</label>
             <input
               id="form-start"
               type="number"
@@ -186,7 +186,7 @@ function FormationSection(): ReactElement | null {
             />
           </div>
           <div className="field" style={{ flex: 1 }}>
-            <label htmlFor="form-dur">Hold (s)</label>
+            <label htmlFor="form-dur">{t.formation.holdLabel}</label>
             <input
               id="form-dur"
               type="number"
@@ -202,7 +202,7 @@ function FormationSection(): ReactElement | null {
           </div>
         </div>
         <div className="field">
-          <label htmlFor="form-transition">Transition to next</label>
+          <label htmlFor="form-transition">{t.formation.transitionLabel}</label>
           <select
             id="form-transition"
             value={formation.transitionType}
@@ -212,27 +212,27 @@ function FormationSection(): ReactElement | null {
               })
             }
           >
-            <option value="linear">Linear (straight paths)</option>
-            <option value="curve">Curve (drag the path handles)</option>
+            <option value="linear">{t.formation.transitionLinear}</option>
+            <option value="curve">{t.formation.transitionCurve}</option>
           </select>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button type="button" className="btn" onClick={() => moveFormation(formation.id, -1)}>
-            ← Earlier
+            {t.formation.earlier}
           </button>
           <button type="button" className="btn" onClick={() => moveFormation(formation.id, 1)}>
-            Later →
+            {t.formation.later}
           </button>
         </div>
         <div className="field">
-          <label htmlFor="form-template">Template</label>
+          <label htmlFor="form-template">{t.formation.templateLabel}</label>
           <div style={{ display: 'flex', gap: 8 }}>
             <select
               id="form-template"
               value={templateKind}
               onChange={(e) => setTemplateKind(e.target.value as TemplateKind)}
             >
-              {Object.entries(TEMPLATE_LABELS).map(([kind, label]) => (
+              {Object.entries(t.formation.templates).map(([kind, label]) => (
                 <option key={kind} value={kind}>
                   {label}
                 </option>
@@ -242,10 +242,10 @@ function FormationSection(): ReactElement | null {
               type="button"
               className="btn"
               disabled={!hasPerformers}
-              title={hasPerformers ? 'Arrange everyone into this shape' : 'Add performers first'}
+              title={hasPerformers ? t.formation.applyTitle : t.formation.applyDisabledTitle}
               onClick={() => applyTemplate(templateKind)}
             >
-              Apply
+              {t.formation.apply}
             </button>
           </div>
         </div>
@@ -253,21 +253,17 @@ function FormationSection(): ReactElement | null {
           type="button"
           className="btn"
           disabled={isFirst || !hasPerformers}
-          title={
-            isFirst
-              ? 'No previous formation to walk from'
-              : 'Swap who takes which spot so total walking distance is minimal (red paths = crossings)'
-          }
+          title={isFirst ? t.formation.untangleFirstTitle : t.formation.untangleTitle}
           onClick={untangleFromPrevious}
         >
-          Untangle from previous
+          {t.formation.untangle}
         </button>
         <button
           type="button"
           className="btn btn-danger"
           onClick={() => removeFormation(formation.id)}
         >
-          Delete formation
+          {t.formation.deleteFormation}
         </button>
       </div>
       <CommentsSection performerId={null} />
@@ -276,17 +272,18 @@ function FormationSection(): ReactElement | null {
 }
 
 function StageSection(): ReactElement {
+  const t = useT();
   const performance = useEditor((s) => s.performance);
   const setStageSize = useEditor((s) => s.setStageSize);
   const setBpm = useEditor((s) => s.setBpm);
 
   return (
     <>
-      <div className="panel-title">Stage</div>
+      <div className="panel-title">{t.stage.title}</div>
       <div className="panel-section">
         <div style={{ display: 'flex', gap: 8 }}>
           <div className="field" style={{ flex: 1 }}>
-            <label htmlFor="stage-w">Width (m)</label>
+            <label htmlFor="stage-w">{t.stage.width}</label>
             <input
               id="stage-w"
               type="number"
@@ -300,7 +297,7 @@ function StageSection(): ReactElement {
             />
           </div>
           <div className="field" style={{ flex: 1 }}>
-            <label htmlFor="stage-h">Depth (m)</label>
+            <label htmlFor="stage-h">{t.stage.depth}</label>
             <input
               id="stage-h"
               type="number"
@@ -315,7 +312,7 @@ function StageSection(): ReactElement {
           </div>
         </div>
         <div className="field">
-          <label htmlFor="stage-bpm">BPM (empty = unknown)</label>
+          <label htmlFor="stage-bpm">{t.stage.bpm}</label>
           <input
             id="stage-bpm"
             type="number"
@@ -331,6 +328,7 @@ function StageSection(): ReactElement {
 }
 
 function HistorySection(): ReactElement {
+  const t = useT();
   const restoreDoc = useEditor((s) => s.restoreDoc);
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
 
@@ -343,7 +341,7 @@ function HistorySection(): ReactElement {
 
   return (
     <>
-      <div className="panel-title">History</div>
+      <div className="panel-title">{t.history.title}</div>
       <div className="panel-section">
         <button
           type="button"
@@ -360,14 +358,14 @@ function HistorySection(): ReactElement {
             }).then(refresh);
           }}
         >
-          Save snapshot
+          {t.history.saveSnapshot}
         </button>
-        {snapshots.length === 0 && <span className="mono">No snapshots yet.</span>}
+        {snapshots.length === 0 && <span className="mono">{t.history.noSnapshots}</span>}
         {snapshots.map((snap) => (
           <div key={snap.id} className="comment-row">
             <div className="comment-head">
               <span className="comment-author">
-                {new Date(snap.createdAt).toLocaleString(undefined, {
+                {new Date(snap.createdAt).toLocaleString(t.dateLocale, {
                   month: 'short',
                   day: 'numeric',
                   hour: '2-digit',
@@ -377,7 +375,7 @@ function HistorySection(): ReactElement {
               <button
                 type="button"
                 className="comment-delete"
-                aria-label={`Delete snapshot ${snap.name}`}
+                aria-label={t.history.deleteSnapshotAria(snap.name)}
                 onClick={() => {
                   void deleteSnapshot(snap.id).then(refresh);
                 }}
@@ -392,7 +390,7 @@ function HistorySection(): ReactElement {
               style={{ marginTop: 4 }}
               onClick={() => restoreDoc(snap.doc)}
             >
-              Restore
+              {t.history.restore}
             </button>
           </div>
         ))}

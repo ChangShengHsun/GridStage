@@ -2,8 +2,10 @@ import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useEditor } from '../state/store';
 import { parseRoster } from '../state/csv';
+import { useT } from '../i18n';
 
 export function CastPanel(): ReactElement {
+  const t = useT();
   const performers = useEditor((s) => s.performers);
   const selectedPerformerIds = useEditor((s) => s.selectedPerformerIds);
   const addPerformer = useEditor((s) => s.addPerformer);
@@ -15,18 +17,18 @@ export function CastPanel(): ReactElement {
 
   return (
     <aside className="cast-panel side-panel">
-      <div className="panel-title">Cast</div>
+      <div className="panel-title">{t.cast.title}</div>
       <div className="panel-section">
         <button type="button" className="btn" onClick={addPerformer}>
-          Add performer
+          {t.cast.addPerformer}
         </button>
         <button
           type="button"
           className="btn"
-          title="CSV columns: name, role, color (header row optional)"
+          title={t.cast.importCsvTitle}
           onClick={() => fileRef.current?.click()}
         >
-          Import CSV
+          {t.cast.importCsv}
         </button>
         {importNote !== '' && (
           <span className="mono" role="status">
@@ -39,28 +41,26 @@ export function CastPanel(): ReactElement {
         type="file"
         accept=".csv,text/csv"
         hidden
-        aria-label="Roster CSV file"
+        aria-label={t.cast.rosterFileAria}
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (file === undefined) return;
           void file.text().then((text) => {
             const rows = parseRoster(text);
             if (rows.length === 0) {
-              setImportNote('No rows found — expected: name, role, color');
+              setImportNote(t.cast.importEmpty);
             } else {
               importRoster(rows);
-              setImportNote(`Imported ${rows.length} performer${rows.length === 1 ? '' : 's'}`);
+              setImportNote(t.cast.imported(rows.length));
             }
           });
           e.target.value = '';
         }}
       />
       {performers.length === 0 ? (
-        <p className="empty-note">
-          No performers yet. Add one, then drag their mark onto the stage.
-        </p>
+        <p className="empty-note">{t.cast.emptyNote}</p>
       ) : (
-        <div role="listbox" aria-label="Performers" aria-multiselectable="true">
+        <div role="listbox" aria-label={t.cast.performersAria} aria-multiselectable="true">
           {performers.map((p) => {
             const selected = selectedPerformerIds.includes(p.id);
             return (

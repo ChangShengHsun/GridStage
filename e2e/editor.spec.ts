@@ -321,6 +321,17 @@ test('PDF export downloads a file', async ({ page }) => {
   expect(download.suggestedFilename()).toContain('walk-charts.pdf');
 });
 
+test('language switcher persists across reloads', async ({ page }) => {
+  // The only select in the header is the language picker (label text is
+  // locale-dependent, so target by structure).
+  const picker = page.locator('header select');
+  await expect(picker).toHaveValue('en');
+  await picker.selectOption('zh');
+  await expect(picker).toHaveValue('zh');
+  await page.reload();
+  await expect(page.locator('header select')).toHaveValue('zh');
+});
+
 test('video export records the show and downloads a movie', async ({ page }) => {
   test.setTimeout(60_000); // realtime capture: the default doc is an 8s show
   await page.getByText('Add performer').click();

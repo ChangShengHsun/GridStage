@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { useEditor } from '../state/store';
 import { getLocalUser } from '../state/user';
+import { useT } from '../i18n';
 
 interface CommentsSectionProps {
   /** Null = comments on the whole selected formation. */
@@ -9,6 +10,7 @@ interface CommentsSectionProps {
 }
 
 export function CommentsSection({ performerId }: CommentsSectionProps): ReactElement {
+  const t = useT();
   const selectedFormationId = useEditor((s) => s.selectedFormationId);
   const comments = useEditor((s) => s.comments);
   const addComment = useEditor((s) => s.addComment);
@@ -26,9 +28,9 @@ export function CommentsSection({ performerId }: CommentsSectionProps): ReactEle
 
   return (
     <>
-      <div className="panel-title">Comments</div>
+      <div className="panel-title">{t.comments.title}</div>
       <div className="panel-section">
-        {visible.length === 0 && <span className="mono">No comments yet.</span>}
+        {visible.length === 0 && <span className="mono">{t.comments.none}</span>}
         {visible.map((c) => (
           <div key={c.id} className="comment-row">
             <div className="comment-head">
@@ -36,7 +38,7 @@ export function CommentsSection({ performerId }: CommentsSectionProps): ReactEle
               <button
                 type="button"
                 className="comment-delete"
-                aria-label={`Delete comment: ${c.text.slice(0, 30)}`}
+                aria-label={t.comments.deleteAria(c.text.slice(0, 30))}
                 onClick={() => removeComment(c.id)}
               >
                 ×
@@ -48,9 +50,9 @@ export function CommentsSection({ performerId }: CommentsSectionProps): ReactEle
         <div style={{ display: 'flex', gap: 6 }}>
           <input
             type="text"
-            aria-label="New comment"
+            aria-label={t.comments.newCommentAria}
             placeholder={
-              performerId === null ? 'Note on this formation…' : 'Note on this performer…'
+              performerId === null ? t.comments.placeholderFormation : t.comments.placeholderPerformer
             }
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -59,7 +61,7 @@ export function CommentsSection({ performerId }: CommentsSectionProps): ReactEle
             }}
           />
           <button type="button" className="btn" disabled={draft.trim() === ''} onClick={submit}>
-            Add
+            {t.comments.add}
           </button>
         </div>
       </div>

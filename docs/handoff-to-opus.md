@@ -116,6 +116,32 @@ process → `Get-NetTCPConnection -LocalPort 5173 | Stop-Process`.
 
 ## 7. Remaining roadmap, with implementation guidance
 
+### FIRST TASK QUEUED BY IVAN — translate the UI to Traditional Chinese
+
+The i18n architecture is already built and wired (2026-07-06); the ONLY
+remaining work is translation. Do not restructure anything.
+
+- How it works: `apps/web/src/i18n/index.ts` — a typed dictionary pair.
+  `en.ts` defines the `Messages` shape; `zh.ts` is declared `: Messages`, so
+  a missing/mistyped key fails `pnpm typecheck`. Components call `useT()`,
+  non-React code calls `messages()`. Locale persists in localStorage
+  `openstage-locale`; the switcher is the `<select>` in the TopBar.
+- Your task: in `zh.ts`, replace every English placeholder VALUE with
+  繁體中文. The file's header comment lists the rules and a dance-context
+  glossary (performer 舞者, formation 隊形, …). Do not touch keys, function
+  signatures, `dateLocale`, or `locale.english`/`locale.chinese`.
+- Out of scope: PDF export stays English (jsPDF's built-in fonts have no CJK
+  glyphs — Chinese would render as garbage; a subsetted CJK font embed is a
+  separate task). Video export renders via browser canvas, so it follows the
+  UI language automatically. `formatTimecode`/`formatEightCount` notation
+  stays as is.
+- Acceptance: `pnpm typecheck && pnpm lint && pnpm e2e` green (e2e runs
+  under the `en` default, so translations must not break it); then switch
+  the UI to 中文 in a real browser and screenshot-review every panel
+  (TopBar, Cast, Properties for performer AND formation selection, Stage,
+  History, Comments, Timeline) — check for overflow/truncation, since
+  Chinese strings are often shorter but panels are narrow.
+
 ### V3a — rule-based formation suggestions
 Pure functions in a new `apps/web/src/state/suggest.ts` (or extend
 `templates.ts`): given performer count + stage size, score/derive candidate

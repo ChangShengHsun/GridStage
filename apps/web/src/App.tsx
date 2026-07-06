@@ -13,8 +13,10 @@ import { Timeline } from './components/Timeline';
 import { useAppHotkeys } from './hooks/useAppHotkeys';
 import { usePlayback } from './hooks/usePlayback';
 import { clearAudio, loadPersistedAudio, setAudioBlob } from './audio/audioPlayer';
+import { useT } from './i18n';
 
 export function App(): ReactElement {
+  const t = useT();
   const { togglePlay } = usePlayback();
   useAppHotkeys(togglePlay);
 
@@ -40,9 +42,9 @@ export function App(): ReactElement {
         }}
       />
       <CastPanel />
-      <main className="stage-area" aria-label="Stage canvas">
+      <main className="stage-area" aria-label={t.stage.canvasAria}>
         {show3d ? (
-          <Suspense fallback={<p className="empty-note">Loading 3D preview…</p>}>
+          <Suspense fallback={<p className="empty-note">{t.stage.loading3d}</p>}>
             <Stage3D />
           </Suspense>
         ) : (
@@ -52,7 +54,7 @@ export function App(): ReactElement {
           type="button"
           className="btn view-toggle"
           onClick={() => setShow3d((v) => !v)}
-          title={show3d ? 'Back to the 2D editor' : '3D preview (view only)'}
+          title={show3d ? t.stage.to2dTitle : t.stage.to3dTitle}
         >
           {show3d ? '2D' : '3D'}
         </button>
@@ -69,7 +71,7 @@ export function App(): ReactElement {
         ref={fileInputRef}
         type="file"
         accept="audio/*"
-        aria-label="Audio file"
+        aria-label={t.stage.audioFileAria}
         hidden
         onChange={(e) => {
           const file = e.target.files?.[0];

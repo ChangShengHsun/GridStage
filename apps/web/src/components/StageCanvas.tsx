@@ -9,6 +9,7 @@ import { findCrossings } from '@openstage/path-planner';
 import { isCollabActive, setAwarenessCursor } from '../collab/collab';
 import { usePeers } from '../hooks/usePeers';
 import { isViewMode } from '../state/viewMode';
+import { useT } from '../i18n';
 
 const CURSOR_BROADCAST_MS = 80;
 
@@ -33,6 +34,7 @@ interface CanvasSize {
 }
 
 export function StageCanvas(): ReactElement {
+  const t = useT();
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<CanvasSize>({ width: 0, height: 0 });
 
@@ -185,7 +187,7 @@ export function StageCanvas(): ReactElement {
             y={offsetY + floorH + 10}
             width={floorW}
             align="center"
-            text="AUDIENCE"
+            text={t.stage.audience}
             fontFamily="'IBM Plex Mono', monospace"
             fontSize={11}
             letterSpacing={4}
