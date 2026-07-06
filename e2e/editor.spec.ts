@@ -1,3 +1,4 @@
+import { stat } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
@@ -318,4 +319,20 @@ test('PDF export downloads a file', async ({ page }) => {
   await page.getByRole('button', { name: 'Export PDF' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toContain('walk-charts.pdf');
+});
+
+test('video export records the show and downloads a movie', async ({ page }) => {
+  test.setTimeout(60_000); // realtime capture: the default doc is an 8s show
+  await page.getByText('Add performer').click();
+
+  const downloadPromise = page.waitForEvent('download', { timeout: 45_000 });
+  await page.getByRole('button', { name: 'Export video' }).click();
+  // While recording, the button turns into a cancel + progress readout.
+  await expect(page.getByRole('button', { name: /Cancel \d+%/ })).toBeVisible();
+
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/-preview\.(webm|mp4)$/);
+  const filePath = await download.path();
+  expect((await stat(filePath)).size).toBeGreaterThan(10_000);
+  await expect(page.getByRole('button', { name: 'Export video' })).toBeVisible();
 });

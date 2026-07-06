@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import { useEditor } from '../state/store';
 import { byOrder, formatTimecode } from '../state/interpolate';
+import { safeFilename } from './filename';
 
 // A4 landscape, millimeters.
 const PAGE_W = 297;
@@ -161,12 +162,4 @@ function drawRosterPage(doc: jsPDF, title: string): void {
   doc.setFontSize(8);
   doc.setTextColor(DIM);
   doc.text('page 1', PAGE_W - MARGIN, PAGE_H - 8, { align: 'right' });
-}
-
-function safeFilename(title: string): string {
-  const cleaned = title
-    .trim()
-    .replace(/[^\p{L}\p{N}]+/gu, '-')
-    .replace(/^-+|-+$/g, '');
-  return cleaned === '' ? 'openstage' : cleaned.toLowerCase();
 }

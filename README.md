@@ -115,8 +115,9 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 - **V2** ✅ — 3D preview, curved (Bézier) transition paths, auto-transition
   (Hungarian matching) + collision warnings, version history (local snapshots;
   server-side Yjs snapshots come with the backend)
-- **V3** — rule-based formation suggestions, MP4/GIF animation export, PWA offline,
-  automatic BPM detection
+- **V3** (in progress) — video (animation) export ✅ (MP4/WebM via MediaRecorder,
+  music mixed in); still open: rule-based formation suggestions, GIF export,
+  PWA offline, automatic BPM detection
 - **V4** — plugin architecture, one-click self-host, community template marketplace
 
 ## License

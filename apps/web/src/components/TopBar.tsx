@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useEditor } from '../state/store';
 import { formatEightCount, formatTimecode } from '../state/interpolate';
@@ -24,6 +24,27 @@ export function TopBar({ onTogglePlay, onExportPdf }: TopBarProps): ReactElement
   const peers = usePeers();
   const [userName, setUserName] = useState(() => getLocalUser().name);
   const [shareNote, setShareNote] = useState('');
+  const [videoProgress, setVideoProgress] = useState<number | null>(null);
+  const videoAbortRef = useRef<AbortController | null>(null);
+
+  const onExportVideo = (): void => {
+    if (videoProgress !== null) {
+      videoAbortRef.current?.abort(); // second click = cancel
+      return;
+    }
+    const controller = new AbortController();
+    videoAbortRef.current = controller;
+    setVideoProgress(0);
+    void import('../export/video')
+      .then((m) =>
+        m.exportPerformanceVideo({ onProgress: setVideoProgress, signal: controller.signal }),
+      )
+      .catch((err: unknown) => {
+        setShareNote(err instanceof Error ? err.message : 'Video export failed');
+        window.setTimeout(() => setShareNote(''), 4000);
+      })
+      .finally(() => setVideoProgress(null));
+  };
 
   const onShare = (): void => {
     if (!isCollabActive()) {
@@ -125,6 +146,14 @@ export function TopBar({ onTogglePlay, onExportPdf }: TopBarProps): ReactElement
       </button>
       <button type="button" className="btn" onClick={onExportPdf}>
         Export PDF
+      </button>
+      <button
+        type="button"
+        className="btn"
+        onClick={onExportVideo}
+        title="Record the playback animation to a movie file (runs in real time)"
+      >
+        {videoProgress === null ? 'Export video' : `Cancel ${Math.round(videoProgress * 100)}%`}
       </button>
     </header>
   );

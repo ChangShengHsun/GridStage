@@ -96,6 +96,11 @@ export function getAudioElement(): HTMLAudioElement | null {
   return audioEl;
 }
 
+/** Raw uploaded audio, for consumers that need to decode it (video export). */
+export function getAudioBlob(): Blob | null {
+  return audioBlob;
+}
+
 export function audioDurationMs(): number {
   if (audioEl === null || !Number.isFinite(audioEl.duration)) return 0;
   return audioEl.duration * 1000;
