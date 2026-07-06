@@ -5,6 +5,11 @@ import type Konva from 'konva';
 import { useEditor } from '../state/store';
 import { byOrder, posesAtTime } from '../state/interpolate';
 import type { StagePose } from '../state/interpolate';
+import { isCollabActive, setAwarenessCursor } from '../collab/collab';
+import { usePeers } from '../hooks/usePeers';
+import { isViewMode } from '../state/viewMode';
+
+const CURSOR_BROADCAST_MS = 80;
 
 const MARGIN_PX = 44;
 const CROSS_ARM_M = 0.26;
@@ -38,9 +43,12 @@ export function StageCanvas(): ReactElement {
   const selectedPerformerIds = useEditor((s) => s.selectedPerformerIds);
   const isPlaying = useEditor((s) => s.isPlaying);
   const playheadMs = useEditor((s) => s.playheadMs);
-  const setPosition = useEditor((s) => s.setPosition);
+  const setPositionLive = useEditor((s) => s.setPositionLive);
+  const pushHistory = useEditor((s) => s.pushHistory);
   const selectPerformer = useEditor((s) => s.selectPerformer);
   const clearPerformerSelection = useEditor((s) => s.clearPerformerSelection);
+  const peers = usePeers();
+  const lastCursorSentRef = useRef(0);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -100,6 +108,21 @@ export function StageCanvas(): ReactElement {
           if (e.target === e.target.getStage() || e.target.name() === 'floor') {
             clearPerformerSelection();
           }
+        }}
+        onMouseMove={(e) => {
+          if (!isCollabActive()) return;
+          const now = Date.now();
+          if (now - lastCursorSentRef.current < CURSOR_BROADCAST_MS) return;
+          lastCursorSentRef.current = now;
+          const pointer = e.target.getStage()?.getPointerPosition();
+          if (pointer == null) return;
+          const m = toMeters(pointer.x, pointer.y);
+          setAwarenessCursor(
+            m.x >= 0 && m.x <= stageWidth && m.y >= 0 && m.y <= stageHeight ? m : null,
+          );
+        }}
+        onMouseLeave={() => {
+          if (isCollabActive()) setAwarenessCursor(null);
         }}
       >
         <Layer listening={false}>
@@ -211,14 +234,27 @@ export function StageCanvas(): ReactElement {
                 key={p.id}
                 x={px.x}
                 y={px.y}
-                draggable={!isPlaying}
+                draggable={!isPlaying && !isViewMode}
                 dragBoundFunc={(pos) => ({
                   x: Math.min(offsetX + floorW, Math.max(offsetX, pos.x)),
                   y: Math.min(offsetY + floorH, Math.max(offsetY, pos.y)),
                 })}
+                onDragStart={() => {
+                  // One undo step per drag; frames below skip history.
+                  pushHistory();
+                }}
+                onDragMove={(e: Konva.KonvaEventObject<DragEvent>) => {
+                  // Live-sync mid-drag so collaborators see the mark move.
+                  if (!isCollabActive()) return;
+                  const now = Date.now();
+                  if (now - lastCursorSentRef.current < CURSOR_BROADCAST_MS) return;
+                  lastCursorSentRef.current = now;
+                  const m = toMeters(e.target.x(), e.target.y());
+                  setPositionLive(selectedFormationId, p.id, m.x, m.y);
+                }}
                 onDragEnd={(e: Konva.KonvaEventObject<DragEvent>) => {
                   const m = toMeters(e.target.x(), e.target.y());
-                  setPosition(selectedFormationId, p.id, m.x, m.y);
+                  setPositionLive(selectedFormationId, p.id, m.x, m.y);
                 }}
                 onMouseDown={(e) => {
                   e.cancelBubble = true;
@@ -241,6 +277,18 @@ export function StageCanvas(): ReactElement {
                     dash={[4, 4]}
                   />
                 )}
+                {peers
+                  .filter((peer) => peer.selectedPerformerIds.includes(p.id))
+                  .map((peer) => (
+                    <Circle
+                      key={peer.clientId}
+                      radius={(HIT_RADIUS_M + 0.12) * pxPerMeter}
+                      stroke={peer.color}
+                      strokeWidth={1.5}
+                      dash={[2, 4]}
+                      listening={false}
+                    />
+                  ))}
                 {/* Spike-tape cross in the performer's color. */}
                 <Line
                   points={[-arm, -arm, arm, arm]}
@@ -271,6 +319,29 @@ export function StageCanvas(): ReactElement {
             );
           })}
         </Layer>
+
+        {/* Remote collaborators' cursors */}
+        {peers.length > 0 && (
+          <Layer listening={false}>
+            {peers.map((peer) => {
+              if (peer.cursor === null) return null;
+              const px = toPx(peer.cursor.x, peer.cursor.y);
+              return (
+                <Group key={peer.clientId} x={px.x} y={px.y}>
+                  <Circle radius={4} fill={peer.color} stroke="#191512" strokeWidth={1} />
+                  <Text
+                    x={7}
+                    y={-5}
+                    text={peer.name}
+                    fontFamily="'Instrument Sans Variable', sans-serif"
+                    fontSize={10}
+                    fill={peer.color}
+                  />
+                </Group>
+              );
+            })}
+          </Layer>
+        )}
       </Stage>
     </div>
   );

@@ -126,7 +126,7 @@ test('playback without audio advances and pauses', async ({ page }) => {
 });
 
 test('audio upload, beat markers, waveform persistence', async ({ page }) => {
-  await page.setInputFiles('input[type="file"]', {
+  await page.setInputFiles('input[aria-label="Audio file"]', {
     name: 'tone.wav',
     mimeType: 'audio/wav',
     buffer: makeWav(),
@@ -188,6 +188,27 @@ test('zoom widens the timeline content', async ({ page }) => {
   await page.getByRole('button', { name: 'Zoom in' }).click();
   const after = (await page.locator('.timeline-content').boundingBox())?.width ?? 0;
   expect(after).toBeGreaterThan(before * 1.8);
+});
+
+test('view mode hides editing UI and blocks dragging', async ({ page }) => {
+  await page.getByText('Add performer').click();
+  await page.goto('/?mode=view');
+  await page.locator('.wordmark').waitFor();
+
+  await expect(page.getByText('Add performer')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Play' })).toBeVisible();
+
+  // Dragging the mark must not move it.
+  const before = (await readDoc(page)).positions;
+  const from = meterToPx(1.5, 6.5);
+  const to = meterToPx(6, 2);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 8 });
+  await page.mouse.up();
+  const after = (await readDoc(page)).positions;
+  expect(after).toEqual(before);
 });
 
 test('PDF export downloads a file', async ({ page }) => {

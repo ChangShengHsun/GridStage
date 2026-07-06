@@ -316,6 +316,34 @@ input[type='color'] {
   user-select: none;
 }
 
+/* ---- View-only mode --------------------------------------------------- */
+
+.app.view-mode {
+  grid-template-columns: 0 1fr 0;
+}
+
+.app.view-mode .cast-panel,
+.app.view-mode .props-panel,
+.app.view-mode .edit-only {
+  display: none;
+}
+
+/* ---- Presence --------------------------------------------------------- */
+
+.presence {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.presence-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--house);
+  box-shadow: 0 0 0 1px var(--panel-edge);
+}
+
 /* ---- Comments -------------------------------------------------------- */
 
 .comment-row {

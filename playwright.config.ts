@@ -7,10 +7,19 @@ export default defineConfig({
     baseURL: 'http://localhost:5173',
     viewport: { width: 1440, height: 900 },
   },
-  webServer: {
-    command: 'pnpm --filter @openstage/web dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
-  },
+  webServer: [
+    {
+      command: 'pnpm --filter @openstage/web dev',
+      url: 'http://localhost:5173',
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+    },
+    {
+      command: 'pnpm --filter @openstage/collab-server start',
+      url: 'http://127.0.0.1:1234',
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+      env: { HOST: '127.0.0.1', PORT: '1234' },
+    },
+  ],
 });

@@ -8,7 +8,7 @@
     "start": "y-websocket"
   },
   "dependencies": {
-    "y-websocket": "^3.0.0",
+    "y-websocket": "1.5.4",
     "yjs": "^13.6.0"
   }
 }

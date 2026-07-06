@@ -230,20 +230,20 @@ export function Timeline({
   return (
     <section className="timeline-panel" aria-label="Timeline">
       <div className="timeline-toolbar">
-        <button type="button" className="btn" onClick={addFormation}>
+        <button type="button" className="btn edit-only" onClick={addFormation}>
           Add formation
         </button>
-        <button type="button" className="btn" onClick={onUploadAudio}>
+        <button type="button" className="btn edit-only" onClick={onUploadAudio}>
           {hasAudio ? 'Replace audio' : 'Upload audio'}
         </button>
         {hasAudio && (
-          <button type="button" className="btn btn-danger" onClick={onClearAudio}>
+          <button type="button" className="btn btn-danger edit-only" onClick={onClearAudio}>
             Remove audio
           </button>
         )}
         <button
           type="button"
-          className="btn"
+          className="btn edit-only"
           title="Drop a beat marker at the playhead (great while music plays)"
           onClick={() => addBeatMarker(useEditor.getState().playheadMs)}
         >

@@ -45,4 +45,11 @@ describe('parseRoster', () => {
     expect(parseRoster('')).toEqual([]);
     expect(parseRoster('name,role,color')).toEqual([]);
   });
+
+  it('rejects binary garbage (e.g. a WAV picked by mistake)', () => {
+    const binary = 'RIFF\x00\x01WAVEfmt \x10\x00\x00\x00\x01\nAlice\nBob\x03\x1b\x07junk';
+    const rows = parseRoster(binary);
+    // Only the clean text line survives.
+    expect(rows).toEqual([{ name: 'Alice', role: '', color: null }]);
+  });
 });

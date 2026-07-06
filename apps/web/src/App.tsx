@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
+import { startCollab } from './collab/collab';
+import { isViewMode } from './state/viewMode';
 import { TopBar } from './components/TopBar';
 import { CastPanel } from './components/CastPanel';
 import { StageCanvas } from './components/StageCanvas';
@@ -20,10 +22,12 @@ export function App(): ReactElement {
     void loadPersistedAudio().then((loaded) => {
       if (loaded) setAudioVersion((v) => v + 1);
     });
+    const room = new URLSearchParams(window.location.search).get('room');
+    if (room !== null && room !== '') startCollab(room);
   }, []);
 
   return (
-    <div className="app">
+    <div className={`app${isViewMode ? ' view-mode' : ''}`}>
       <TopBar
         onTogglePlay={togglePlay}
         onExportPdf={() => {
@@ -47,6 +51,7 @@ export function App(): ReactElement {
         ref={fileInputRef}
         type="file"
         accept="audio/*"
+        aria-label="Audio file"
         hidden
         onChange={(e) => {
           const file = e.target.files?.[0];

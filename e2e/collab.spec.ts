@@ -1,0 +1,38 @@
+import { expect, test } from '@playwright/test';
+
+test('two clients collaborate in a room: doc sync, presence, comments', async ({ browser }) => {
+  const room = `e2e-${Date.now()}`;
+  const url = `/?room=${room}`;
+
+  const ctxA = await browser.newContext();
+  const ctxB = await browser.newContext();
+  const pageA = await ctxA.newPage();
+  const pageB = await ctxB.newPage();
+
+  // A joins first and creates content.
+  await pageA.goto(url);
+  await pageA.getByText('Add performer').waitFor();
+  await pageA.getByText('Add performer').click();
+  await pageA.getByLabel('Performance title').fill('Synced show');
+  // Deselect the new performer so A's panel shows FORMATION comments
+  // (adding a performer auto-selects it).
+  await pageA.getByLabel('Stage canvas').click({ position: { x: 15, y: 15 } });
+
+  // B joins late — must receive A's history from the relay.
+  await pageB.goto(url);
+  await pageB.getByText('Add performer').waitFor();
+  await expect(pageB.locator('.cast-row')).toHaveCount(1, { timeout: 10_000 });
+  await expect(pageB.getByLabel('Performance title')).toHaveValue('Synced show');
+
+  // Presence: each side shows two dots (self + peer).
+  await expect(pageA.locator('.presence-dot')).toHaveCount(2, { timeout: 10_000 });
+  await expect(pageB.locator('.presence-dot')).toHaveCount(2);
+
+  // B comments on the formation; A sees it.
+  await pageB.getByLabel('New comment').fill('note from B');
+  await pageB.getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(pageA.getByText('note from B')).toBeVisible({ timeout: 10_000 });
+
+  await ctxA.close();
+  await ctxB.close();
+});

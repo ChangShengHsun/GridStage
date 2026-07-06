@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useEditor } from '../state/store';
+import { isViewMode } from '../state/viewMode';
 
 const NUDGE_M = 0.1;
 const NUDGE_BIG_M = 1;
@@ -18,6 +19,15 @@ export function useAppHotkeys(togglePlay: () => void): void {
       if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
 
       const s = useEditor.getState();
+
+      // Viewers can play/pause but not edit.
+      if (isViewMode) {
+        if (e.key === ' ') {
+          e.preventDefault();
+          togglePlay();
+        }
+        return;
+      }
 
       if (e.ctrlKey || e.metaKey) {
         if (e.key.toLowerCase() === 'z') {

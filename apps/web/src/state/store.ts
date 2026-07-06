@@ -22,7 +22,7 @@ import type { RosterRow } from './csv';
 /** positions[formationId][performerId] = FormationPosition */
 export type PositionMap = Record<string, Record<string, FormationPosition>>;
 
-interface DocState {
+export interface DocState {
   performance: Performance;
   performers: Performer[];
   formations: Formation[];
@@ -62,6 +62,8 @@ interface EditorState extends DocState {
   applyTemplate: (kind: TemplateKind) => void;
 
   setPosition: (formationId: string, performerId: string, x: number, y: number) => void;
+  /** Same, but WITHOUT recording history — for continuous drag frames. */
+  setPositionLive: (formationId: string, performerId: string, x: number, y: number) => void;
   setRotation: (formationId: string, performerId: string, rotation: number) => void;
   nudgeSelected: (dx: number, dy: number) => void;
   rotateSelected: (deltaDeg: number) => void;
@@ -157,6 +159,16 @@ function snapshotDoc(s: DocState): DocState {
 const UNDO_LIMIT = 50;
 const undoStack: DocState[] = [];
 const redoStack: DocState[] = [];
+
+/**
+ * Collaboration hook point: when a Yjs session is active, snapshot undo would
+ * also revert other people's edits, so the collab module swaps in a
+ * Y.UndoManager (which only tracks local transactions).
+ */
+export const undoOverride: { undo: (() => void) | null; redo: (() => void) | null } = {
+  undo: null,
+  redo: null,
+};
 
 export const useEditor = create<EditorState>()(
   persist(
@@ -424,6 +436,25 @@ export const useEditor = create<EditorState>()(
             };
           }),
 
+        setPositionLive: (formationId, performerId, x, y) =>
+          set((s) => {
+            const existing = s.positions[formationId]?.[performerId];
+            if (existing === undefined) return {};
+            return {
+              positions: {
+                ...s.positions,
+                [formationId]: {
+                  ...s.positions[formationId],
+                  [performerId]: {
+                    ...existing,
+                    x: clamp(x, 0, s.performance.stageWidth),
+                    y: clamp(y, 0, s.performance.stageHeight),
+                  },
+                },
+              },
+            };
+          }),
+
         setRotation: (formationId, performerId, rotation) =>
           mutateDoc((s) => {
             const existing = s.positions[formationId]?.[performerId];
@@ -513,6 +544,10 @@ export const useEditor = create<EditorState>()(
         setIsPlaying: (playing) => set({ isPlaying: playing }),
 
         undo: () => {
+          if (undoOverride.undo !== null) {
+            undoOverride.undo();
+            return;
+          }
           const prev = undoStack.pop();
           if (prev === undefined) return;
           redoStack.push(snapshotDoc(get()));
@@ -520,6 +555,10 @@ export const useEditor = create<EditorState>()(
         },
 
         redo: () => {
+          if (undoOverride.redo !== null) {
+            undoOverride.redo();
+            return;
+          }
           const next = redoStack.pop();
           if (next === undefined) return;
           undoStack.push(snapshotDoc(get()));

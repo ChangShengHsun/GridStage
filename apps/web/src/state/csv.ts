@@ -14,6 +14,11 @@ export interface RosterRow {
 
 const HEX_COLOR = /^#?[0-9a-fA-F]{6}$/;
 
+// Control characters mean a line isn't a text roster (e.g. a binary file
+// picked by mistake) — skip the garbage instead of importing it.
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHARS = /[\x00-\x08\x0b\x0c\x0e-\x1f]/;
+
 /** Split one CSV line honoring double quotes. */
 function splitLine(line: string): string[] {
   const cells: string[] = [];
@@ -49,6 +54,7 @@ export function parseRoster(text: string): RosterRow[] {
   const lines = text.split(/\r\n|\r|\n/).filter((l) => l.trim() !== '');
   const rows: RosterRow[] = [];
   for (const [index, line] of lines.entries()) {
+    if (CONTROL_CHARS.test(line)) continue;
     const cells = splitLine(line);
     const name = cells[0] ?? '';
     if (name === '') continue;
