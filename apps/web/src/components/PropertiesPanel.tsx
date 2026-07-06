@@ -6,6 +6,8 @@ import { deleteSnapshot, listSnapshots, saveSnapshot } from '../state/history';
 import type { Snapshot } from '../state/history';
 import { CommentsSection } from './CommentsSection';
 import { useT } from '../i18n';
+import { getAudioSamples } from '../audio/audioPlayer';
+import { detectBpm } from '../audio/bpm';
 
 /** Parse a number input, returning null for empty/invalid text. */
 function num(value: string): number | null {
@@ -277,6 +279,26 @@ function StageSection(): ReactElement {
   const setStageSize = useEditor((s) => s.setStageSize);
   const setBpm = useEditor((s) => s.setBpm);
 
+  const [detecting, setDetecting] = useState(false);
+  const [suggestedBpm, setSuggestedBpm] = useState<number | null>(null);
+  const [detectNote, setDetectNote] = useState('');
+
+  const onDetectBpm = (): void => {
+    setDetecting(true);
+    setSuggestedBpm(null);
+    setDetectNote('');
+    void (async (): Promise<void> => {
+      const audio = await getAudioSamples();
+      if (audio === null) {
+        setDetectNote(t.stage.detectBpmNoAudio);
+        return;
+      }
+      const estimate = detectBpm(audio.samples, audio.sampleRate);
+      if (estimate === null) setDetectNote(t.stage.detectBpmFailed);
+      else setSuggestedBpm(Math.round(estimate.bpm));
+    })().finally(() => setDetecting(false));
+  };
+
   return (
     <>
       <div className="panel-title">{t.stage.title}</div>
@@ -321,6 +343,39 @@ function StageSection(): ReactElement {
             value={performance.bpm ?? ''}
             onChange={(e) => setBpm(num(e.target.value))}
           />
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className="btn edit-only"
+            disabled={detecting}
+            title={t.stage.detectBpmTitle}
+            onClick={onDetectBpm}
+          >
+            {detecting ? t.stage.detecting : t.stage.detectBpm}
+          </button>
+          {suggestedBpm !== null && (
+            <>
+              <span className="mono" role="status">
+                {t.stage.detectedBpm(suggestedBpm)}
+              </span>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  setBpm(suggestedBpm);
+                  setSuggestedBpm(null);
+                }}
+              >
+                {t.stage.applyBpm(suggestedBpm)}
+              </button>
+            </>
+          )}
+          {detectNote !== '' && (
+            <span className="mono" role="status">
+              {detectNote}
+            </span>
+          )}
         </div>
       </div>
     </>

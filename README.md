@@ -116,8 +116,9 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
   (Hungarian matching) + collision warnings, version history (local snapshots;
   server-side Yjs snapshots come with the backend)
 - **V3** (in progress) — video (animation) export ✅ (MP4/WebM via MediaRecorder,
-  music mixed in); still open: rule-based formation suggestions, GIF export,
-  PWA offline, automatic BPM detection
+  music mixed in); automatic BPM detection ✅ (onset flux + autocorrelation,
+  suggestion-only); still open: rule-based formation suggestions, GIF export,
+  PWA offline
 - **V4** — plugin architecture, one-click self-host, community template marketplace
 
 ## License
