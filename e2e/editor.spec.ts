@@ -222,6 +222,46 @@ test('untangle swaps crossing walk paths to the minimal-travel assignment', asyn
   expect(Math.abs((p2?.x ?? 0) - 9)).toBeLessThan(0.4);
 });
 
+test('curve transition: dragging the handle stores a Bézier control point', async ({ page }) => {
+  await page.getByText('Add performer').click(); // D1 @ (1.5, 6.5)
+  await page.getByText('Add formation').click(); // F2 selected, copies F1
+
+  // Move D1 in F2 so there is a real path: (1.5,6.5) -> (9,3)
+  const from = meterToPx(1.5, 6.5);
+  const to = meterToPx(9, 3);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 8 });
+  await page.mouse.up();
+
+  // Transition type lives on the formation being LEFT (F1).
+  await page.getByLabel('Stage canvas').click({ position: { x: 15, y: 15 } });
+  await page.getByRole('button', { name: /Formation 1/ }).click();
+  await page.selectOption('#form-transition', 'curve');
+
+  // Back to F2, select D1 so its handle (at the path midpoint) appears.
+  await page.getByRole('button', { name: /Formation 2/ }).click();
+  await page.getByText('Dancer 1').first().click();
+
+  const mid = meterToPx((1.5 + 9) / 2, (6.5 + 3) / 2);
+  const bent = meterToPx(5.25, 1.5);
+  await page.mouse.move(mid.x, mid.y);
+  await page.mouse.down();
+  await page.mouse.move(bent.x, bent.y, { steps: 8 });
+  await page.mouse.up();
+
+  const state = await readDoc(page);
+  const f1 = state.formations.find((f) => f.orderIndex === 0);
+  const d1 = state.performers[0];
+  if (f1 === undefined || d1 === undefined) throw new Error('setup failed');
+  const pos = state.positions[f1.id]?.[d1.id] as
+    { curveControlPoints?: { x: number; y: number }[] } | undefined;
+  const control = pos?.curveControlPoints?.[0];
+  expect(control).toBeDefined();
+  expect(Math.abs((control?.x ?? 0) - 5.25)).toBeLessThan(0.4);
+  expect(Math.abs((control?.y ?? 0) - 1.5)).toBeLessThan(0.4);
+});
+
 test('view mode hides editing UI and blocks dragging', async ({ page }) => {
   await page.getByText('Add performer').click();
   await page.goto('/?mode=view');

@@ -72,6 +72,8 @@ interface EditorState extends DocState {
   /** Same, but WITHOUT recording history — for continuous drag frames. */
   setPositionLive: (formationId: string, performerId: string, x: number, y: number) => void;
   setRotation: (formationId: string, performerId: string, rotation: number) => void;
+  /** Set the Bézier control point for this performer's transition OUT. */
+  setCurveControl: (formationId: string, performerId: string, x: number, y: number) => void;
   nudgeSelected: (dx: number, dy: number) => void;
   rotateSelected: (deltaDeg: number) => void;
 
@@ -492,6 +494,29 @@ export const useEditor = create<EditorState>()(
                     ...existing,
                     x: clamp(x, 0, s.performance.stageWidth),
                     y: clamp(y, 0, s.performance.stageHeight),
+                  },
+                },
+              },
+            };
+          }),
+
+        setCurveControl: (formationId, performerId, x, y) =>
+          mutateDoc((s) => {
+            const existing = s.positions[formationId]?.[performerId];
+            if (existing === undefined) return {};
+            return {
+              positions: {
+                ...s.positions,
+                [formationId]: {
+                  ...s.positions[formationId],
+                  [performerId]: {
+                    ...existing,
+                    curveControlPoints: [
+                      {
+                        x: clamp(x, 0, s.performance.stageWidth),
+                        y: clamp(y, 0, s.performance.stageHeight),
+                      },
+                    ],
                   },
                 },
               },

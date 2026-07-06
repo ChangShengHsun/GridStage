@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
-import { Stage, Layer, Rect, Line, Group, Wedge, Circle, Text } from 'react-konva';
+import { Stage, Layer, Rect, Line, Group, Wedge, Circle, Text, Shape } from 'react-konva';
 import type Konva from 'konva';
 import { useEditor } from '../state/store';
 import { byOrder, posesAtTime } from '../state/interpolate';
@@ -45,6 +45,7 @@ export function StageCanvas(): ReactElement {
   const isPlaying = useEditor((s) => s.isPlaying);
   const playheadMs = useEditor((s) => s.playheadMs);
   const setPositionLive = useEditor((s) => s.setPositionLive);
+  const setCurveControl = useEditor((s) => s.setCurveControl);
   const pushHistory = useEditor((s) => s.pushHistory);
   const selectPerformer = useEditor((s) => s.selectPerformer);
   const clearPerformerSelection = useEditor((s) => s.clearPerformerSelection);
@@ -192,11 +193,13 @@ export function StageCanvas(): ReactElement {
           />
         </Layer>
 
-        {/* Ghosts: where everyone stood in the previous formation, with
-            collision warnings on crossing walk paths. */}
+        {/* Ghosts: where everyone stood in the previous formation. Linear
+            transitions get crossing warnings; curve transitions draw the
+            Bézier and (for selected performers) a draggable control handle. */}
         {!isPlaying &&
           previous !== undefined &&
           (() => {
+            const isCurve = previous.transitionType === 'curve';
             const walkers = performers.filter(
               (p) => previousPositions[p.id] !== undefined && editPositions[p.id] !== undefined,
             );
@@ -208,39 +211,99 @@ export function StageCanvas(): ReactElement {
                 to: { x: to?.x ?? 0, y: to?.y ?? 0 },
               };
             });
-            const crossing = new Set(findCrossings(paths).flat());
+            // ponytail: crossing detection is straight-line only; curved
+            // paths would need sampled-segment checks.
+            const crossing = isCurve ? new Set<number>() : new Set(findCrossings(paths).flat());
             return (
-              <Layer listening={false}>
-                {performers.map((p) => {
-                  const prev = previousPositions[p.id];
-                  if (prev === undefined) return null;
-                  const prevPx = toPx(prev.x, prev.y);
-                  const walkerIndex = walkers.findIndex((w) => w.id === p.id);
-                  const curr = editPositions[p.id];
-                  const currPx = curr !== undefined ? toPx(curr.x, curr.y) : null;
-                  const collides = walkerIndex !== -1 && crossing.has(walkerIndex);
-                  return (
-                    <Group key={p.id} opacity={collides ? 0.9 : 0.35}>
-                      {currPx !== null && (
-                        <Line
-                          points={[prevPx.x, prevPx.y, currPx.x, currPx.y]}
+              <>
+                <Layer listening={false}>
+                  {performers.map((p) => {
+                    const prev = previousPositions[p.id];
+                    if (prev === undefined) return null;
+                    const prevPx = toPx(prev.x, prev.y);
+                    const walkerIndex = walkers.findIndex((w) => w.id === p.id);
+                    const curr = editPositions[p.id];
+                    const currPx = curr !== undefined ? toPx(curr.x, curr.y) : null;
+                    const collides = walkerIndex !== -1 && crossing.has(walkerIndex);
+                    const control = prev.curveControlPoints?.[0];
+                    const controlPx =
+                      isCurve && currPx !== null
+                        ? control !== undefined
+                          ? toPx(control.x, control.y)
+                          : { x: (prevPx.x + currPx.x) / 2, y: (prevPx.y + currPx.y) / 2 }
+                        : null;
+                    return (
+                      <Group key={p.id} opacity={collides ? 0.9 : 0.35}>
+                        {currPx !== null &&
+                          (isCurve && controlPx !== null ? (
+                            <Shape
+                              stroke={p.color}
+                              strokeWidth={1}
+                              dash={[3, 5]}
+                              opacity={0.8}
+                              sceneFunc={(ctx, shape) => {
+                                ctx.beginPath();
+                                ctx.moveTo(prevPx.x, prevPx.y);
+                                ctx.quadraticCurveTo(controlPx.x, controlPx.y, currPx.x, currPx.y);
+                                ctx.fillStrokeShape(shape);
+                              }}
+                            />
+                          ) : (
+                            <Line
+                              points={[prevPx.x, prevPx.y, currPx.x, currPx.y]}
+                              stroke={collides ? '#d95f5f' : p.color}
+                              strokeWidth={collides ? 2 : 1}
+                              dash={collides ? undefined : [3, 5]}
+                              opacity={0.8}
+                            />
+                          ))}
+                        <Circle
+                          x={prevPx.x}
+                          y={prevPx.y}
+                          radius={4}
                           stroke={collides ? '#d95f5f' : p.color}
-                          strokeWidth={collides ? 2 : 1}
-                          dash={collides ? undefined : [3, 5]}
-                          opacity={0.8}
+                          strokeWidth={1.5}
                         />
-                      )}
-                      <Circle
-                        x={prevPx.x}
-                        y={prevPx.y}
-                        radius={4}
-                        stroke={collides ? '#d95f5f' : p.color}
-                        strokeWidth={1.5}
-                      />
-                    </Group>
-                  );
-                })}
-              </Layer>
+                      </Group>
+                    );
+                  })}
+                </Layer>
+                {/* Curve control handles: draggable, for selected performers. */}
+                {isCurve && !isViewMode && (
+                  <Layer>
+                    {performers
+                      .filter((p) => selectedPerformerIds.includes(p.id))
+                      .map((p) => {
+                        const prev = previousPositions[p.id];
+                        const curr = editPositions[p.id];
+                        if (prev === undefined || curr === undefined) return null;
+                        const prevPx = toPx(prev.x, prev.y);
+                        const currPx = toPx(curr.x, curr.y);
+                        const control = prev.curveControlPoints?.[0];
+                        const handlePx =
+                          control !== undefined
+                            ? toPx(control.x, control.y)
+                            : { x: (prevPx.x + currPx.x) / 2, y: (prevPx.y + currPx.y) / 2 };
+                        return (
+                          <Circle
+                            key={`handle-${p.id}`}
+                            x={handlePx.x}
+                            y={handlePx.y}
+                            radius={6}
+                            fill="#e8d44c"
+                            stroke="#191512"
+                            strokeWidth={1.5}
+                            draggable
+                            onDragEnd={(e: Konva.KonvaEventObject<DragEvent>) => {
+                              const m = toMeters(e.target.x(), e.target.y());
+                              setCurveControl(previous.id, p.id, m.x, m.y);
+                            }}
+                          />
+                        );
+                      })}
+                  </Layer>
+                )}
+              </>
             );
           })()}
 

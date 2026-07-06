@@ -60,6 +60,37 @@ describe('posesAtTime', () => {
     const poses = posesAtTime([f1, f2], sparse, 2000);
     expect(poses.get('alice')?.x).toBe(0);
   });
+
+  it("travels a quadratic Bézier when the transition is 'curve'", () => {
+    const curveF1 = { ...f1, transitionType: 'curve' as const };
+    const curved: PositionMap = {
+      f1: {
+        alice: {
+          formationId: 'f1',
+          performerId: 'alice',
+          x: 0,
+          y: 0,
+          rotation: 0,
+          curveControlPoints: [{ x: 2, y: 6 }],
+        },
+      },
+      f2: positions['f2'] ?? {},
+    };
+    // midpoint of transition: B(0.5) = 0.25*P0 + 0.5*C + 0.25*P1
+    const poses = posesAtTime([curveF1, f2], curved, 2000);
+    expect(poses.get('alice')?.x).toBeCloseTo(0.25 * 0 + 0.5 * 2 + 0.25 * 4); // 2
+    expect(poses.get('alice')?.y).toBeCloseTo(0.25 * 0 + 0.5 * 6 + 0.25 * 2); // 3.5
+    // endpoints unchanged
+    expect(posesAtTime([curveF1, f2], curved, 1000).get('alice')?.x).toBeCloseTo(0);
+    expect(posesAtTime([curveF1, f2], curved, 3000).get('alice')?.x).toBeCloseTo(4);
+  });
+
+  it("'curve' without a control point falls back to a straight line", () => {
+    const curveF1 = { ...f1, transitionType: 'curve' as const };
+    const poses = posesAtTime([curveF1, f2], positions, 2000);
+    expect(poses.get('alice')?.x).toBeCloseTo(2);
+    expect(poses.get('alice')?.y).toBeCloseTo(1);
+  });
 });
 
 describe('helpers', () => {

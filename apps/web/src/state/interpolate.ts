@@ -22,6 +22,11 @@ function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }
 
+function quadBezier(p0: number, c: number, p1: number, t: number): number {
+  const inv = 1 - t;
+  return inv * inv * p0 + 2 * inv * t * c + t * t * p1;
+}
+
 function poseOf(pos: FormationPosition): StagePose {
   return { x: pos.x, y: pos.y, rotation: pos.rotation };
 }
@@ -69,9 +74,18 @@ export function posesAtTime(
     }
     const span = next.startTimeMs - holdEnd;
     const t = span <= 0 ? 1 : Math.min((tMs - holdEnd) / span, 1);
+    // 'curve' transitions travel along a quadratic Bézier through the
+    // performer's control point (stored on the position being LEFT).
+    const control = current.transitionType === 'curve' ? pos.curveControlPoints?.[0] : undefined;
     result.set(performerId, {
-      x: lerp(pos.x, nextPos.x, t),
-      y: lerp(pos.y, nextPos.y, t),
+      x:
+        control !== undefined
+          ? quadBezier(pos.x, control.x, nextPos.x, t)
+          : lerp(pos.x, nextPos.x, t),
+      y:
+        control !== undefined
+          ? quadBezier(pos.y, control.y, nextPos.y, t)
+          : lerp(pos.y, nextPos.y, t),
       rotation: lerpAngle(pos.rotation, nextPos.rotation, t),
     });
   }

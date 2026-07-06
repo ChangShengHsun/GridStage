@@ -211,7 +211,7 @@ function FormationSection(): ReactElement | null {
             }
           >
             <option value="linear">Linear (straight paths)</option>
-            <option value="curve">Curve (coming in V2)</option>
+            <option value="curve">Curve (drag the path handles)</option>
           </select>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
