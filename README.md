@@ -112,8 +112,9 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 - **V1** ✅ — Yjs real-time collaboration (cursors/presence/per-user undo),
   comments, formation template library, CSV roster import, view-only share
   links (server-enforced roles still need the backend)
-- **V2** — 3D preview, curved (Bézier) transition paths, auto-transition
-  (Hungarian matching) + collision warnings, version history
+- **V2** ✅ — 3D preview, curved (Bézier) transition paths, auto-transition
+  (Hungarian matching) + collision warnings, version history (local snapshots;
+  server-side Yjs snapshots come with the backend)
 - **V3** — rule-based formation suggestions, MP4/GIF animation export, PWA offline,
   automatic BPM detection
 - **V4** — plugin architecture, one-click self-host, community template marketplace
