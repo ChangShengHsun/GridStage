@@ -11,3 +11,5 @@ test-results/
 playwright-report/
 .minio-data/
 .pg-data/
+apps/desktop/renderer/
+apps/desktop/release/

@@ -3,8 +3,13 @@
 Open-source collaborative stage formation & choreography editor — for choreographers,
 cheer coaches, stage managers, and dance studios.
 
-Plan formations on a top-down 2D stage, sync them to music, preview transitions,
-and export walk charts as PDF. Real-time multi-user editing via CRDT (roadmap V1).
+Plan formations on a top-down 2D stage, sync them to music, preview transitions
+in 2D and 3D, calibrate to the beat, and export walk-chart PDFs or a rendered
+video. Real-time multi-user editing (cursors, presence, per-user undo) is built
+in via CRDT.
+
+**Two ways to get it:** install the desktop app (a normal `.exe`, nothing else
+to set up) or run it from source. Both are below.
 
 ## Architecture
 
@@ -51,7 +56,44 @@ openstage/
 └── tsconfig.base.json  # strict mode, shared by all packages
 ```
 
-## Quick start (frontend only, no Docker needed)
+## Install the desktop app (no Node.js needed)
+
+For choreographers and anyone who just wants to **use** OpenStage — you do not
+need Node.js, pnpm, a terminal, or even a browser installed. The desktop app
+bundles everything.
+
+1. Go to the [**Releases**](https://github.com/ChangShengHsun/OpenStage/releases)
+   page and download the latest `OpenStage Setup <version>.exe` (Windows).
+2. Double-click it and follow the installer. The app is not code-signed yet, so
+   Windows SmartScreen may show a blue "Windows protected your PC" box — click
+   **More info → Run anyway** (safe: it is your own build).
+3. Launch **OpenStage** from the Start menu.
+
+Everything works offline. Your work is saved automatically on that computer
+(there is no cloud account yet), so to move a piece to another machine, export a
+PDF or video, or copy it via a live-share link. Real-time collaboration in the
+desktop build needs a collab server to point at (see below); solo editing does
+not.
+
+### Building the installer yourself (maintainers)
+
+This step *does* need Node.js 20+ and pnpm — it is how the `.exe` above is
+produced.
+
+```bash
+pnpm install
+pnpm --filter @openstage/desktop start   # run the desktop app without packaging
+pnpm --filter @openstage/desktop dist    # build the installer -> apps/desktop/release/
+```
+
+> **Windows note:** `dist` uses electron-builder, which extracts a toolchain
+> containing symbolic links. Turn on **Settings → System → For developers →
+> Developer Mode** first (or run the command from an Administrator terminal),
+> otherwise the extraction fails with a "cannot create symbolic link" error.
+
+## Quick start (run from source)
+
+Needs **Node.js 20+** and **pnpm**. Runs the editor as a local web app.
 
 ```bash
 pnpm install

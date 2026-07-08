@@ -1,0 +1,29 @@
+{
+  "name": "@openstage/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenStage desktop shell (Electron) — wraps the web app into an installable app",
+  "license": "MIT",
+  "main": "main.cjs",
+  "scripts": {
+    "renderer": "pnpm --filter @openstage/web build && node copy-renderer.mjs",
+    "start": "pnpm renderer && electron .",
+    "dist": "pnpm renderer && electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "org.openstage.editor",
+    "productName": "OpenStage",
+    "directories": { "output": "release" },
+    "files": ["main.cjs", "renderer/**/*"],
+    "win": { "target": "nsis" },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
