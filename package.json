@@ -16,7 +16,8 @@
     "build": "pnpm -r --if-present build",
     "test": "pnpm -r --if-present test",
     "e2e": "playwright test",
-    "dev:web": "pnpm --filter @openstage/web dev"
+    "dev:web": "pnpm --filter @openstage/web dev",
+    "prepare": "pnpm --filter \"./packages/*\" build"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.0",
