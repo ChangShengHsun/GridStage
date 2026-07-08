@@ -169,6 +169,18 @@ function build2dRenderer(
       ctx.arc(x, y, markR, 0, Math.PI * 2);
       ctx.fill();
 
+      const badge = performer.badge ?? '';
+      if (badge !== '') {
+        ctx.fillStyle = BG;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const badgePx =
+          badge.length <= 1 ? markR * 1.1 : badge.length <= 2 ? markR * 0.8 : markR * 0.5;
+        ctx.font = `bold ${badgePx}px ${SANS}`;
+        ctx.fillText(badge, x, y + 1);
+        ctx.textBaseline = 'alphabetic';
+      }
+
       ctx.fillStyle = INK;
       ctx.font = `12px ${SANS}`;
       ctx.textAlign = 'center';

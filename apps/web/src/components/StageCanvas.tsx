@@ -50,9 +50,23 @@ export function StageCanvas(): ReactElement {
   const setCurveControl = useEditor((s) => s.setCurveControl);
   const pushHistory = useEditor((s) => s.pushHistory);
   const selectPerformer = useEditor((s) => s.selectPerformer);
+  const setPerformerSelection = useEditor((s) => s.setPerformerSelection);
   const clearPerformerSelection = useEditor((s) => s.clearPerformerSelection);
+  const pathPerformerId = useEditor((s) => s.pathPerformerId);
   const peers = usePeers();
   const lastCursorSentRef = useRef(0);
+
+  // Marquee (rubber-band) selection: press on empty floor, drag, release.
+  // A plain click (no movement past the threshold) still just deselects.
+  const [marquee, setMarquee] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(
+    null,
+  );
+  const marqueeRef = useRef<{ x0: number; y0: number; moved: boolean } | null>(null);
+  // Group drag: where every OTHER selected performer stood when the drag began.
+  const groupDragRef = useRef<{
+    startM: { x: number; y: number };
+    origins: Map<string, { x: number; y: number }>;
+  } | null>(null);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -110,22 +124,62 @@ export function StageCanvas(): ReactElement {
         height={size.height}
         onMouseDown={(e) => {
           if (e.target === e.target.getStage() || e.target.name() === 'floor') {
-            clearPerformerSelection();
+            const pointer = e.target.getStage()?.getPointerPosition();
+            if (pointer != null && !isPlaying) {
+              marqueeRef.current = { x0: pointer.x, y0: pointer.y, moved: false };
+            } else {
+              clearPerformerSelection();
+            }
           }
         }}
         onMouseMove={(e) => {
+          const pointer = e.target.getStage()?.getPointerPosition();
+          const drag = marqueeRef.current;
+          if (drag !== null && pointer != null) {
+            if (
+              drag.moved ||
+              Math.abs(pointer.x - drag.x0) > 4 ||
+              Math.abs(pointer.y - drag.y0) > 4
+            ) {
+              drag.moved = true;
+              setMarquee({ x0: drag.x0, y0: drag.y0, x1: pointer.x, y1: pointer.y });
+            }
+          }
           if (!isCollabActive()) return;
           const now = Date.now();
           if (now - lastCursorSentRef.current < CURSOR_BROADCAST_MS) return;
           lastCursorSentRef.current = now;
-          const pointer = e.target.getStage()?.getPointerPosition();
           if (pointer == null) return;
           const m = toMeters(pointer.x, pointer.y);
           setAwarenessCursor(
             m.x >= 0 && m.x <= stageWidth && m.y >= 0 && m.y <= stageHeight ? m : null,
           );
         }}
+        onMouseUp={() => {
+          const drag = marqueeRef.current;
+          marqueeRef.current = null;
+          setMarquee(null);
+          if (drag === null) return;
+          if (!drag.moved) {
+            clearPerformerSelection();
+            return;
+          }
+          if (isViewMode || marquee === null) return;
+          const a = toMeters(Math.min(marquee.x0, marquee.x1), Math.min(marquee.y0, marquee.y1));
+          const b = toMeters(Math.max(marquee.x0, marquee.x1), Math.max(marquee.y0, marquee.y1));
+          const inside = performers
+            .filter((p) => {
+              const pos = editPositions[p.id];
+              return (
+                pos !== undefined && pos.x >= a.x && pos.x <= b.x && pos.y >= a.y && pos.y <= b.y
+              );
+            })
+            .map((p) => p.id);
+          setPerformerSelection(inside);
+        }}
         onMouseLeave={() => {
+          marqueeRef.current = null;
+          setMarquee(null);
           if (isCollabActive()) setAwarenessCursor(null);
         }}
       >
@@ -330,26 +384,64 @@ export function StageCanvas(): ReactElement {
                   x: Math.min(offsetX + floorW, Math.max(offsetX, pos.x)),
                   y: Math.min(offsetY + floorH, Math.max(offsetY, pos.y)),
                 })}
-                onDragStart={() => {
+                onDragStart={(e: Konva.KonvaEventObject<DragEvent>) => {
                   // One undo step per drag; frames below skip history.
                   pushHistory();
+                  // Dragging a member of a multi-selection moves the group.
+                  if (selectedPerformerIds.includes(p.id) && selectedPerformerIds.length > 1) {
+                    const origins = new Map<string, { x: number; y: number }>();
+                    for (const id of selectedPerformerIds) {
+                      if (id === p.id) continue;
+                      const pos = editPositions[id];
+                      if (pos !== undefined) origins.set(id, { x: pos.x, y: pos.y });
+                    }
+                    groupDragRef.current = {
+                      startM: toMeters(e.target.x(), e.target.y()),
+                      origins,
+                    };
+                  } else {
+                    groupDragRef.current = null;
+                  }
                 }}
                 onDragMove={(e: Konva.KonvaEventObject<DragEvent>) => {
-                  // Live-sync mid-drag so collaborators see the mark move.
+                  const m = toMeters(e.target.x(), e.target.y());
+                  const group = groupDragRef.current;
+                  if (group !== null) {
+                    const dx = m.x - group.startM.x;
+                    const dy = m.y - group.startM.y;
+                    setPositionLive(selectedFormationId, p.id, m.x, m.y);
+                    for (const [id, origin] of group.origins) {
+                      setPositionLive(selectedFormationId, id, origin.x + dx, origin.y + dy);
+                    }
+                    return;
+                  }
+                  // Solo drag: live-sync only for collaborators (local render
+                  // follows the Konva node, no store churn needed).
                   if (!isCollabActive()) return;
                   const now = Date.now();
                   if (now - lastCursorSentRef.current < CURSOR_BROADCAST_MS) return;
                   lastCursorSentRef.current = now;
-                  const m = toMeters(e.target.x(), e.target.y());
                   setPositionLive(selectedFormationId, p.id, m.x, m.y);
                 }}
                 onDragEnd={(e: Konva.KonvaEventObject<DragEvent>) => {
                   const m = toMeters(e.target.x(), e.target.y());
+                  const group = groupDragRef.current;
+                  if (group !== null) {
+                    const dx = m.x - group.startM.x;
+                    const dy = m.y - group.startM.y;
+                    for (const [id, origin] of group.origins) {
+                      setPositionLive(selectedFormationId, id, origin.x + dx, origin.y + dy);
+                    }
+                    groupDragRef.current = null;
+                  }
                   setPositionLive(selectedFormationId, p.id, m.x, m.y);
                 }}
                 onMouseDown={(e) => {
                   e.cancelBubble = true;
-                  selectPerformer(p.id, e.evt.shiftKey);
+                  // Clicking an already-selected mark keeps the selection, so
+                  // grabbing one member drags the whole group.
+                  if (e.evt.shiftKey) selectPerformer(p.id, true);
+                  else if (!selectedPerformerIds.includes(p.id)) selectPerformer(p.id, false);
                 }}
               >
                 {/* Facing wedge — a light cone showing orientation. */}
@@ -380,19 +472,52 @@ export function StageCanvas(): ReactElement {
                       listening={false}
                     />
                   ))}
-                {/* Spike-tape cross in the performer's color. */}
-                <Line
-                  points={[-arm, -arm, arm, arm]}
-                  stroke={p.color}
-                  strokeWidth={3}
-                  lineCap="round"
-                />
-                <Line
-                  points={[-arm, arm, arm, -arm]}
-                  stroke={p.color}
-                  strokeWidth={3}
-                  lineCap="round"
-                />
+                {/* Mark: a circled badge when one is set, else spike-tape cross. */}
+                {(p.badge ?? '') !== '' ? (
+                  <>
+                    <Circle
+                      radius={0.32 * pxPerMeter}
+                      fill="#191512"
+                      stroke={p.color}
+                      strokeWidth={2.5}
+                    />
+                    <Text
+                      x={-0.32 * pxPerMeter}
+                      y={-0.32 * pxPerMeter}
+                      width={0.64 * pxPerMeter}
+                      height={0.64 * pxPerMeter}
+                      align="center"
+                      verticalAlign="middle"
+                      text={p.badge ?? ''}
+                      fontStyle="bold"
+                      fontFamily="'Instrument Sans Variable', sans-serif"
+                      fontSize={
+                        (p.badge ?? '').length <= 1
+                          ? 0.36 * pxPerMeter
+                          : (p.badge ?? '').length <= 2
+                            ? 0.27 * pxPerMeter
+                            : 0.17 * pxPerMeter
+                      }
+                      fill={p.color}
+                      listening={false}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Line
+                      points={[-arm, -arm, arm, arm]}
+                      stroke={p.color}
+                      strokeWidth={3}
+                      lineCap="round"
+                    />
+                    <Line
+                      points={[-arm, arm, arm, -arm]}
+                      stroke={p.color}
+                      strokeWidth={3}
+                      lineCap="round"
+                    />
+                  </>
+                )}
                 {/* Invisible hit area so small crosses stay grabbable. */}
                 <Circle radius={HIT_RADIUS_M * pxPerMeter} fill="transparent" />
                 <Text
@@ -410,6 +535,99 @@ export function StageCanvas(): ReactElement {
             );
           })}
         </Layer>
+
+        {/* Whole-show walk path for one performer: numbered stops, dashed legs. */}
+        {!isPlaying &&
+          pathPerformerId !== null &&
+          (() => {
+            const walker = performers.find((p) => p.id === pathPerformerId);
+            if (walker === undefined) return null;
+            const stops: {
+              formationId: string;
+              pos: NonNullable<(typeof editPositions)[string]>;
+            }[] = [];
+            for (const f of ordered) {
+              const pos = positions[f.id]?.[walker.id];
+              if (pos !== undefined) stops.push({ formationId: f.id, pos });
+            }
+            if (stops.length === 0) return null;
+            return (
+              <Layer listening={false}>
+                {stops.slice(0, -1).map((stop, i) => {
+                  const next = stops[i + 1];
+                  if (next === undefined) return null;
+                  const fromPx = toPx(stop.pos.x, stop.pos.y);
+                  const nextPx = toPx(next.pos.x, next.pos.y);
+                  const formation = ordered.find((f) => f.id === stop.formationId);
+                  const control =
+                    formation?.transitionType === 'curve'
+                      ? stop.pos.curveControlPoints?.[0]
+                      : undefined;
+                  const controlPx = control !== undefined ? toPx(control.x, control.y) : null;
+                  return controlPx !== null ? (
+                    <Shape
+                      key={`leg-${stop.formationId}`}
+                      stroke={walker.color}
+                      strokeWidth={2}
+                      dash={[7, 5]}
+                      opacity={0.9}
+                      sceneFunc={(ctx, shape) => {
+                        ctx.beginPath();
+                        ctx.moveTo(fromPx.x, fromPx.y);
+                        ctx.quadraticCurveTo(controlPx.x, controlPx.y, nextPx.x, nextPx.y);
+                        ctx.fillStrokeShape(shape);
+                      }}
+                    />
+                  ) : (
+                    <Line
+                      key={`leg-${stop.formationId}`}
+                      points={[fromPx.x, fromPx.y, nextPx.x, nextPx.y]}
+                      stroke={walker.color}
+                      strokeWidth={2}
+                      dash={[7, 5]}
+                      opacity={0.9}
+                    />
+                  );
+                })}
+                {stops.map((stop, i) => {
+                  const px = toPx(stop.pos.x, stop.pos.y);
+                  return (
+                    <Group key={`stop-${stop.formationId}`} x={px.x} y={px.y}>
+                      <Circle radius={9} fill="#191512" stroke={walker.color} strokeWidth={1.5} />
+                      <Text
+                        x={-9}
+                        y={-9}
+                        width={18}
+                        height={18}
+                        align="center"
+                        verticalAlign="middle"
+                        text={String(i + 1)}
+                        fontFamily="'IBM Plex Mono', monospace"
+                        fontSize={10}
+                        fill="#ece5db"
+                      />
+                    </Group>
+                  );
+                })}
+              </Layer>
+            );
+          })()}
+
+        {/* Marquee selection rectangle */}
+        {marquee !== null && (
+          <Layer listening={false}>
+            <Rect
+              x={Math.min(marquee.x0, marquee.x1)}
+              y={Math.min(marquee.y0, marquee.y1)}
+              width={Math.abs(marquee.x1 - marquee.x0)}
+              height={Math.abs(marquee.y1 - marquee.y0)}
+              fill="rgba(232, 168, 76, 0.08)"
+              stroke="#e8a84c"
+              strokeWidth={1}
+              dash={[4, 4]}
+            />
+          </Layer>
+        )}
 
         {/* Remote collaborators' cursors */}
         {peers.length > 0 && (

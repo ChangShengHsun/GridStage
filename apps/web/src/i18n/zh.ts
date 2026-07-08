@@ -40,6 +40,9 @@ export const zh: Messages = {
     play: '播放',
     pause: '暫停',
     exportPdf: '匯出 PDF',
+    pdfKindAria: 'PDF 匯出類型',
+    pdfCharts: '隊形圖',
+    pdfSheets: '個人走位單',
     exportVideo: '匯出影片',
     exportVideoTitle: '把播放動畫錄製成影片檔（即時錄製，需與演出等長的時間）',
     videoModeAria: '影片匯出視角（2D 或 3D）',
@@ -82,6 +85,9 @@ export const zh: Messages = {
     yLabel: 'Y (m)',
     facingLabel: '面向（° — 0 = 觀眾席）',
     facingDegreesAria: '面向角度',
+    badgeLabel: '標示（圓圈內）',
+    badgeTitle: '一個中文字或最多 4 個英文字元——顯示在 2D 標記圈內、3D 的臉上',
+    showPath: '顯示整場走位路徑',
     removeFromCast: '從名單移除',
   },
 
@@ -110,6 +116,10 @@ export const zh: Messages = {
     untangleTitle: '交換各舞者的站位，使總走位距離最短（紅色路徑＝交叉）',
     mirror: '左右鏡像',
     mirrorTitle: '整個隊形沿舞台中線左右翻轉',
+    copyFromLabel: '從其他隊形複製站位',
+    copyFromAria: '來源隊形',
+    copyFrom: '複製',
+    copyFromTitle: '用所選隊形的站位覆蓋目前隊形',
     deleteFormation: '刪除隊形',
   },
 
@@ -184,8 +194,7 @@ export const zh: Messages = {
     hint: '拖曳隊形以移動 · Ctrl+滾輪縮放',
     playheadAria: '播放頭位置',
     removeBeatAria: (seconds: string): string => `移除 ${seconds} 秒處的節拍標記`,
-    formationAria: (name: string, seconds: string): string =>
-      `隊形 ${name}，開始於 ${seconds} 秒`,
+    formationAria: (name: string, seconds: string): string => `隊形 ${name}，開始於 ${seconds} 秒`,
   },
 
   videoExport: {

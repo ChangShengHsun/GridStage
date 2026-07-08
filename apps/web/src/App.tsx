@@ -50,12 +50,7 @@ export function App(): ReactElement {
             }
       }
     >
-      <TopBar
-        onExportPdf={() => {
-          // Implemented in the PDF export milestone.
-          void import('./export/pdf').then((m) => m.exportPerformancePdf());
-        }}
-      />
+      <TopBar />
       <CastPanel />
       <main className="stage-area" aria-label={t.stage.canvasAria}>
         {show3d ? (

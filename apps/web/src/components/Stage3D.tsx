@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { CanvasTexture, DoubleSide } from 'three';
 import type { PerspectiveCamera } from 'three';
 import { useEditor } from '../state/store';
 import { posesAtTime } from '../state/interpolate';
@@ -91,8 +92,41 @@ function Controls({
   return null;
 }
 
-function Performer3D({ pose, color }: { pose: StagePose; color: string }): ReactElement {
+/** Paper-tag texture for the badge: dark glyph on an off-white card. */
+function useBadgeTexture(badge: string): CanvasTexture | null {
+  return useMemo(() => {
+    if (badge === '') return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    if (ctx === null) return null;
+    ctx.fillStyle = '#f2ead9';
+    ctx.fillRect(0, 0, 128, 128);
+    ctx.strokeStyle = '#c9bda6';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(3, 3, 122, 122);
+    ctx.fillStyle = '#26221e';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const size = badge.length <= 1 ? 88 : badge.length <= 2 ? 62 : 40;
+    ctx.font = `bold ${size}px 'Instrument Sans', system-ui, sans-serif`;
+    ctx.fillText(badge, 64, 68);
+    return new CanvasTexture(canvas);
+  }, [badge]);
+}
+
+function Performer3D({
+  pose,
+  color,
+  badge,
+}: {
+  pose: StagePose;
+  color: string;
+  badge: string;
+}): ReactElement {
   const facingRad = ((pose.rotation + 90) * Math.PI) / 180;
+  const badgeTexture = useBadgeTexture(badge);
   return (
     <group position={[pose.x, 0, pose.y]}>
       <mesh position={[0, 0.85, 0]} castShadow>
@@ -107,6 +141,16 @@ function Performer3D({ pose, color }: { pose: StagePose; color: string }): React
         <boxGeometry args={[0.08, 0.08, 0.36]} />
         <meshStandardMaterial color="#ece5db" />
       </mesh>
+      {/* badge: a paper tag stuck on the face, so it turns with the dancer */}
+      {badgeTexture !== null && (
+        <mesh
+          position={[Math.cos(facingRad) * 0.24, 1.42, Math.sin(facingRad) * 0.24]}
+          rotation={[0, Math.PI / 2 - facingRad, 0]}
+        >
+          <planeGeometry args={[0.3, 0.3]} />
+          <meshBasicMaterial map={badgeTexture} side={DoubleSide} />
+        </mesh>
+      )}
     </group>
   );
 }
@@ -176,33 +220,33 @@ export default function Stage3D(): ReactElement {
           h={h}
           followPose={followId !== null ? (poses.get(followId) ?? null) : null}
         />
-      <ambientLight intensity={0.55} />
-      {/* the tungsten wash from above-front */}
-      <directionalLight position={[2, 10, 8]} intensity={1.2} color="#e8c896" castShadow />
+        <ambientLight intensity={0.55} />
+        {/* the tungsten wash from above-front */}
+        <directionalLight position={[2, 10, 8]} intensity={1.2} color="#e8c896" castShadow />
 
-      {/* Everything positioned relative to stage center. */}
-      <group position={[-w / 2, 0, -h / 2]}>
-        {/* floor */}
-        <mesh position={[w / 2, -0.05, h / 2]} receiveShadow>
-          <boxGeometry args={[w, 0.1, h]} />
-          <meshStandardMaterial color="#2e2a26" />
-        </mesh>
-        {/* downstage edge marker (audience side) */}
-        <mesh position={[w / 2, 0.02, h + 0.15]}>
-          <boxGeometry args={[w, 0.02, 0.08]} />
-          <meshStandardMaterial color="#e8a84c" emissive="#e8a84c" emissiveIntensity={0.4} />
-        </mesh>
-        {/* center line spike, matching the 2D canvas */}
-        <mesh position={[w / 2, 0.02, h / 2]}>
-          <boxGeometry args={[0.02, 0.02, h]} />
-          <meshStandardMaterial color="#e8d44c" transparent opacity={0.35} />
-        </mesh>
-        {performers.map((p) => {
-          const pose = poses.get(p.id);
-          if (pose === undefined) return null;
-          return <Performer3D key={p.id} pose={pose} color={p.color} />;
-        })}
-      </group>
+        {/* Everything positioned relative to stage center. */}
+        <group position={[-w / 2, 0, -h / 2]}>
+          {/* floor */}
+          <mesh position={[w / 2, -0.05, h / 2]} receiveShadow>
+            <boxGeometry args={[w, 0.1, h]} />
+            <meshStandardMaterial color="#2e2a26" />
+          </mesh>
+          {/* downstage edge marker (audience side) */}
+          <mesh position={[w / 2, 0.02, h + 0.15]}>
+            <boxGeometry args={[w, 0.02, 0.08]} />
+            <meshStandardMaterial color="#e8a84c" emissive="#e8a84c" emissiveIntensity={0.4} />
+          </mesh>
+          {/* center line spike, matching the 2D canvas */}
+          <mesh position={[w / 2, 0.02, h / 2]}>
+            <boxGeometry args={[0.02, 0.02, h]} />
+            <meshStandardMaterial color="#e8d44c" transparent opacity={0.35} />
+          </mesh>
+          {performers.map((p) => {
+            const pose = poses.get(p.id);
+            if (pose === undefined) return null;
+            return <Performer3D key={p.id} pose={pose} color={p.color} badge={p.badge ?? ''} />;
+          })}
+        </group>
       </Canvas>
     </>
   );

@@ -89,6 +89,12 @@ export interface Performer {
   color: string;
   role: string;
   avatarUrl: string | null;
+  /**
+   * Short tag drawn inside the performer's mark (2D) and on their face (3D):
+   * one CJK/fullwidth character or up to four ASCII characters. Optional —
+   * absent means no badge.
+   */
+  badge?: string;
 }
 
 export interface FormationPosition {

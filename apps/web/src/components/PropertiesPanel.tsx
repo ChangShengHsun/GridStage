@@ -7,8 +7,9 @@ import type { Snapshot } from '../state/history';
 import { CommentsSection } from './CommentsSection';
 import { useT } from '../i18n';
 import { appendTap, bpmFromTaps, MIN_TAPS_TO_APPLY } from '../audio/tapTempo';
-import { showEndMs } from '../state/interpolate';
+import { byOrder, showEndMs } from '../state/interpolate';
 import { audioDurationMs } from '../audio/audioPlayer';
+import { normalizeBadge } from '../state/badge';
 
 /** Parse a number input, returning null for empty/invalid text. */
 function num(value: string): number | null {
@@ -26,6 +27,8 @@ function PerformerSection(): ReactElement | null {
   const removePerformer = useEditor((s) => s.removePerformer);
   const setPosition = useEditor((s) => s.setPosition);
   const setRotation = useEditor((s) => s.setRotation);
+  const pathPerformerId = useEditor((s) => s.pathPerformerId);
+  const setPathPerformer = useEditor((s) => s.setPathPerformer);
 
   const performerId = selectedPerformerIds[0];
   if (performerId === undefined) return null;
@@ -68,6 +71,28 @@ function PerformerSection(): ReactElement | null {
             onChange={(e) => updatePerformer(performer.id, { color: e.target.value })}
           />
         </div>
+        <div className="field">
+          <label htmlFor="perf-badge" title={t.performer.badgeTitle}>
+            {t.performer.badgeLabel}
+          </label>
+          <input
+            id="perf-badge"
+            type="text"
+            title={t.performer.badgeTitle}
+            value={performer.badge ?? ''}
+            onChange={(e) =>
+              updatePerformer(performer.id, { badge: normalizeBadge(e.target.value) })
+            }
+          />
+        </div>
+        <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12 }}>
+          <input
+            type="checkbox"
+            checked={pathPerformerId === performer.id}
+            onChange={(e) => setPathPerformer(e.target.checked ? performer.id : null)}
+          />
+          {t.performer.showPath}
+        </label>
         {pos !== undefined && (
           <>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -151,7 +176,12 @@ function MultiSelectSection({ count }: { count: number }): ReactElement {
         <p className="empty-note">{t.performer.multiSelected(count)}</p>
         <span className="field-label">{t.performer.tools}</span>
         {count === 2 && (
-          <button type="button" className="btn" title={t.performer.swapTitle} onClick={swapSelected}>
+          <button
+            type="button"
+            className="btn"
+            title={t.performer.swapTitle}
+            onClick={swapSelected}
+          >
             {t.performer.swap}
           </button>
         )}
@@ -213,8 +243,10 @@ function FormationSection(): ReactElement | null {
   const applyTemplate = useEditor((s) => s.applyTemplate);
   const untangleFromPrevious = useEditor((s) => s.untangleFromPrevious);
   const mirrorFormation = useEditor((s) => s.mirrorFormation);
+  const copyPositionsFrom = useEditor((s) => s.copyPositionsFrom);
   const hasPerformers = useEditor((s) => s.performers.length > 0);
   const [templateKind, setTemplateKind] = useState<TemplateKind>('line');
+  const [copySourceId, setCopySourceId] = useState('');
 
   const formation = formations.find((f) => f.id === selectedFormationId);
   if (formation === undefined) return null;
@@ -330,6 +362,35 @@ function FormationSection(): ReactElement | null {
         >
           {t.formation.mirror}
         </button>
+        <div className="field">
+          <label htmlFor="form-copy-from">{t.formation.copyFromLabel}</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <select
+              id="form-copy-from"
+              aria-label={t.formation.copyFromAria}
+              value={copySourceId}
+              onChange={(e) => setCopySourceId(e.target.value)}
+            >
+              <option value="">—</option>
+              {byOrder(formations)
+                .filter((f) => f.id !== formation.id)
+                .map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name}
+                  </option>
+                ))}
+            </select>
+            <button
+              type="button"
+              className="btn"
+              disabled={copySourceId === ''}
+              title={t.formation.copyFromTitle}
+              onClick={() => copyPositionsFrom(copySourceId)}
+            >
+              {t.formation.copyFrom}
+            </button>
+          </div>
+        </div>
         <button
           type="button"
           className="btn btn-danger"

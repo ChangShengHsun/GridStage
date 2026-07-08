@@ -93,7 +93,16 @@ interface EditorState extends DocState {
 
   selectFormation: (id: string) => void;
   selectPerformer: (id: string, additive: boolean) => void;
+  /** Replace the whole performer selection (marquee select). */
+  setPerformerSelection: (ids: string[]) => void;
   clearPerformerSelection: () => void;
+
+  /** Copy every stored position from another formation into the selected one. */
+  copyPositionsFrom: (sourceFormationId: string) => void;
+
+  /** Performer whose whole-show walk path is overlaid on the canvas (UI-only). */
+  pathPerformerId: string | null;
+  setPathPerformer: (id: string | null) => void;
 
   addBeatMarker: (ms: number) => void;
   removeBeatMarker: (ms: number) => void;
@@ -561,7 +570,9 @@ export const useEditor = create<EditorState>()(
             if (current === undefined || s.selectedPerformerIds.length < 2) return {};
             const selected = selectedSpots(current, s.selectedPerformerIds);
             if (selected.length < 2) return {};
-            return { positions: { ...s.positions, [fid]: applySpots(current, alignSpots(selected, axis)) } };
+            return {
+              positions: { ...s.positions, [fid]: applySpots(current, alignSpots(selected, axis)) },
+            };
           }),
 
         distributeSelected: (axis) =>
@@ -572,7 +583,10 @@ export const useEditor = create<EditorState>()(
             const selected = selectedSpots(current, s.selectedPerformerIds);
             if (selected.length < 3) return {};
             return {
-              positions: { ...s.positions, [fid]: applySpots(current, distributeSpots(selected, axis)) },
+              positions: {
+                ...s.positions,
+                [fid]: applySpots(current, distributeSpots(selected, axis)),
+              },
             };
           }),
 
@@ -674,6 +688,23 @@ export const useEditor = create<EditorState>()(
         },
 
         selectFormation: (id) => set({ selectedFormationId: id }),
+
+        setPerformerSelection: (ids) => set({ selectedPerformerIds: ids }),
+
+        copyPositionsFrom: (sourceFormationId) =>
+          mutateDoc((s) => {
+            const source = s.positions[sourceFormationId];
+            const targetId = s.selectedFormationId;
+            if (source === undefined || targetId === '' || sourceFormationId === targetId)
+              return {};
+            const copied = Object.fromEntries(
+              Object.entries(source).map(([pid, pos]) => [pid, { ...pos, formationId: targetId }]),
+            );
+            return { positions: { ...s.positions, [targetId]: copied } };
+          }),
+
+        pathPerformerId: null,
+        setPathPerformer: (id) => set({ pathPerformerId: id }),
 
         selectPerformer: (id, additive) =>
           set((s) => ({

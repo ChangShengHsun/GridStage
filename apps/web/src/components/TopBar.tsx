@@ -8,11 +8,7 @@ import { usePeers } from '../hooks/usePeers';
 import { isViewMode } from '../state/viewMode';
 import { useLocaleStore, useT } from '../i18n';
 
-interface TopBarProps {
-  onExportPdf: () => void;
-}
-
-export function TopBar({ onExportPdf }: TopBarProps): ReactElement {
+export function TopBar(): ReactElement {
   const t = useT();
   const locale = useLocaleStore((s) => s.locale);
   const setLocale = useLocaleStore((s) => s.setLocale);
@@ -23,6 +19,7 @@ export function TopBar({ onExportPdf }: TopBarProps): ReactElement {
   const playheadMs = useEditor((s) => s.playheadMs);
   const undo = useEditor((s) => s.undo);
   const redo = useEditor((s) => s.redo);
+  const [pdfKind, setPdfKind] = useState<'charts' | 'sheets'>('charts');
   const eightCount = bpm !== null ? formatEightCount(playheadMs, bpm, countSegments) : null;
 
   const peers = usePeers();
@@ -83,20 +80,10 @@ export function TopBar({ onExportPdf }: TopBarProps): ReactElement {
         onChange={(e) => setTitle(e.target.value)}
         style={{ width: 200 }}
       />
-      <button
-        type="button"
-        className="btn edit-only"
-        onClick={undo}
-        title={t.topbar.undoTitle}
-      >
+      <button type="button" className="btn edit-only" onClick={undo} title={t.topbar.undoTitle}>
         {t.topbar.undo}
       </button>
-      <button
-        type="button"
-        className="btn edit-only"
-        onClick={redo}
-        title={t.topbar.redoTitle}
-      >
+      <button type="button" className="btn edit-only" onClick={redo} title={t.topbar.redoTitle}>
         {t.topbar.redo}
       </button>
       <span className="topbar-spacer" />
@@ -169,7 +156,24 @@ export function TopBar({ onExportPdf }: TopBarProps): ReactElement {
         {formatTimecode(playheadMs)}
         {eightCount !== null ? `  ${eightCount}` : ''}
       </span>
-      <button type="button" className="btn" onClick={onExportPdf}>
+      <select
+        aria-label={t.topbar.pdfKindAria}
+        value={pdfKind}
+        style={{ width: 132 }}
+        onChange={(e) => setPdfKind(e.target.value === 'sheets' ? 'sheets' : 'charts')}
+      >
+        <option value="charts">{t.topbar.pdfCharts}</option>
+        <option value="sheets">{t.topbar.pdfSheets}</option>
+      </select>
+      <button
+        type="button"
+        className="btn"
+        onClick={() => {
+          if (pdfKind === 'sheets')
+            void import('../export/walkSheets').then((m) => m.exportWalkSheetsPdf());
+          else void import('../export/pdf').then((m) => m.exportPerformancePdf());
+        }}
+      >
         {t.topbar.exportPdf}
       </button>
       <select

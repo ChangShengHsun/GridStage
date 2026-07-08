@@ -146,7 +146,10 @@ test('formation tools: mirror flips x, align row shares depth', async ({ page })
 
   // Select both, align to a row -> equal y.
   await page.getByText('Dancer 1').first().click();
-  await page.getByText('Dancer 2').first().click({ modifiers: ['Shift'] });
+  await page
+    .getByText('Dancer 2')
+    .first()
+    .click({ modifiers: ['Shift'] });
   await page.getByRole('button', { name: 'Align row' }).click();
   state = await readDoc(page);
   expect(
@@ -188,7 +191,8 @@ test('playback speed control scales how fast the playhead advances', async ({ pa
 
   const text = (await page.getByLabel('Playhead time').textContent()) ?? '';
   const parts = /(\d+):(\d+)\.(\d)/.exec(text);
-  const seconds = Number(parts?.[1] ?? 0) * 60 + Number(parts?.[2] ?? 0) + Number(parts?.[3] ?? 0) / 10;
+  const seconds =
+    Number(parts?.[1] ?? 0) * 60 + Number(parts?.[2] ?? 0) + Number(parts?.[3] ?? 0) / 10;
   // 1.2s of wall clock at 2.0x ≈ 2.4s of show time (loose band for CI jitter).
   expect(seconds).toBeGreaterThanOrEqual(1.8);
   expect(seconds).toBeLessThanOrEqual(3.5);
@@ -209,7 +213,9 @@ test('sidebars resize by dragging and the width persists', async ({ page }) => {
 
   await page.reload();
   await page.getByText('Add performer').waitFor();
-  expect(Math.abs(((await page.locator('.cast-panel').boundingBox())?.width ?? 0) - 320)).toBeLessThanOrEqual(8);
+  expect(
+    Math.abs(((await page.locator('.cast-panel').boundingBox())?.width ?? 0) - 320),
+  ).toBeLessThanOrEqual(8);
 });
 
 test('timeline height resizes by dragging and persists', async ({ page }) => {
@@ -440,6 +446,100 @@ test('PDF export downloads a file', async ({ page }) => {
   await page.getByRole('button', { name: 'Export PDF' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toContain('walk-charts.pdf');
+});
+
+test('personal walk sheets PDF downloads', async ({ page }) => {
+  await page.getByText('Add performer').click();
+  await page.getByLabel('PDF export type').selectOption('sheets');
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export PDF' }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toContain('walk-sheets.pdf');
+});
+
+test('badge normalizes and persists', async ({ page }) => {
+  await page.getByText('Add performer').click();
+  await page.getByText('Dancer 1').first().click();
+  await page.getByLabel('Badge (inside the mark)').fill('勝勛');
+  let doc = await readDoc(page);
+  expect((doc.performers[0] as { badge?: string }).badge).toBe('勝');
+  await page.getByLabel('Badge (inside the mark)').fill('LEADER');
+  doc = await readDoc(page);
+  expect((doc.performers[0] as { badge?: string }).badge).toBe('LEAD');
+});
+
+test('copy positions from another formation', async ({ page }) => {
+  await page.getByText('Add performer').click();
+  // Move Dancer 1 in Formation 1, then add Formation 2 and move them again.
+  const from = meterToPx(1.5, 6.5);
+  const mid = meterToPx(9, 2);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(mid.x, mid.y, { steps: 8 });
+  await page.mouse.up();
+  await page.getByText('Add formation').click();
+  const back = meterToPx(3, 3);
+  await page.mouse.move(mid.x, mid.y);
+  await page.mouse.down();
+  await page.mouse.move(back.x, back.y, { steps: 8 });
+  await page.mouse.up();
+
+  // Deselect performer so the formation panel (with the picker) is visible.
+  await page.getByLabel('Stage canvas').click({ position: { x: 10, y: 10 } });
+  const before = await readDoc(page);
+  const f1 = before.formations.find((f) => f.orderIndex === 0)?.id ?? '';
+  const f2 = before.formations.find((f) => f.orderIndex === 1)?.id ?? '';
+  const pid = before.performers[0]?.id ?? '';
+  expect(before.positions[f2]?.[pid]?.x).not.toBeCloseTo(before.positions[f1]?.[pid]?.x ?? 0, 1);
+
+  await page.getByLabel('Source formation').selectOption({ label: 'Formation 1' });
+  await page.getByRole('button', { name: 'Copy', exact: true }).click();
+  const after = await readDoc(page);
+  expect(after.positions[f2]?.[pid]?.x).toBeCloseTo(after.positions[f1]?.[pid]?.x ?? 0, 3);
+  expect(after.positions[f2]?.[pid]?.y).toBeCloseTo(after.positions[f1]?.[pid]?.y ?? 0, 3);
+});
+
+test('marquee selects several performers and drags them together', async ({ page }) => {
+  await page.getByText('Add performer').click();
+  await page.getByText('Add performer').click();
+  await page.getByText('Add performer').click();
+
+  // Rubber-band over the whole floor: all three get selected.
+  const a = meterToPx(0.4, 5.2);
+  const b = meterToPx(11.5, 7.8);
+  await page.mouse.move(a.x, a.y);
+  await page.mouse.down();
+  await page.mouse.move(b.x, b.y, { steps: 8 });
+  await page.mouse.up();
+  await expect(page.getByText(/3 selected/)).toBeVisible();
+
+  const before = await readDoc(page);
+  const fid = before.formations[0]?.id ?? '';
+  const ids = before.performers.map((p) => p.id);
+  const start = ids.map((id) => ({ ...before.positions[fid]?.[id] }));
+
+  // Drag the first mark 2m right and 3m up — the whole group must follow.
+  const grab = meterToPx(before.positions[fid]?.[ids[0] ?? '']?.x ?? 0, 6.5);
+  const drop = meterToPx((before.positions[fid]?.[ids[0] ?? '']?.x ?? 0) + 2, 3.5);
+  await page.mouse.move(grab.x, grab.y);
+  await page.mouse.down();
+  await page.mouse.move(drop.x, drop.y, { steps: 10 });
+  await page.mouse.up();
+
+  const after = await readDoc(page);
+  ids.forEach((id, i) => {
+    expect(after.positions[fid]?.[id]?.x ?? 0).toBeCloseTo((start[i]?.x ?? 0) + 2, 0);
+    expect(after.positions[fid]?.[id]?.y ?? 0).toBeCloseTo((start[i]?.y ?? 0) - 3, 0);
+  });
+});
+
+test('whole-show path toggle shows without crashing', async ({ page }) => {
+  await page.getByText('Add performer').click();
+  await page.getByText('Add formation').click();
+  await page.getByText('Dancer 1').first().click();
+  await page.getByLabel('Show whole-show path').check();
+  await expect(page.getByLabel('Show whole-show path')).toBeChecked();
+  await expect(page.getByLabel('Stage canvas')).toBeVisible();
 });
 
 test('count segments anchor count 1 away from 0:00', async ({ page }) => {
