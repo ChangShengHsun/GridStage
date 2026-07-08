@@ -380,7 +380,13 @@ export function Timeline({
             <div
               key={sec.id}
               data-skip-scrub="true"
-              style={{ position: 'absolute', left: msToPx(sec.timeMs), top: 0, bottom: 0, zIndex: 3 }}
+              style={{
+                position: 'absolute',
+                left: msToPx(sec.timeMs),
+                top: 0,
+                bottom: 0,
+                zIndex: 3,
+              }}
             >
               <div
                 aria-hidden="true"
@@ -399,7 +405,14 @@ export function Timeline({
                   aria-label={t.timeline.renameSectionAria}
                   defaultValue={sec.name}
                   autoFocus
-                  style={{ position: 'absolute', top: 0, left: 1, width: 84, fontSize: 11, padding: '1px 3px' }}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 1,
+                    width: 84,
+                    fontSize: 11,
+                    padding: '1px 3px',
+                  }}
                   onBlur={(e) => {
                     renameSection(sec.id, e.target.value.trim() || t.timeline.sectionDefault);
                     setEditingSection(null);

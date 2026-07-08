@@ -77,7 +77,7 @@ not.
 
 ### Building the installer yourself (maintainers)
 
-This step *does* need Node.js 20+ and pnpm — it is how the `.exe` above is
+This step _does_ need Node.js 20+ and pnpm — it is how the `.exe` above is
 produced.
 
 ```bash

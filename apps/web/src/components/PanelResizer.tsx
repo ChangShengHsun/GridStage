@@ -36,7 +36,11 @@ export function PanelResizer({ side }: { side: Side }): ReactElement {
         : { bottom: timelineHeight - 3 };
 
   const label =
-    side === 'cast' ? t.layout.resizeCast : side === 'props' ? t.layout.resizeProps : t.layout.resizeTimeline;
+    side === 'cast'
+      ? t.layout.resizeCast
+      : side === 'props'
+        ? t.layout.resizeProps
+        : t.layout.resizeTimeline;
 
   return (
     <div

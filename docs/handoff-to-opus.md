@@ -143,6 +143,7 @@ remaining work is translation. Do not restructure anything.
   Chinese strings are often shorter but panels are narrow.
 
 ### V3a — rule-based formation suggestions
+
 Pure functions in a new `apps/web/src/state/suggest.ts` (or extend
 `templates.ts`): given performer count + stage size, score/derive candidate
 next formations (spacing balance, symmetry, minimal travel from current —
@@ -153,12 +154,14 @@ only, that's the spec. Acceptance: unit tests for the scoring math; e2e:
 click suggest, apply, positions change and undo restores.
 
 ### V3b — GIF export (video export is DONE)
+
 Needs an encoder dep (`gifenc` is small and MIT). Reuse the frame-drawing
 code in `export/video.ts` — extract the `draw(tMs)` body so both exporters
 share it; render offline at ~12fps, 640px wide (GIFs get huge fast).
 Remember trap #2 (optimizeDeps). Acceptance: e2e downloads a `.gif` > 10KB.
 
 ### V3c — PWA offline
+
 Use `vite-plugin-pwa` (workbox). The app is already offline-capable in spirit
 (localStorage + IndexedDB); the plugin adds a manifest + service worker to
 cache the shell. Careful: a service worker caching stale JS is the classic
@@ -167,17 +170,20 @@ updates. Acceptance: `pnpm build && pnpm preview`, DevTools offline mode,
 app still loads; document that collab obviously needs network.
 
 ### V3d — BPM calibration — DONE (2026-07-06, as tap tempo)
+
 Ivan rejected automatic signal-analysis detection on real music ("這個功能
 很爛") and asked for manual tap calibration instead: click "Calibrate BPM"
 on a downbeat, keep clicking once per beat, apply the measured tempo.
 Implemented in `apps/web/src/audio/tapTempo.ts` (pure: span/(n−1) estimator
-+ 3s-pause auto-restart, 7 unit tests) + StageSection UI + one e2e.
-The old detector (`audio/bpm.ts` + its 9 tests) is PARKED — pure,
-self-contained, no UI references it. If a future feature wants auto-detect
-(e.g. pre-filling the tap value), start from Ivan's UX complaint, not from
-re-enabling it as-is; delete the file if Ivan says so.
+
+- 3s-pause auto-restart, 7 unit tests) + StageSection UI + one e2e.
+  The old detector (`audio/bpm.ts` + its 9 tests) is PARKED — pure,
+  self-contained, no UI references it. If a future feature wants auto-detect
+  (e.g. pre-filling the tap value), start from Ivan's UX complaint, not from
+  re-enabling it as-is; delete the file if Ivan says so.
 
 ### V4 + backend (bigger, propose a plan to Ivan first — >10 files rule)
+
 - **Backend verification** (first Docker session): see §4.
 - **Server-enforced roles:** JWT auth in apps/api; collab-server checks a
   signed room token on WebSocket upgrade (y-websocket 1.5.4 exposes an

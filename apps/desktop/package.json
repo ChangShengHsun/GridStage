@@ -17,9 +17,16 @@
   "build": {
     "appId": "org.openstage.editor",
     "productName": "OpenStage",
-    "directories": { "output": "release" },
-    "files": ["main.cjs", "renderer/**/*"],
-    "win": { "target": "nsis" },
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.cjs",
+      "renderer/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
     "nsis": {
       "oneClick": false,
       "perMachine": false,

@@ -52,7 +52,9 @@ export function CommentsSection({ performerId }: CommentsSectionProps): ReactEle
             type="text"
             aria-label={t.comments.newCommentAria}
             placeholder={
-              performerId === null ? t.comments.placeholderFormation : t.comments.placeholderPerformer
+              performerId === null
+                ? t.comments.placeholderFormation
+                : t.comments.placeholderPerformer
             }
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
