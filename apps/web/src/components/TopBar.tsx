@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { useEditor } from '../state/store';
 import { formatEightCount, formatTimecode } from '../state/interpolate';
@@ -7,6 +7,7 @@ import { collabRoom, isCollabActive, setAwarenessUser } from '../collab/collab';
 import { usePeers } from '../hooks/usePeers';
 import { isViewMode } from '../state/viewMode';
 import { useLocaleStore, useT } from '../i18n';
+import { ExportDialog } from './ExportDialog';
 
 export function TopBar(): ReactElement {
   const t = useT();
@@ -19,38 +20,11 @@ export function TopBar(): ReactElement {
   const playheadMs = useEditor((s) => s.playheadMs);
   const undo = useEditor((s) => s.undo);
   const redo = useEditor((s) => s.redo);
-  const [pdfKind, setPdfKind] = useState<'charts' | 'sheets'>('charts');
   const eightCount = bpm !== null ? formatEightCount(playheadMs, bpm, countSegments) : null;
 
   const peers = usePeers();
   const [userName, setUserName] = useState(() => getLocalUser().name);
   const [shareNote, setShareNote] = useState('');
-  const [videoProgress, setVideoProgress] = useState<number | null>(null);
-  const [videoMode, setVideoMode] = useState<'2d' | '3d'>('2d');
-  const videoAbortRef = useRef<AbortController | null>(null);
-
-  const onExportVideo = (): void => {
-    if (videoProgress !== null) {
-      videoAbortRef.current?.abort(); // second click = cancel
-      return;
-    }
-    const controller = new AbortController();
-    videoAbortRef.current = controller;
-    setVideoProgress(0);
-    void import('../export/video')
-      .then((m) =>
-        m.exportPerformanceVideo({
-          mode: videoMode,
-          onProgress: setVideoProgress,
-          signal: controller.signal,
-        }),
-      )
-      .catch((err: unknown) => {
-        setShareNote(err instanceof Error ? err.message : t.topbar.videoExportFailed);
-        window.setTimeout(() => setShareNote(''), 4000);
-      })
-      .finally(() => setVideoProgress(null));
-  };
 
   const onShare = (): void => {
     if (!isCollabActive()) {
@@ -156,46 +130,7 @@ export function TopBar(): ReactElement {
         {formatTimecode(playheadMs)}
         {eightCount !== null ? `  ${eightCount}` : ''}
       </span>
-      <select
-        aria-label={t.topbar.pdfKindAria}
-        value={pdfKind}
-        style={{ width: 132 }}
-        onChange={(e) => setPdfKind(e.target.value === 'sheets' ? 'sheets' : 'charts')}
-      >
-        <option value="charts">{t.topbar.pdfCharts}</option>
-        <option value="sheets">{t.topbar.pdfSheets}</option>
-      </select>
-      <button
-        type="button"
-        className="btn"
-        onClick={() => {
-          if (pdfKind === 'sheets')
-            void import('../export/walkSheets').then((m) => m.exportWalkSheetsPdf());
-          else void import('../export/pdf').then((m) => m.exportPerformancePdf());
-        }}
-      >
-        {t.topbar.exportPdf}
-      </button>
-      <select
-        aria-label={t.topbar.videoModeAria}
-        value={videoMode}
-        disabled={videoProgress !== null}
-        style={{ width: 58 }}
-        onChange={(e) => setVideoMode(e.target.value === '3d' ? '3d' : '2d')}
-      >
-        <option value="2d">2D</option>
-        <option value="3d">3D</option>
-      </select>
-      <button
-        type="button"
-        className="btn"
-        onClick={onExportVideo}
-        title={t.topbar.exportVideoTitle}
-      >
-        {videoProgress === null
-          ? t.topbar.exportVideo
-          : t.topbar.exportVideoCancel(Math.round(videoProgress * 100))}
-      </button>
+      <ExportDialog />
     </header>
   );
 }

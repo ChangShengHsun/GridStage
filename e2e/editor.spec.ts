@@ -442,17 +442,20 @@ test('3D camera presets are present and reframe without crashing', async ({ page
 });
 
 test('PDF export downloads a file', async ({ page }) => {
+  await page.getByRole('button', { name: 'Export…' }).click();
+  await page.getByRole('button', { name: 'PDF · Walk charts' }).click();
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export PDF' }).click();
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toContain('walk-charts.pdf');
 });
 
 test('personal walk sheets PDF downloads', async ({ page }) => {
   await page.getByText('Add performer').click();
-  await page.getByLabel('PDF export type').selectOption('sheets');
+  await page.getByRole('button', { name: 'Export…' }).click();
+  await page.getByRole('button', { name: 'PDF · Personal sheets' }).click();
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export PDF' }).click();
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toContain('walk-sheets.pdf');
 });
@@ -601,8 +604,10 @@ test('video export records the show and downloads a movie', async ({ page }) => 
   test.setTimeout(60_000); // realtime capture: the default doc is an 8s show
   await page.getByText('Add performer').click();
 
+  await page.getByRole('button', { name: 'Export…' }).click();
+  await page.getByRole('button', { name: 'Video', exact: true }).click();
   const downloadPromise = page.waitForEvent('download', { timeout: 45_000 });
-  await page.getByRole('button', { name: 'Export video' }).click();
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
   // While recording, the button turns into a cancel + progress readout.
   await expect(page.getByRole('button', { name: /Cancel \d+%/ })).toBeVisible();
 
@@ -610,16 +615,17 @@ test('video export records the show and downloads a movie', async ({ page }) => 
   expect(download.suggestedFilename()).toMatch(/-preview\.(webm|mp4)$/);
   const filePath = await download.path();
   expect((await stat(filePath)).size).toBeGreaterThan(10_000);
-  await expect(page.getByRole('button', { name: 'Export video' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Export', exact: true })).toBeVisible();
 });
 
 test('3D video export records the perspective view', async ({ page }) => {
   test.setTimeout(60_000);
   await page.getByText('Add performer').click();
+  await page.getByRole('button', { name: 'Export…' }).click();
   await page.getByLabel('Video export view (2D or 3D)').selectOption('3d');
 
   const downloadPromise = page.waitForEvent('download', { timeout: 45_000 });
-  await page.getByRole('button', { name: 'Export video' }).click();
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/-3d\.(webm|mp4)$/);
   expect((await stat(await download.path())).size).toBeGreaterThan(10_000);
