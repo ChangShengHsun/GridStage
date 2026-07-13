@@ -89,8 +89,12 @@ export async function exportPerformanceVideo({
   }
 }
 
-/** Top-down plan renderer: closes over the layout, returns a per-frame draw. */
-function build2dRenderer(
+/**
+ * Top-down plan renderer: closes over the layout, returns a per-frame draw.
+ * Draws at the module's fixed 1280x720 — the canvas must match W/H.
+ * Also reused by the PNG snapshot exporter.
+ */
+export function build2dRenderer(
   canvas: HTMLCanvasElement,
   doc: SceneDoc,
   msg: Messages,

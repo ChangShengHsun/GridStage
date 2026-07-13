@@ -3,9 +3,9 @@ import type { ReactElement } from 'react';
 import { useT } from '../i18n';
 import type { VideoMode } from '../export/video';
 
-type ExportKind = 'video' | 'pdf-charts' | 'pdf-sheets';
+type ExportKind = 'video' | 'pdf-charts' | 'pdf-sheets' | 'png';
 
-const KINDS: readonly ExportKind[] = ['video', 'pdf-charts', 'pdf-sheets'];
+const KINDS: readonly ExportKind[] = ['video', 'pdf-charts', 'pdf-sheets', 'png'];
 
 /**
  * The export page: one place for every output format and its settings
@@ -23,7 +23,13 @@ export function ExportDialog(): ReactElement {
   const videoAbortRef = useRef<AbortController | null>(null);
 
   const kindLabel = (k: ExportKind): string =>
-    k === 'video' ? t.export.video : k === 'pdf-charts' ? t.export.pdfCharts : t.export.pdfSheets;
+    k === 'video'
+      ? t.export.video
+      : k === 'pdf-charts'
+        ? t.export.pdfCharts
+        : k === 'pdf-sheets'
+          ? t.export.pdfSheets
+          : t.export.png;
 
   const startVideo = (): void => {
     if (videoProgress !== null) {
@@ -52,6 +58,7 @@ export function ExportDialog(): ReactElement {
     if (kind === 'pdf-charts') void import('../export/pdf').then((m) => m.exportPerformancePdf());
     else if (kind === 'pdf-sheets')
       void import('../export/walkSheets').then((m) => m.exportWalkSheetsPdf());
+    else if (kind === 'png') void import('../export/png').then((m) => m.exportFormationPng());
     else startVideo();
   };
 
@@ -104,6 +111,7 @@ export function ExportDialog(): ReactElement {
             )}
             {kind === 'pdf-charts' && <p className="empty-note">{t.export.chartsNote}</p>}
             {kind === 'pdf-sheets' && <p className="empty-note">{t.export.sheetsNote}</p>}
+            {kind === 'png' && <p className="empty-note">{t.export.pngNote}</p>}
             {note !== '' && (
               <span className="mono" role="status">
                 {note}

@@ -687,3 +687,14 @@ test('audience side is selectable and persists in the doc', async ({ page }) => 
   const doc = await readDoc(page);
   expect((doc.performance as { audienceAt?: string }).audienceAt).toBe('top');
 });
+
+test('PNG snapshot of the selected formation downloads', async ({ page }) => {
+  await page.getByText('Add performer').click();
+  await page.getByRole('button', { name: 'Export…' }).click();
+  await page.getByRole('button', { name: 'PNG · Formation snapshot' }).click();
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/-formation-1\.png$/);
+  expect((await stat(await download.path())).size).toBeGreaterThan(5_000);
+});

@@ -49,6 +49,8 @@ export const zh: Messages = {
     video: '影片',
     pdfCharts: 'PDF · 隊形圖',
     pdfSheets: 'PDF · 個人走位單',
+    png: 'PNG · 隊形快照',
+    pngNote: '目前選取隊形的單張圖片——貼到群組聊天最方便。',
     videoViewLabel: '視角',
     videoViewAria: '影片匯出視角（2D 或 3D）',
     videoNote: '以實際播放速度錄製——匯出需要與演出等長的時間。',

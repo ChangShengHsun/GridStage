@@ -48,6 +48,8 @@ export const en = {
     video: 'Video',
     pdfCharts: 'PDF · Walk charts',
     pdfSheets: 'PDF · Personal sheets',
+    png: 'PNG · Formation snapshot',
+    pngNote: 'One image of the selected formation — quick to paste into a group chat.',
     videoViewLabel: 'View',
     videoViewAria: 'Video export view (2D or 3D)',
     videoNote: 'Records the playback in real time — the export takes as long as the show.',
