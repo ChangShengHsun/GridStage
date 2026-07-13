@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import { useEditor } from '../state/store';
 import { byOrder, formatTimecode } from '../state/interpolate';
 import { safeFilename } from './filename';
+import { ensureCjkFont, hasCjk } from './pdfFont';
 
 // A4 landscape, millimeters.
 const PAGE_W = 297;
@@ -15,13 +16,21 @@ const DIM = '#8a8074';
 /**
  * Walk chart: one page per formation (stage plan with marks, facing arrows
  * and names) plus a roster page. Drawn as vectors — crisp at any print size.
+ * When any text is CJK the bundled Noto Sans TC subset is embedded.
  */
-export function exportPerformancePdf(): void {
+export async function exportPerformancePdf(): Promise<void> {
   const s = useEditor.getState();
   const ordered = byOrder(s.formations);
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
-  drawRosterPage(doc, s.performance.title);
+  const allText = [
+    s.performance.title,
+    ...s.performers.flatMap((p) => [p.name, p.role]),
+    ...s.formations.map((f) => f.name),
+  ].join('');
+  const font = await ensureCjkFont(doc, hasCjk(allText));
+
+  drawRosterPage(doc, s.performance.title, font);
 
   ordered.forEach((formation, index) => {
     doc.addPage('a4', 'landscape');
@@ -29,10 +38,10 @@ export function exportPerformancePdf(): void {
 
     // Header
     doc.setTextColor(INK);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(font, 'bold');
     doc.setFontSize(14);
     doc.text(`${index + 1}. ${formation.name}`, MARGIN, MARGIN);
-    doc.setFont('helvetica', 'normal');
+    doc.setFont(font, 'normal');
     doc.setFontSize(9);
     doc.setTextColor(DIM);
     const holdEnd = formation.startTimeMs + formation.durationMs;
@@ -131,14 +140,14 @@ export function exportPerformancePdf(): void {
   doc.save(`${safeFilename(s.performance.title)}-walk-charts.pdf`);
 }
 
-function drawRosterPage(doc: jsPDF, title: string): void {
+function drawRosterPage(doc: jsPDF, title: string, font: string): void {
   const s = useEditor.getState();
 
-  doc.setFont('helvetica', 'bold');
+  doc.setFont(font, 'bold');
   doc.setFontSize(20);
   doc.setTextColor(INK);
   doc.text(title, MARGIN, MARGIN + 6);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont(font, 'normal');
   doc.setFontSize(10);
   doc.setTextColor(DIM);
   doc.text(

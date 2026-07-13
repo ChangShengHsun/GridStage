@@ -688,6 +688,21 @@ test('audience side is selectable and persists in the doc', async ({ page }) => 
   expect((doc.performance as { audienceAt?: string }).audienceAt).toBe('top');
 });
 
+test('PDF export with Chinese names embeds the CJK font and downloads', async ({ page }) => {
+  await page.getByLabel('Performance title').fill('春季舞展');
+  await page.getByText('Add performer').click();
+  await page.getByLabel('Name', { exact: true }).fill('張勝勛');
+
+  await page.getByRole('button', { name: 'Export…' }).click();
+  await page.getByRole('button', { name: 'PDF · Personal sheets' }).click();
+  const downloadPromise = page.waitForEvent('download', { timeout: 30_000 });
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toContain('walk-sheets.pdf');
+  // Embedded font makes a CJK sheet much bigger than the empty-doc PDF.
+  expect((await stat(await download.path())).size).toBeGreaterThan(100_000);
+});
+
 test('performer groups: tag two dancers, one click selects the group', async ({ page }) => {
   await page.getByText('Add performer').click();
   await page.getByText('Add performer').click();

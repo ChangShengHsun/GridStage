@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import { useEditor } from '../state/store';
 import { byOrder, formatTimecode } from '../state/interpolate';
 import { safeFilename } from './filename';
+import { ensureCjkFont, hasCjk } from './pdfFont';
 
 // A4 landscape, millimeters — same sheet conventions as pdf.ts.
 const PAGE_W = 297;
@@ -12,21 +13,29 @@ const HEADER_H = 20;
 const INK = '#26221e';
 const DIM = '#8a8074';
 
-/** jsPDF's built-in fonts have no CJK glyphs; only draw text that will render. */
-function pdfSafe(text: string): string {
-  return Array.from(text).some((c) => (c.codePointAt(0) ?? 0) > 0xff) ? '' : text;
-}
-
 /**
  * Personal walk sheets: one page per performer with THEIR positions across
  * the whole show — a numbered route on the stage plan plus a table of
  * formation, time window, position, and facing. The printable handout each
- * dancer rehearses from.
+ * dancer rehearses from. When any text is CJK the bundled Noto Sans TC
+ * subset is embedded so Chinese names print instead of being skipped.
  */
-export function exportWalkSheetsPdf(): void {
+export async function exportWalkSheetsPdf(): Promise<void> {
   const s = useEditor.getState();
   const ordered = byOrder(s.formations);
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  const allText = [
+    s.performance.title,
+    ...s.performers.flatMap((p) => [p.name, p.role, p.badge ?? '']),
+    ...s.formations.map((f) => f.name),
+  ].join('');
+  const font = await ensureCjkFont(doc, hasCjk(allText));
+  // Without the CJK font, drop text helvetica cannot render (draws garbage).
+  const pdfSafe = (text: string): string =>
+    font !== 'helvetica' || !Array.from(text).some((c) => (c.codePointAt(0) ?? 0) > 0xff)
+      ? text
+      : '';
 
   s.performers.forEach((performer, pageIndex) => {
     if (pageIndex > 0) doc.addPage('a4', 'landscape');
@@ -43,14 +52,14 @@ export function exportWalkSheetsPdf(): void {
     if (badge !== '') {
       doc.setFontSize(badge.length <= 1 ? 8 : 5);
       doc.setTextColor('#ffffff');
-      doc.setFont('helvetica', 'bold');
+      doc.setFont(font, 'bold');
       doc.text(badge, MARGIN + 3, MARGIN + 2.2, { align: 'center' });
     }
     doc.setTextColor(INK);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(font, 'bold');
     doc.setFontSize(15);
     doc.text(pdfSafe(performer.name) || `#${pageIndex + 1}`, MARGIN + 9, MARGIN + 3);
-    doc.setFont('helvetica', 'normal');
+    doc.setFont(font, 'normal');
     doc.setFontSize(9);
     doc.setTextColor(DIM);
     if (performer.role !== '') doc.text(pdfSafe(performer.role), MARGIN + 9, MARGIN + 8);
@@ -134,7 +143,7 @@ export function exportWalkSheetsPdf(): void {
       doc.circle(x, y, 3, 'FD');
       doc.setFontSize(7.5);
       doc.setTextColor(INK);
-      doc.setFont('helvetica', 'bold');
+      doc.setFont(font, 'bold');
       doc.text(String(i + 1), x, y + 1, { align: 'center' });
     });
 
@@ -142,7 +151,7 @@ export function exportWalkSheetsPdf(): void {
     const tableX = MARGIN + plotW + 10;
     const tableW = PAGE_W - MARGIN - tableX;
     const rowY = MARGIN + HEADER_H + 4;
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(font, 'bold');
     doc.setFontSize(8);
     doc.setTextColor(INK);
     doc.text('#', tableX, rowY);
@@ -153,7 +162,7 @@ export function exportWalkSheetsPdf(): void {
     doc.setLineWidth(0.2);
     doc.setDrawColor(DIM);
     doc.line(tableX, rowY + 1.5, tableX + tableW, rowY + 1.5);
-    doc.setFont('helvetica', 'normal');
+    doc.setFont(font, 'normal');
 
     const rowH = 5.4;
     const maxRows = Math.floor((PAGE_H - MARGIN - rowY - 6) / rowH);
