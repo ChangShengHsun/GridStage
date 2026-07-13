@@ -270,14 +270,15 @@ export function StageCanvas(): ReactElement {
             const paths = walkers.map((p) => {
               const from = previousPositions[p.id];
               const to = editPositions[p.id];
+              const control = isCurve ? from?.curveControlPoints?.[0] : undefined;
               return {
                 from: { x: from?.x ?? 0, y: from?.y ?? 0 },
                 to: { x: to?.x ?? 0, y: to?.y ?? 0 },
+                // No control point = the curve renders as its straight chord.
+                ...(control !== undefined ? { control: { x: control.x, y: control.y } } : {}),
               };
             });
-            // ponytail: crossing detection is straight-line only; curved
-            // paths would need sampled-segment checks.
-            const crossing = isCurve ? new Set<number>() : new Set(findCrossings(paths).flat());
+            const crossing = new Set(findCrossings(paths).flat());
             return (
               <>
                 <Layer listening={false}>
@@ -301,9 +302,9 @@ export function StageCanvas(): ReactElement {
                         {currPx !== null &&
                           (isCurve && controlPx !== null ? (
                             <Shape
-                              stroke={p.color}
-                              strokeWidth={1}
-                              dash={[3, 5]}
+                              stroke={collides ? '#d95f5f' : p.color}
+                              strokeWidth={collides ? 2 : 1}
+                              dash={collides ? undefined : [3, 5]}
                               opacity={0.8}
                               sceneFunc={(ctx, shape) => {
                                 ctx.beginPath();

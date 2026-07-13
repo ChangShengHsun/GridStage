@@ -154,29 +154,70 @@ export function segmentsIntersect(
 export interface WalkPath {
   from: PathPoint;
   to: PathPoint;
+  /** Quadratic Bézier control point; absent = a straight walking line. */
+  control?: PathPoint;
+}
+
+/** Samples per curved path when checking intersections. */
+const CURVE_SAMPLES = 16;
+
+/** A path as a polyline: 2 points for a line, sampled points for a curve. */
+function toPolyline(path: WalkPath): PathPoint[] {
+  const control = path.control;
+  if (control === undefined) return [path.from, path.to];
+  const points: PathPoint[] = [];
+  for (let step = 0; step <= CURVE_SAMPLES; step++) {
+    const t = step / CURVE_SAMPLES;
+    const inv = 1 - t;
+    points.push({
+      x: inv * inv * path.from.x + 2 * inv * t * control.x + t * t * path.to.x,
+      y: inv * inv * path.from.y + 2 * inv * t * control.y + t * t * path.to.y,
+    });
+  }
+  return points;
+}
+
+function polylinesIntersect(a: readonly PathPoint[], b: readonly PathPoint[]): boolean {
+  for (let i = 0; i < a.length - 1; i++) {
+    for (let j = 0; j < b.length - 1; j++) {
+      const a0 = a[i];
+      const a1 = a[i + 1];
+      const b0 = b[j];
+      const b1 = b[j + 1];
+      if (a0 === undefined || a1 === undefined || b0 === undefined || b1 === undefined) continue;
+      if (segmentsIntersect(a0, a1, b0, b1)) return true;
+    }
+  }
+  return false;
 }
 
 /**
  * Index pairs of paths that cross each other. Paths sharing an endpoint
- * (e.g. two dancers leaving the same cluster) are not reported.
+ * (e.g. two dancers leaving the same cluster) are not reported. Curved
+ * paths (with a `control` point) are checked against their sampled shape,
+ * so a bend that sweeps through another dancer's line is caught too.
  *
- * ponytail: O(n²) pairwise checks — casts are tens of dancers, not
- * thousands; switch to a sweep line if that ever changes.
+ * ponytail: O(n²) pairwise polyline checks — casts are tens of dancers,
+ * not thousands; switch to a sweep line if that ever changes.
  */
 export function findCrossings(paths: readonly WalkPath[]): [number, number][] {
   const crossings: [number, number][] = [];
+  const polylines = paths.map(toPolyline);
   for (let i = 0; i < paths.length; i++) {
     for (let j = i + 1; j < paths.length; j++) {
       const a = paths[i];
       const b = paths[j];
-      if (a === undefined || b === undefined) continue;
+      const polyA = polylines[i];
+      const polyB = polylines[j];
+      if (a === undefined || b === undefined || polyA === undefined || polyB === undefined)
+        continue;
       const sharesEndpoint =
         distance(a.from, b.from) < 1e-9 ||
         distance(a.from, b.to) < 1e-9 ||
         distance(a.to, b.from) < 1e-9 ||
         distance(a.to, b.to) < 1e-9;
       if (sharesEndpoint) continue;
-      if (segmentsIntersect(a.from, a.to, b.from, b.to)) crossings.push([i, j]);
+      if (polylinesIntersect(polyA, polyB)) crossings.push([i, j]);
     }
   }
   return crossings;

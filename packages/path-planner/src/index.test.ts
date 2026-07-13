@@ -130,4 +130,29 @@ describe('segmentsIntersect / findCrossings', () => {
     ];
     expect(findCrossings(paths)).toEqual([[0, 1]]);
   });
+
+  it('catches curves that cross only because of their bends', () => {
+    // Straight versions (y=0 and y=3) never meet; the bends swap them.
+    const paths = [
+      { from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, control: { x: 5, y: 5 } },
+      { from: { x: 0, y: 3 }, to: { x: 10, y: 3 }, control: { x: 5, y: -2 } },
+    ];
+    expect(findCrossings(paths)).toEqual([[0, 1]]);
+  });
+
+  it('clears curves that bend away from each other', () => {
+    const paths = [
+      { from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, control: { x: 5, y: 2 } }, // stays y <= 1
+      { from: { x: 0, y: 3 }, to: { x: 10, y: 3 }, control: { x: 5, y: 5 } }, // stays y >= 3
+    ];
+    expect(findCrossings(paths)).toEqual([]);
+  });
+
+  it('catches a curve sweeping through a straight line', () => {
+    const paths = [
+      { from: { x: 0, y: 2 }, to: { x: 10, y: 2 } }, // straight at y=2
+      { from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, control: { x: 5, y: 6 } }, // peaks at y=3
+    ];
+    expect(findCrossings(paths)).toEqual([[0, 1]]);
+  });
 });
