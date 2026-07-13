@@ -22,9 +22,6 @@ function pdfSafe(text: string): string {
  * the whole show — a numbered route on the stage plan plus a table of
  * formation, time window, position, and facing. The printable handout each
  * dancer rehearses from.
- *
- * ponytail: transition legs draw as straight dashed lines even for curve
- * transitions; sample the Bézier like the canvas does if routes need it.
  */
 export function exportWalkSheetsPdf(): void {
   const s = useEditor.getState();
@@ -101,6 +98,9 @@ export function exportWalkSheetsPdf(): void {
     });
 
     // Route: dashed legs between consecutive stops, numbered circles on top.
+    // Curve transitions draw their actual quadratic Bézier (converted to the
+    // cubic form jsPDF's `lines` takes: each cubic control = 2/3 toward the
+    // quadratic control point).
     doc.setDrawColor(performer.color);
     doc.setLineWidth(0.4);
     doc.setLineDashPattern([2, 1.6], 0);
@@ -110,7 +110,20 @@ export function exportWalkSheetsPdf(): void {
       if (a === undefined || b === undefined) continue;
       const aPt = toPt(a.pos);
       const bPt = toPt(b.pos);
-      doc.line(aPt.x, aPt.y, bPt.x, bPt.y);
+      const control =
+        a.formation.transitionType === 'curve' ? a.pos.curveControlPoints?.[0] : undefined;
+      if (control !== undefined) {
+        const cPt = toPt(control);
+        const c1 = { x: aPt.x + (2 / 3) * (cPt.x - aPt.x), y: aPt.y + (2 / 3) * (cPt.y - aPt.y) };
+        const c2 = { x: bPt.x + (2 / 3) * (cPt.x - bPt.x), y: bPt.y + (2 / 3) * (cPt.y - bPt.y) };
+        doc.lines(
+          [[c1.x - aPt.x, c1.y - aPt.y, c2.x - aPt.x, c2.y - aPt.y, bPt.x - aPt.x, bPt.y - aPt.y]],
+          aPt.x,
+          aPt.y,
+        );
+      } else {
+        doc.line(aPt.x, aPt.y, bPt.x, bPt.y);
+      }
     }
     doc.setLineDashPattern([], 0);
     stops.forEach((stop, i) => {
