@@ -11,9 +11,19 @@ export function CastPanel(): ReactElement {
   const addPerformer = useEditor((s) => s.addPerformer);
   const importRoster = useEditor((s) => s.importRoster);
   const selectPerformer = useEditor((s) => s.selectPerformer);
+  const setPerformerSelection = useEditor((s) => s.setPerformerSelection);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const [importNote, setImportNote] = useState('');
+
+  // Every group name in use, with its members — one chip per group.
+  const groups = new Map<string, string[]>();
+  for (const p of performers) {
+    for (const tag of p.tags ?? []) {
+      groups.set(tag, [...(groups.get(tag) ?? []), p.id]);
+    }
+  }
+  const groupNames = [...groups.keys()].sort((a, b) => a.localeCompare(b));
 
   return (
     <aside className="cast-panel side-panel">
@@ -34,6 +44,23 @@ export function CastPanel(): ReactElement {
           <span className="mono" role="status">
             {importNote}
           </span>
+        )}
+        {groupNames.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {groupNames.map((name) => (
+              <button
+                key={name}
+                type="button"
+                className="btn"
+                style={{ fontSize: 11, padding: '2px 8px' }}
+                aria-label={t.cast.selectGroupAria(name)}
+                title={t.cast.selectGroupTitle}
+                onClick={() => setPerformerSelection(groups.get(name) ?? [])}
+              >
+                {name} · {groups.get(name)?.length ?? 0}
+              </button>
+            ))}
+          </div>
         )}
       </div>
       <input

@@ -17,6 +17,13 @@ function num(value: string): number | null {
   return value.trim() === '' || Number.isNaN(n) ? null : n;
 }
 
+/** "front, flyers" -> unique trimmed group names (CJK commas count too). */
+function parseTags(text: string): string[] {
+  return [...new Set(text.split(/[,，、]/).map((part) => part.trim()))].filter(
+    (tag) => tag !== '',
+  );
+}
+
 function PerformerSection(): ReactElement | null {
   const t = useT();
   const performers = useEditor((s) => s.performers);
@@ -83,6 +90,23 @@ function PerformerSection(): ReactElement | null {
             onChange={(e) =>
               updatePerformer(performer.id, { badge: normalizeBadge(e.target.value) })
             }
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="perf-tags" title={t.performer.tagsTitle}>
+            {t.performer.tagsLabel}
+          </label>
+          <input
+            id="perf-tags"
+            key={performer.id}
+            type="text"
+            title={t.performer.tagsTitle}
+            defaultValue={(performer.tags ?? []).join(', ')}
+            placeholder={t.performer.tagsPlaceholder}
+            onBlur={(e) => updatePerformer(performer.id, { tags: parseTags(e.target.value) })}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur();
+            }}
           />
         </div>
         <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12 }}>

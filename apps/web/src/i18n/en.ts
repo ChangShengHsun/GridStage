@@ -70,6 +70,8 @@ export const en = {
     imported: (n: number): string => `Imported ${n} performer${n === 1 ? '' : 's'}`,
     emptyNote: 'No performers yet. Add one, then drag their mark onto the stage.',
     performersAria: 'Performers',
+    selectGroupAria: (name: string): string => `Select group ${name}`,
+    selectGroupTitle: 'Select everyone in this group',
   },
 
   performer: {
@@ -97,6 +99,9 @@ export const en = {
     facingDegreesAria: 'Facing degrees',
     badgeLabel: 'Badge (inside the mark)',
     badgeTitle: 'One CJK character or up to 4 letters — shown in the 2D mark and on the face in 3D',
+    tagsLabel: 'Groups (comma separated)',
+    tagsTitle: 'Group names like "front row, flyers" — click a group in the Cast panel to select everyone in it',
+    tagsPlaceholder: 'e.g. front row, flyers',
     showPath: 'Show whole-show path',
     removeFromCast: 'Remove from cast',
   },

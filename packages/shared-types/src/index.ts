@@ -101,6 +101,11 @@ export interface Performer {
    * absent means no badge.
    */
   badge?: string;
+  /**
+   * Free-form group names ("front row", "flyers"…) for selecting several
+   * performers at once. Optional — absent means ungrouped.
+   */
+  tags?: string[];
 }
 
 export interface FormationPosition {

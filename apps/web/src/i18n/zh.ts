@@ -71,6 +71,8 @@ export const zh: Messages = {
     imported: (n: number): string => `已匯入 ${n} 位舞者`,
     emptyNote: '尚無舞者。新增一位，再把標記拖到舞台上。',
     performersAria: '舞者',
+    selectGroupAria: (name: string): string => `選取分組 ${name}`,
+    selectGroupTitle: '選取這個分組的所有舞者',
   },
 
   performer: {
@@ -98,6 +100,9 @@ export const zh: Messages = {
     facingDegreesAria: '面向角度',
     badgeLabel: '標示（圓圈內）',
     badgeTitle: '一個中文字或最多 4 個英文字元——顯示在 2D 標記圈內、3D 的臉上',
+    tagsLabel: '分組（以逗號分隔）',
+    tagsTitle: '分組名稱，例如「前排, 空翻組」——在演出者面板點分組即可整組選取',
+    tagsPlaceholder: '例：前排, 空翻組',
     showPath: '顯示整場走位路徑',
     removeFromCast: '從名單移除',
   },

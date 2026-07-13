@@ -688,6 +688,30 @@ test('audience side is selectable and persists in the doc', async ({ page }) => 
   expect((doc.performance as { audienceAt?: string }).audienceAt).toBe('top');
 });
 
+test('performer groups: tag two dancers, one click selects the group', async ({ page }) => {
+  await page.getByText('Add performer').click();
+  await page.getByText('Add performer').click();
+  await page.getByText('Add performer').click();
+
+  // Tag dancers 1 and 2 as "front"; dancer 3 stays ungrouped.
+  await page.getByText('Dancer 1').first().click();
+  await page.getByLabel('Groups (comma separated)').fill('front');
+  await page.getByLabel('Groups (comma separated)').press('Enter');
+  await page.getByText('Dancer 2').first().click();
+  await page.getByLabel('Groups (comma separated)').fill('front, flyers');
+  await page.getByLabel('Groups (comma separated)').press('Enter');
+
+  const doc = await readDoc(page);
+  expect((doc.performers[0] as { tags?: string[] }).tags).toEqual(['front']);
+  expect((doc.performers[1] as { tags?: string[] }).tags).toEqual(['front', 'flyers']);
+
+  await page.getByRole('button', { name: 'Select group front' }).click();
+  const rows = page.getByRole('listbox', { name: 'Performers' }).getByRole('option');
+  await expect(rows.nth(0)).toHaveAttribute('aria-selected', 'true');
+  await expect(rows.nth(1)).toHaveAttribute('aria-selected', 'true');
+  await expect(rows.nth(2)).toHaveAttribute('aria-selected', 'false');
+});
+
 test('PNG snapshot of the selected formation downloads', async ({ page }) => {
   await page.getByText('Add performer').click();
   await page.getByRole('button', { name: 'Export…' }).click();
