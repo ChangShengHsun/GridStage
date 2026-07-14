@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { useEditor } from '../state/store';
-import { byOrder, formatTimecode } from '../state/interpolate';
+import { byOrder, formatEightCount, formatTimecode } from '../state/interpolate';
 import { safeFilename } from './filename';
 import { ensureCjkFont, hasCjk } from './pdfFont';
 
@@ -22,7 +22,6 @@ const DIM = '#8a8074';
  */
 export async function exportWalkSheetsPdf(): Promise<void> {
   const s = useEditor.getState();
-  const ordered = byOrder(s.formations);
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
   const allText = [
@@ -31,6 +30,18 @@ export async function exportWalkSheetsPdf(): Promise<void> {
     ...s.formations.map((f) => f.name),
   ].join('');
   const font = await ensureCjkFont(doc, hasCjk(allText));
+  drawWalkSheetsInto(doc, font);
+  doc.save(`${safeFilename(s.performance.title)}-walk-sheets.pdf`);
+}
+
+/**
+ * Draw one sheet per performer starting on the CURRENT page (the rehearsal
+ * pack composes this after the charts; the standalone export calls it on a
+ * fresh doc). The font must already be registered via ensureCjkFont.
+ */
+export function drawWalkSheetsInto(doc: jsPDF, font: string): void {
+  const s = useEditor.getState();
+  const ordered = byOrder(s.formations);
   // Without the CJK font, drop text helvetica cannot render (draws garbage).
   const pdfSafe = (text: string): string =>
     font !== 'helvetica' || !Array.from(text).some((c) => (c.codePointAt(0) ?? 0) > 0xff)
@@ -147,7 +158,9 @@ export async function exportWalkSheetsPdf(): Promise<void> {
       doc.text(String(i + 1), x, y + 1, { align: 'center' });
     });
 
-    // Table, right side: # / formation / time / position / facing.
+    // Table, right side: # / formation / time / counts / position / facing.
+    // Counts anchor the cue musically ("enter on 8ct 3, count 1") when a
+    // BPM is set — the same numbering the timeline ruler shows.
     const tableX = MARGIN + plotW + 10;
     const tableW = PAGE_W - MARGIN - tableX;
     const rowY = MARGIN + HEADER_H + 4;
@@ -155,10 +168,11 @@ export async function exportWalkSheetsPdf(): Promise<void> {
     doc.setFontSize(8);
     doc.setTextColor(INK);
     doc.text('#', tableX, rowY);
-    doc.text('Formation', tableX + 8, rowY);
-    doc.text('Time', tableX + 44, rowY);
-    doc.text('x,y (m)', tableX + 74, rowY);
-    doc.text('Face', tableX + 92, rowY);
+    doc.text('Formation', tableX + 7, rowY);
+    doc.text('Time', tableX + 34, rowY);
+    doc.text('8ct', tableX + 60, rowY);
+    doc.text('x,y (m)', tableX + 71, rowY);
+    doc.text('Face', tableX + 85, rowY);
     doc.setLineWidth(0.2);
     doc.setDrawColor(DIM);
     doc.line(tableX, rowY + 1.5, tableX + tableW, rowY + 1.5);
@@ -172,16 +186,25 @@ export async function exportWalkSheetsPdf(): Promise<void> {
       doc.setFontSize(8);
       doc.setTextColor(INK);
       doc.text(String(i + 1), tableX, y);
-      doc.text(pdfSafe(stop.formation.name).slice(0, 20) || `(${i + 1})`, tableX + 8, y);
+      doc.text(pdfSafe(stop.formation.name).slice(0, 13) || `(${i + 1})`, tableX + 7, y);
       doc.setTextColor(DIM);
       doc.text(
         `${formatTimecode(stop.formation.startTimeMs)}-${formatTimecode(holdEnd)}`,
-        tableX + 44,
+        tableX + 34,
         y,
       );
+      const counts =
+        s.performance.bpm !== null
+          ? (formatEightCount(
+              stop.formation.startTimeMs,
+              s.performance.bpm,
+              s.performance.countSegments,
+            )?.replace('8ct ', '') ?? '—')
+          : '—';
+      doc.text(counts, tableX + 60, y);
       doc.setTextColor(INK);
-      doc.text(`${stop.pos.x.toFixed(1)}, ${stop.pos.y.toFixed(1)}`, tableX + 74, y);
-      doc.text(`${Math.round(stop.pos.rotation)}°`, tableX + 92, y);
+      doc.text(`${stop.pos.x.toFixed(1)}, ${stop.pos.y.toFixed(1)}`, tableX + 71, y);
+      doc.text(`${Math.round(stop.pos.rotation)}°`, tableX + 85, y);
     });
     if (stops.length > maxRows) {
       doc.setFontSize(7.5);
@@ -193,6 +216,4 @@ export async function exportWalkSheetsPdf(): Promise<void> {
     doc.setTextColor(DIM);
     doc.text(`page ${pageIndex + 1}`, PAGE_W - MARGIN, PAGE_H - 7, { align: 'right' });
   });
-
-  doc.save(`${safeFilename(s.performance.title)}-walk-sheets.pdf`);
 }

@@ -1007,6 +1007,20 @@ test('library: create, switch, duplicate and delete choreographies', async ({ pa
   await expect(page.getByText('Replace audio')).toBeVisible();
 });
 
+test('rehearsal pack PDF combines charts and personal sheets', async ({ page }) => {
+  await page.getByText('Add performer').click();
+  await page.getByText('Add performer').click();
+  await page.getByText('Add formation').click();
+  await page.getByRole('button', { name: 'Export…' }).click();
+  await page.getByRole('button', { name: 'PDF · Rehearsal pack' }).click();
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/-rehearsal-pack\.pdf$/);
+  // roster + 2 charts + 2 sheets — comfortably bigger than a bare one-pager
+  expect((await stat(await download.path())).size).toBeGreaterThan(8_000);
+});
+
 test('PNG snapshot of the selected formation downloads', async ({ page }) => {
   await page.getByText('Add performer').click();
   await page.getByRole('button', { name: 'Export…' }).click();

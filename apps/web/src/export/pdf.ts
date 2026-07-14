@@ -21,16 +21,30 @@ const DIM = '#8a8074';
  */
 export async function exportPerformancePdf(): Promise<void> {
   const s = useEditor.getState();
-  const ordered = byOrder(s.formations);
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const font = await ensureCjkFont(doc, hasCjk(chartText()));
+  drawWalkChartsInto(doc, font);
+  doc.save(`${safeFilename(s.performance.title)}-walk-charts.pdf`);
+}
 
-  const allText = [
+/** Every string the charts print — the pack checks it for CJK too. */
+export function chartText(): string {
+  const s = useEditor.getState();
+  return [
     s.performance.title,
     ...s.performers.flatMap((p) => [p.name, p.role]),
     ...s.props.map((p) => p.name),
     ...s.formations.map((f) => f.name),
   ].join('');
-  const font = await ensureCjkFont(doc, hasCjk(allText));
+}
+
+/**
+ * Draw the roster page + one chart per formation starting on the CURRENT
+ * page. The font must already be registered via ensureCjkFont.
+ */
+export function drawWalkChartsInto(doc: jsPDF, font: string): void {
+  const s = useEditor.getState();
+  const ordered = byOrder(s.formations);
 
   drawRosterPage(doc, s.performance.title, font);
 
@@ -173,8 +187,6 @@ export async function exportPerformancePdf(): Promise<void> {
     doc.setTextColor(DIM);
     doc.text(`page ${index + 2}`, PAGE_W - MARGIN, PAGE_H - 8, { align: 'right' });
   });
-
-  doc.save(`${safeFilename(s.performance.title)}-walk-charts.pdf`);
 }
 
 function drawRosterPage(doc: jsPDF, title: string, font: string): void {

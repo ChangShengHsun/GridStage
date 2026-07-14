@@ -112,6 +112,9 @@ export const en = {
     video: 'Video',
     pdfCharts: 'PDF · Walk charts',
     pdfSheets: 'PDF · Personal sheets',
+    pdfPack: 'PDF · Rehearsal pack',
+    packNote:
+      'Everything in one printable file: roster, every walk chart, then each dancer’s personal sheet with times and 8-counts.',
     png: 'PNG · Formation snapshot',
     pngNote: 'One image of the selected formation — quick to paste into a group chat.',
     videoViewLabel: 'View',

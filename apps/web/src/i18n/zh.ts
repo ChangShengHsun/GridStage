@@ -113,6 +113,8 @@ export const zh: Messages = {
     video: '影片',
     pdfCharts: 'PDF · 隊形圖',
     pdfSheets: 'PDF · 個人走位單',
+    pdfPack: 'PDF · 排練交接包',
+    packNote: '一份可列印的完整檔案：名單、每個隊形圖，加上每位舞者含時間與八拍數的個人走位單。',
     png: 'PNG · 隊形快照',
     pngNote: '目前選取隊形的單張圖片——貼到群組聊天最方便。',
     videoViewLabel: '視角',
