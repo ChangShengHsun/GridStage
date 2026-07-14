@@ -59,6 +59,8 @@ interface EditorState extends DocState {
   setAudienceAt: (at: 'top' | 'bottom') => void;
   /** Opacity of the venue photo under the grid, 0–1. */
   setStageBackgroundOpacity: (opacity: number) => void;
+  /** Offstage holding zones (left/right wings, backstage), meters 0–10. */
+  setWings: (wings: { left: number; right: number; back: number }) => void;
 
   addPerformer: () => void;
   importRoster: (rows: readonly RosterRow[]) => void;
@@ -236,6 +238,22 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+/** Placeable extent including wings: x ∈ [-left, w+right], y ∈ [-back, h]. */
+export function stageBounds(p: Performance): {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+} {
+  const wings = p.wings ?? { left: 0, right: 0, back: 0 };
+  return {
+    minX: -wings.left,
+    maxX: p.stageWidth + wings.right,
+    minY: -wings.back,
+    maxY: p.stageHeight,
+  };
+}
+
 /** Default spot for the index-th cast member: rows across downstage. */
 function defaultSpot(
   index: number,
@@ -319,19 +337,44 @@ export const useEditor = create<EditorState>()(
           mutateDoc((s) => {
             const stageWidth = clamp(width, 2, 60);
             const stageHeight = clamp(height, 2, 60);
-            // Keep every stored position on the resized stage.
+            // Keep every stored position on the resized stage (wings included).
+            const b = stageBounds({ ...s.performance, stageWidth, stageHeight });
             const positions: PositionMap = Object.fromEntries(
               Object.entries(s.positions).map(([fid, byPerformer]) => [
                 fid,
                 Object.fromEntries(
                   Object.entries(byPerformer).map(([pid, pos]) => [
                     pid,
-                    { ...pos, x: clamp(pos.x, 0, stageWidth), y: clamp(pos.y, 0, stageHeight) },
+                    { ...pos, x: clamp(pos.x, b.minX, b.maxX), y: clamp(pos.y, b.minY, b.maxY) },
                   ]),
                 ),
               ]),
             );
             return { performance: { ...s.performance, stageWidth, stageHeight }, positions };
+          }),
+
+        setWings: (wings) =>
+          mutateDoc((s) => {
+            const next = {
+              left: clamp(wings.left, 0, 10),
+              right: clamp(wings.right, 0, 10),
+              back: clamp(wings.back, 0, 10),
+            };
+            const performance = { ...s.performance, wings: next };
+            // Shrinking a wing pulls anyone standing there back inside.
+            const b = stageBounds(performance);
+            const positions: PositionMap = Object.fromEntries(
+              Object.entries(s.positions).map(([fid, byPerformer]) => [
+                fid,
+                Object.fromEntries(
+                  Object.entries(byPerformer).map(([pid, pos]) => [
+                    pid,
+                    { ...pos, x: clamp(pos.x, b.minX, b.maxX), y: clamp(pos.y, b.minY, b.maxY) },
+                  ]),
+                ),
+              ]),
+            );
+            return { performance, positions };
           }),
 
         setBpm: (bpm) =>
@@ -772,6 +815,7 @@ export const useEditor = create<EditorState>()(
           mutateDoc((s) => {
             const existing = s.positions[formationId]?.[performerId];
             if (existing === undefined) return {};
+            const b = stageBounds(s.performance);
             return {
               positions: {
                 ...s.positions,
@@ -779,8 +823,8 @@ export const useEditor = create<EditorState>()(
                   ...s.positions[formationId],
                   [performerId]: {
                     ...existing,
-                    x: clamp(x, 0, s.performance.stageWidth),
-                    y: clamp(y, 0, s.performance.stageHeight),
+                    x: clamp(x, b.minX, b.maxX),
+                    y: clamp(y, b.minY, b.maxY),
                   },
                 },
               },
@@ -791,6 +835,7 @@ export const useEditor = create<EditorState>()(
           set((s) => {
             const existing = s.positions[formationId]?.[performerId];
             if (existing === undefined) return {};
+            const b = stageBounds(s.performance);
             return {
               positions: {
                 ...s.positions,
@@ -798,8 +843,8 @@ export const useEditor = create<EditorState>()(
                   ...s.positions[formationId],
                   [performerId]: {
                     ...existing,
-                    x: clamp(x, 0, s.performance.stageWidth),
-                    y: clamp(y, 0, s.performance.stageHeight),
+                    x: clamp(x, b.minX, b.maxX),
+                    y: clamp(y, b.minY, b.maxY),
                   },
                 },
               },

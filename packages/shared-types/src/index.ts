@@ -63,6 +63,12 @@ export interface Performance {
    * with the doc. Absent = 0.5.
    */
   stageBackgroundOpacity?: number;
+  /**
+   * Offstage holding zones in meters (absent or 0 = none). Dancers can be
+   * placed there while waiting to enter: left/right wings extend the x
+   * axis (x < 0 / x > stageWidth), backstage extends upstage (y < 0).
+   */
+  wings?: { left: number; right: number; back: number };
 }
 
 /** One counted passage: count 1 lands on startMs, counting stops at endMs. */

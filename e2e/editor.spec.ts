@@ -1007,6 +1007,31 @@ test('library: create, switch, duplicate and delete choreographies', async ({ pa
   await expect(page.getByText('Replace audio')).toBeVisible();
 });
 
+test('wings: dancers can be placed offstage once wings exist', async ({ page }) => {
+  await page.getByText('Add performer').click();
+  // no wings yet: offstage x clamps back to 0
+  await page.getByText('Dancer 1').first().click();
+  await page.locator('#pos-x').fill('-2');
+  let state = await readDoc(page);
+  const fid = state.formations[0]?.id ?? '';
+  const pid = state.performers[0]?.id ?? '';
+  expect(state.positions[fid]?.[pid]?.x).toBe(0);
+
+  // open a 2m left wing, then the same position sticks
+  await page.getByRole('button', { name: 'Stage settings…' }).click();
+  await page.locator('#wing-left').fill('2');
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await page.locator('#pos-x').fill('-1.5');
+  state = await readDoc(page);
+  expect(state.positions[fid]?.[pid]?.x).toBe(-1.5);
+
+  // shrinking the wing pulls the dancer back inside the new bounds
+  await page.getByRole('button', { name: 'Stage settings…' }).click();
+  await page.locator('#wing-left').fill('0.5');
+  state = await readDoc(page);
+  expect(state.positions[fid]?.[pid]?.x).toBe(-0.5);
+});
+
 test('transition analyzer warns about head-on swaps', async ({ page }) => {
   await page.getByText('Add performer').click();
   await page.getByText('Add performer').click();

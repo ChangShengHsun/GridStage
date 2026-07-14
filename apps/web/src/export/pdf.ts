@@ -68,14 +68,20 @@ export function drawWalkChartsInto(doc: jsPDF, font: string): void {
     );
     doc.text(s.performance.title, PAGE_W - MARGIN, MARGIN, { align: 'right' });
 
-    // Stage box, meters -> mm
+    // Stage box, meters -> mm. Wings extend the fitted extent; the floor
+    // origin shifts by whichever wing lands page-left/top (swap under flip).
+    const flip = s.performance.audienceAt === 'top';
+    const wings = s.performance.wings ?? { left: 0, right: 0, back: 0 };
+    const totalW = s.performance.stageWidth + wings.left + wings.right;
+    const totalH = s.performance.stageHeight + wings.back;
     const availW = PAGE_W - MARGIN * 2;
     const availH = PAGE_H - MARGIN * 2 - HEADER_H - 8;
-    const scale = Math.min(availW / s.performance.stageWidth, availH / s.performance.stageHeight);
+    const scale = Math.min(availW / totalW, availH / totalH);
     const stageW = s.performance.stageWidth * scale;
     const stageH = s.performance.stageHeight * scale;
-    const originX = (PAGE_W - stageW) / 2;
-    const originY = MARGIN + HEADER_H;
+    const originX = (PAGE_W - totalW * scale) / 2 + (flip ? wings.right : wings.left) * scale;
+    const originY =
+      MARGIN + HEADER_H + (availH - totalH * scale) / 2 + (flip ? 0 : wings.back) * scale;
 
     doc.setDrawColor(INK);
     doc.setLineWidth(0.4);
@@ -98,19 +104,40 @@ export function drawWalkChartsInto(doc: jsPDF, font: string): void {
     doc.line(originX + stageW / 2, originY, originX + stageW / 2, originY + stageH);
     doc.setLineDashPattern([], 0);
 
-    // Audience at the top = the plan rotated 180° (performer view).
-    const flip = s.performance.audienceAt === 'top';
     doc.setFontSize(8);
     doc.setTextColor(DIM);
     doc.text('AUDIENCE', PAGE_W / 2, flip ? originY - 3 : originY + stageH + 6, {
       align: 'center',
     });
 
-    // Props: scenery outlines under the marks.
     const toPage = (xM: number, yM: number): [number, number] => [
       originX + (flip ? s.performance.stageWidth - xM : xM) * scale,
       originY + (flip ? s.performance.stageHeight - yM : yM) * scale,
     ];
+
+    // Wings/backstage: dashed holding zones hugging the floor.
+    doc.setDrawColor(DIM);
+    doc.setLineWidth(0.2);
+    doc.setLineDashPattern([1.2, 1.2], 0);
+    for (const zone of [
+      { w: wings.left, x0: -wings.left, y0: -wings.back, x1: 0, y1: s.performance.stageHeight },
+      {
+        w: wings.right,
+        x0: s.performance.stageWidth,
+        y0: -wings.back,
+        x1: s.performance.stageWidth + wings.right,
+        y1: s.performance.stageHeight,
+      },
+      { w: wings.back, x0: 0, y0: -wings.back, x1: s.performance.stageWidth, y1: 0 },
+    ]) {
+      if (zone.w <= 0) continue;
+      const [ax, ay] = toPage(zone.x0, zone.y0);
+      const [bx, by] = toPage(zone.x1, zone.y1);
+      doc.rect(Math.min(ax, bx), Math.min(ay, by), Math.abs(bx - ax), Math.abs(by - ay));
+    }
+    doc.setLineDashPattern([], 0);
+
+    // Props: scenery outlines under the marks.
     for (const prop of s.props) {
       const pos = positions[prop.id];
       if (pos === undefined) continue;

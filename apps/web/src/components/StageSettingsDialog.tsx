@@ -21,6 +21,8 @@ export function StageSettingsDialog(): ReactElement {
   const performance = useEditor((s) => s.performance);
   const setStageSize = useEditor((s) => s.setStageSize);
   const setAudienceAt = useEditor((s) => s.setAudienceAt);
+  const setWings = useEditor((s) => s.setWings);
+  const wings = performance.wings ?? { left: 0, right: 0, back: 0 };
   const setStageBackgroundOpacity = useEditor((s) => s.setStageBackgroundOpacity);
   const backgroundImage = useStageBackground((s) => s.image);
   const setBackground = useStageBackground((s) => s.set);
@@ -86,6 +88,34 @@ export function StageSettingsDialog(): ReactElement {
               <option value="bottom">{t.stage.audienceBottom}</option>
               <option value="top">{t.stage.audienceTop}</option>
             </select>
+          </div>
+          <div className="field">
+            <label title={t.stage.wingsTitle}>{t.stage.wingsLabel}</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {(
+                [
+                  { key: 'left', label: t.stage.wingLeft },
+                  { key: 'right', label: t.stage.wingRight },
+                  { key: 'back', label: t.stage.wingBack },
+                ] as const
+              ).map(({ key, label }) => (
+                <div className="field" style={{ flex: 1 }} key={key}>
+                  <label htmlFor={`wing-${key}`}>{label}</label>
+                  <input
+                    id={`wing-${key}`}
+                    type="number"
+                    min={0}
+                    max={10}
+                    step={0.5}
+                    value={wings[key]}
+                    onChange={(e) => {
+                      const v = num(e.target.value);
+                      if (v !== null) setWings({ ...wings, [key]: v });
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
           <div className="field">
             <label>{t.stage.backgroundLabel}</label>

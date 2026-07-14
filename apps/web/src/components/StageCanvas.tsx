@@ -101,21 +101,24 @@ export function StageCanvas(): ReactElement {
   }, []);
 
   const { stageWidth, stageHeight } = performance;
+  // Audience at the top = the plan rotated 180° (performers' perspective).
+  // Only the toPx/toMeters mappings flip; stored coordinates never change.
+  const flip = performance.audienceAt === 'top';
+  // Wings/backstage extend the drawable extent around the floor.
+  const wings = performance.wings ?? { left: 0, right: 0, back: 0 };
+  const totalW = stageWidth + wings.left + wings.right;
+  const totalH = stageHeight + wings.back;
   const pxPerMeter =
     size.width > 0
-      ? Math.min(
-          (size.width - MARGIN_PX * 2) / stageWidth,
-          (size.height - MARGIN_PX * 2) / stageHeight,
-        )
+      ? Math.min((size.width - MARGIN_PX * 2) / totalW, (size.height - MARGIN_PX * 2) / totalH)
       : 0;
   const floorW = stageWidth * pxPerMeter;
   const floorH = stageHeight * pxPerMeter;
-  const offsetX = (size.width - floorW) / 2;
-  const offsetY = (size.height - floorH) / 2;
-
-  // Audience at the top = the plan rotated 180° (performers' perspective).
-  // Only these two mappings flip; stored coordinates never change.
-  const flip = performance.audienceAt === 'top';
+  // Center the FULL extent; the floor origin shifts by whichever wing ends
+  // up on-screen-left/top (they swap under flip).
+  const offsetX =
+    (size.width - totalW * pxPerMeter) / 2 + (flip ? wings.right : wings.left) * pxPerMeter;
+  const offsetY = (size.height - totalH * pxPerMeter) / 2 + (flip ? 0 : wings.back) * pxPerMeter;
   const toPx = (xM: number, yM: number): { x: number; y: number } => ({
     x: offsetX + (flip ? stageWidth - xM : xM) * pxPerMeter,
     y: offsetY + (flip ? stageHeight - yM : yM) * pxPerMeter,
@@ -142,17 +145,18 @@ export function StageCanvas(): ReactElement {
     return <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />;
   }
 
-  // Clamp drags to the floor; with snap on, land on the 0.5m lattice
-  // (grid corners and cell centers). Symmetric, so it holds under flip too.
+  // Clamp drags to the floor plus wings; with snap on, land on the 0.5m
+  // lattice. Working in METERS keeps the bounds correct under flip (the
+  // left wing renders on the right of the screen in performer view).
   const dragBound = (pos: { x: number; y: number }): { x: number; y: number } => {
-    let x = Math.min(offsetX + floorW, Math.max(offsetX, pos.x));
-    let y = Math.min(offsetY + floorH, Math.max(offsetY, pos.y));
+    const m = toMeters(pos.x, pos.y);
+    let x = Math.min(stageWidth + wings.right, Math.max(-wings.left, m.x));
+    let y = Math.min(stageHeight, Math.max(-wings.back, m.y));
     if (snapToGrid) {
-      const step = 0.5 * pxPerMeter;
-      x = offsetX + Math.round((x - offsetX) / step) * step;
-      y = offsetY + Math.round((y - offsetY) / step) * step;
+      x = Math.round(x / 0.5) * 0.5;
+      y = Math.round(y / 0.5) * 0.5;
     }
-    return { x, y };
+    return toPx(x, y);
   };
 
   // Stage-level pointer handlers, shared by mouse and touch (touch-action is
@@ -228,6 +232,36 @@ export function StageCanvas(): ReactElement {
         }}
       >
         <Layer listening={false}>
+          {/* Wings/backstage: dim holding zones hugging the floor. */}
+          {[
+            { w: wings.left, x0: -wings.left, y0: -wings.back, x1: 0, y1: stageHeight },
+            {
+              w: wings.right,
+              x0: stageWidth,
+              y0: -wings.back,
+              x1: stageWidth + wings.right,
+              y1: stageHeight,
+            },
+            { w: wings.back, x0: 0, y0: -wings.back, x1: stageWidth, y1: 0 },
+          ]
+            .filter((zone) => zone.w > 0)
+            .map((zone, i) => {
+              const a = toPx(zone.x0, zone.y0);
+              const b = toPx(zone.x1, zone.y1);
+              return (
+                <Rect
+                  key={`wing${i}`}
+                  x={Math.min(a.x, b.x)}
+                  y={Math.min(a.y, b.y)}
+                  width={Math.abs(b.x - a.x)}
+                  height={Math.abs(b.y - a.y)}
+                  fill="#211e1b"
+                  stroke="#4a4038"
+                  strokeWidth={1}
+                  dash={[4, 4]}
+                />
+              );
+            })}
           {/* Marley floor under a warm wash — the one lit surface. */}
           <Rect
             name="floor"

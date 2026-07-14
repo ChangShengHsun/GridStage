@@ -76,14 +76,20 @@ export function drawWalkSheetsInto(doc: jsPDF, font: string): void {
     if (performer.role !== '') doc.text(pdfSafe(performer.role), MARGIN + 9, MARGIN + 8);
     doc.text(pdfSafe(s.performance.title), PAGE_W - MARGIN, MARGIN + 3, { align: 'right' });
 
-    // Stage plot, left side.
+    // Stage plot, left side. Wings extend the fitted extent so offstage
+    // stops still land inside the plot (origin shifts under flip).
+    const flip = s.performance.audienceAt === 'top';
+    const wings = s.performance.wings ?? { left: 0, right: 0, back: 0 };
+    const totalW = s.performance.stageWidth + wings.left + wings.right;
+    const totalH = s.performance.stageHeight + wings.back;
     const plotW = 168;
     const plotH = PAGE_H - MARGIN * 2 - HEADER_H;
-    const scale = Math.min(plotW / s.performance.stageWidth, plotH / s.performance.stageHeight);
+    const scale = Math.min(plotW / totalW, plotH / totalH);
     const stageW = s.performance.stageWidth * scale;
     const stageH = s.performance.stageHeight * scale;
-    const originX = MARGIN;
-    const originY = MARGIN + HEADER_H + (plotH - stageH) / 2;
+    const originX = MARGIN + (flip ? wings.right : wings.left) * scale;
+    const originY =
+      MARGIN + HEADER_H + (plotH - totalH * scale) / 2 + (flip ? 0 : wings.back) * scale;
 
     doc.setDrawColor(INK);
     doc.setLineWidth(0.4);
@@ -105,8 +111,6 @@ export function drawWalkSheetsInto(doc: jsPDF, font: string): void {
     doc.line(originX + stageW / 2, originY, originX + stageW / 2, originY + stageH);
     doc.setLineDashPattern([], 0);
 
-    // Audience at the top = the plan rotated 180° (performer view).
-    const flip = s.performance.audienceAt === 'top';
     const toPt = (pos: { x: number; y: number }): { x: number; y: number } => ({
       x: originX + (flip ? s.performance.stageWidth - pos.x : pos.x) * scale,
       y: originY + (flip ? s.performance.stageHeight - pos.y : pos.y) * scale,
