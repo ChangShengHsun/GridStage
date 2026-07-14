@@ -8,7 +8,13 @@
 
 const DB_NAME = 'openstage-media';
 const STORE = 'blobs';
-const AUDIO_KEY = 'audio';
+/** Docs saved before the library feature shared this single key. */
+const LEGACY_AUDIO_KEY = 'audio';
+
+const audioKeyFor = (docId: string): string => `audio:${docId}`;
+
+/** Which library document the singleton currently plays for. */
+let currentDocId: string | null = null;
 
 let audioEl: HTMLAudioElement | null = null;
 let audioBlob: Blob | null = null;
@@ -59,23 +65,45 @@ function attach(blob: Blob): void {
   peaksCache = null;
 }
 
+function detach(): void {
+  if (objectUrl !== null) URL.revokeObjectURL(objectUrl);
+  audioEl = null;
+  audioBlob = null;
+  objectUrl = null;
+  peaksCache = null;
+}
+
 export async function setAudioBlob(blob: Blob): Promise<void> {
   attach(blob);
-  await idbPut(AUDIO_KEY, blob);
+  await idbPut(currentDocId !== null ? audioKeyFor(currentDocId) : LEGACY_AUDIO_KEY, blob);
 }
 
 let loadPromise: Promise<boolean> | null = null;
 
 /**
- * Restore persisted audio on app start. Resolves true if audio exists.
- * Concurrent calls (React StrictMode double-mounts effects) share one
- * in-flight load, otherwise the second attach() would revoke the blob URL
- * the first Audio element is still reading.
+ * Point the audio singleton at a library document, restoring its persisted
+ * track (each choreography keeps its own audio). Resolves true if audio
+ * exists. Concurrent calls for the SAME doc (React StrictMode double-mounts
+ * effects) share one in-flight load, otherwise the second attach() would
+ * revoke the blob URL the first Audio element is still reading.
  */
-export function loadPersistedAudio(): Promise<boolean> {
-  loadPromise ??= (async (): Promise<boolean> => {
-    if (audioEl !== null) return true;
-    const blob = await idbGet(AUDIO_KEY);
+export function switchAudioToDoc(docId: string): Promise<boolean> {
+  if (currentDocId === docId && loadPromise !== null) return loadPromise;
+  currentDocId = docId;
+  loadPromise = (async (): Promise<boolean> => {
+    detach();
+    let blob = await idbGet(audioKeyFor(docId));
+    if (blob === null) {
+      // Pre-library audio lived under one shared key — adopt it into the
+      // first doc that loads after the upgrade (the doc that owned it).
+      const legacy = await idbGet(LEGACY_AUDIO_KEY);
+      if (legacy !== null) {
+        await idbPut(audioKeyFor(docId), legacy);
+        await idbPut(LEGACY_AUDIO_KEY, null);
+        blob = legacy;
+      }
+    }
+    if (currentDocId !== docId) return false; // a newer switch won the race
     if (blob === null) return false;
     attach(blob);
     return true;
@@ -84,12 +112,21 @@ export function loadPersistedAudio(): Promise<boolean> {
 }
 
 export async function clearAudio(): Promise<void> {
-  if (objectUrl !== null) URL.revokeObjectURL(objectUrl);
-  audioEl = null;
-  audioBlob = null;
-  objectUrl = null;
-  peaksCache = null;
-  await idbPut(AUDIO_KEY, null);
+  detach();
+  await idbPut(currentDocId !== null ? audioKeyFor(currentDocId) : LEGACY_AUDIO_KEY, null);
+}
+
+/** Library duplicate: give the new doc its own reference to the same track. */
+export async function copyAudioBetweenDocs(fromDocId: string, toDocId: string): Promise<void> {
+  const blob =
+    fromDocId === currentDocId && audioBlob !== null
+      ? audioBlob
+      : await idbGet(audioKeyFor(fromDocId));
+  if (blob !== null) await idbPut(audioKeyFor(toDocId), blob);
+}
+
+export async function deleteAudioForDoc(docId: string): Promise<void> {
+  await idbPut(audioKeyFor(docId), null);
 }
 
 export function getAudioElement(): HTMLAudioElement | null {

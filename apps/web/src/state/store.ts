@@ -142,6 +142,11 @@ interface EditorState extends DocState {
 
   /** Replace the whole document (version-history restore); undoable. */
   restoreDoc: (doc: DocState) => void;
+  /**
+   * Switch to another library document: NOT undoable (undo must never cross
+   * documents), clears the undo/redo stacks and resets the session UI state.
+   */
+  loadDoc: (doc: DocState) => void;
 
   undo: () => void;
   redo: () => void;
@@ -175,7 +180,7 @@ function applySpots(current: PositionsByPerformer, spots: readonly Spot[]): Posi
   return updated;
 }
 
-function createInitialDoc(): DocState {
+export function createInitialDoc(): DocState {
   const performanceId = newId();
   const formationId = newId();
   return {
@@ -947,6 +952,19 @@ export const useEditor = create<EditorState>()(
             ...snapshotDoc(doc),
             selectedPerformerIds: [],
           })),
+
+        loadDoc: (doc) => {
+          undoStack.length = 0;
+          redoStack.length = 0;
+          const first = [...doc.formations].sort((a, b) => a.orderIndex - b.orderIndex)[0];
+          set({
+            ...snapshotDoc(doc),
+            selectedFormationId: first?.id ?? '',
+            selectedPerformerIds: [],
+            playheadMs: 0,
+            isPlaying: false,
+          } as EditorState);
+        },
 
         undo: () => {
           if (undoOverride.undo !== null) {

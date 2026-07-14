@@ -752,6 +752,46 @@ test('performer groups: tag two dancers, one click selects the group', async ({ 
   await expect(rows.nth(2)).toHaveAttribute('aria-selected', 'false');
 });
 
+test('library: create, switch, duplicate and delete choreographies', async ({ page }) => {
+  await page.getByLabel('Performance title').fill('Show A');
+  await page.getByText('Add performer').click();
+  await page.setInputFiles('input[aria-label="Audio file"]', {
+    name: 'tone.wav',
+    mimeType: 'audio/wav',
+    buffer: makeWav(),
+  });
+  await page.getByText('Replace audio').waitFor();
+
+  // start a second choreography from the library
+  await page.getByRole('button', { name: 'Library', exact: true }).click();
+  await page.getByRole('button', { name: 'New choreography' }).click();
+  await expect(page.getByLabel('Performance title')).toHaveValue('Untitled performance');
+  await page.getByLabel('Performance title').fill('Show B');
+  // audio belongs to Show A, not to the fresh doc
+  await expect(page.getByText('Upload audio')).toBeVisible();
+
+  // reload keeps the OPEN doc (Show B), not the first one
+  await page.reload();
+  await page.getByText('Add performer').waitFor();
+  await expect(page.getByLabel('Performance title')).toHaveValue('Show B');
+
+  // duplicate Show A, then delete the copy (confirm dialog accepted)
+  await page.getByRole('button', { name: 'Library', exact: true }).click();
+  await page.getByRole('button', { name: 'Duplicate Show A', exact: true }).click();
+  await expect(page.getByText('Show A (copy)')).toBeVisible();
+  page.once('dialog', (dialog) => void dialog.accept());
+  await page.getByRole('button', { name: 'Delete Show A (copy)' }).click();
+  await expect(page.getByText('Show A (copy)')).toBeHidden();
+
+  // switch back to Show A — its performer and its audio are still there
+  await page.getByRole('button', { name: 'Open Show A', exact: true }).click();
+  await expect(page.getByLabel('Performance title')).toHaveValue('Show A');
+  await expect(
+    page.getByRole('listbox', { name: 'Performers' }).getByRole('option'),
+  ).toHaveCount(1);
+  await expect(page.getByText('Replace audio')).toBeVisible();
+});
+
 test('PNG snapshot of the selected formation downloads', async ({ page }) => {
   await page.getByText('Add performer').click();
   await page.getByRole('button', { name: 'Export…' }).click();

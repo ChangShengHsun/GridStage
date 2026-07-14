@@ -12,7 +12,8 @@ import { PropertiesPanel } from './components/PropertiesPanel';
 import { Timeline } from './components/Timeline';
 import { useAppHotkeys } from './hooks/useAppHotkeys';
 import { usePlayback } from './hooks/usePlayback';
-import { clearAudio, loadPersistedAudio, setAudioBlob } from './audio/audioPlayer';
+import { clearAudio, setAudioBlob, switchAudioToDoc } from './audio/audioPlayer';
+import { useEditor } from './state/store';
 import { useT } from './i18n';
 import { useLayout } from './state/layout';
 import { PanelResizer } from './components/PanelResizer';
@@ -29,10 +30,14 @@ export function App(): ReactElement {
   const [audioVersion, setAudioVersion] = useState(0);
   const [show3d, setShow3d] = useState(false);
 
+  // Each library document keeps its own audio — reload it whenever the open
+  // document changes (app start, library switch, joining a collab room).
+  const perfId = useEditor((s) => s.performance.id);
   useEffect(() => {
-    void loadPersistedAudio().then((loaded) => {
-      if (loaded) setAudioVersion((v) => v + 1);
-    });
+    void switchAudioToDoc(perfId).then(() => setAudioVersion((v) => v + 1));
+  }, [perfId]);
+
+  useEffect(() => {
     const room = new URLSearchParams(window.location.search).get('room');
     if (room !== null && room !== '') startCollab(room);
   }, []);

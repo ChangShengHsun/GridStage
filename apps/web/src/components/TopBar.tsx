@@ -14,6 +14,7 @@ import { usePeers } from '../hooks/usePeers';
 import { isViewMode } from '../state/viewMode';
 import { useLocaleStore, useT } from '../i18n';
 import { ExportDialog } from './ExportDialog';
+import { LibraryDialog } from './LibraryDialog';
 
 export function TopBar(): ReactElement {
   const t = useT();
@@ -60,6 +61,7 @@ export function TopBar(): ReactElement {
         onChange={(e) => setTitle(e.target.value)}
         style={{ width: 200 }}
       />
+      {!isViewMode && <LibraryDialog />}
       <button type="button" className="btn edit-only" onClick={undo} title={t.topbar.undoTitle}>
         {t.topbar.undo}
       </button>
