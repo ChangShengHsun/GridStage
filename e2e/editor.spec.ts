@@ -841,6 +841,15 @@ test('crews: save the cast, load it into a fresh choreography with groups', asyn
   await expect(page.getByText('Team 2026 · 2')).toBeHidden();
 });
 
+test('metronome toggle needs a BPM and latches on', async ({ page }) => {
+  const metro = page.getByRole('button', { name: 'Click', exact: true });
+  await expect(metro).toBeDisabled();
+  await page.getByLabel('BPM (empty = unknown)').fill('120');
+  await expect(metro).toBeEnabled();
+  await metro.click();
+  await expect(metro).toHaveAttribute('aria-pressed', 'true');
+});
+
 test('PWA manifest, service worker and icons are served', async ({ request }) => {
   const manifest = await request.get('/manifest.webmanifest');
   expect(manifest.ok()).toBeTruthy();

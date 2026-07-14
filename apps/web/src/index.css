@@ -558,6 +558,12 @@ input[type='color'] {
   padding: 12px 16px;
 }
 
+/* A toggled-on toolbar button (metronome, snap…). */
+.btn-active {
+  border-color: var(--tungsten);
+  color: var(--tungsten);
+}
+
 .library-dialog {
   width: min(680px, 94vw);
 }

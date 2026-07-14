@@ -49,6 +49,8 @@ interface EditorState extends DocState {
   isPlaying: boolean;
   /** Session-only playback speed multiplier, 0.5–2 (not persisted). */
   playbackRate: number;
+  /** Session-only: click on every beat while playing (needs a BPM). */
+  metronomeOn: boolean;
 
   setTitle: (title: string) => void;
   setStageSize: (width: number, height: number) => void;
@@ -154,6 +156,7 @@ interface EditorState extends DocState {
   setPlayhead: (ms: number) => void;
   setIsPlaying: (playing: boolean) => void;
   setPlaybackRate: (rate: number) => void;
+  setMetronomeOn: (on: boolean) => void;
 
   /** Replace the whole document (version-history restore); undoable. */
   restoreDoc: (doc: DocState) => void;
@@ -308,6 +311,7 @@ export const useEditor = create<EditorState>()(
         playheadMs: 0,
         isPlaying: false,
         playbackRate: 1,
+        metronomeOn: false,
 
         setTitle: (title) => mutateDoc((s) => ({ performance: { ...s.performance, title } })),
 
@@ -1027,6 +1031,7 @@ export const useEditor = create<EditorState>()(
         setPlayhead: (ms) => set({ playheadMs: Math.max(0, ms) }),
         setIsPlaying: (playing) => set({ isPlaying: playing }),
         setPlaybackRate: (rate) => set({ playbackRate: Math.min(2, Math.max(0.5, rate)) }),
+        setMetronomeOn: (on) => set({ metronomeOn: on }),
 
         restoreDoc: (doc) =>
           mutateDoc(() => ({

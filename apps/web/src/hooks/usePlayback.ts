@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useEditor } from '../state/store';
 import { showEndMs } from '../state/interpolate';
 import { audioDurationMs, getAudioElement } from '../audio/audioPlayer';
+import { tickMetronome } from '../audio/metronome';
 
 function playbackEndMs(): number {
   return Math.max(showEndMs(useEditor.getState().formations), audioDurationMs());
@@ -45,6 +46,9 @@ export function usePlayback(): { togglePlay: () => void } {
         s.setPlayhead(endMs);
         s.setIsPlaying(false);
         return;
+      }
+      if (s.metronomeOn && s.performance.bpm !== null) {
+        tickMetronome(s.playheadMs, t, s.performance.bpm, s.performance.countSegments);
       }
       s.setPlayhead(t);
       rafRef.current = requestAnimationFrame(tick);

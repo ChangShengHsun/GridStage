@@ -43,6 +43,8 @@ export function Timeline({
   const formations = useEditor((s) => s.formations);
   const playbackRate = useEditor((s) => s.playbackRate);
   const setPlaybackRate = useEditor((s) => s.setPlaybackRate);
+  const metronomeOn = useEditor((s) => s.metronomeOn);
+  const setMetronomeOn = useEditor((s) => s.setMetronomeOn);
   const beatMarkersMs = useEditor((s) => s.performance.beatMarkersMs);
   const bpm = useEditor((s) => s.performance.bpm);
   const selectedFormationId = useEditor((s) => s.selectedFormationId);
@@ -282,6 +284,16 @@ export function Timeline({
         </button>
         <button type="button" className="btn btn-primary" onClick={onTogglePlay}>
           {isPlaying ? t.topbar.pause : t.topbar.play}
+        </button>
+        <button
+          type="button"
+          className={`btn${metronomeOn ? ' btn-active' : ''}`}
+          disabled={bpm === null}
+          aria-pressed={metronomeOn}
+          title={bpm === null ? t.timeline.metronomeNeedsBpm : t.timeline.metronomeTitle}
+          onClick={() => setMetronomeOn(!metronomeOn)}
+        >
+          {t.timeline.metronome}
         </button>
         <select
           aria-label={t.topbar.playbackSpeedAria}
