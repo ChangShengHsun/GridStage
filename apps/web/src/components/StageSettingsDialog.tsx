@@ -1,0 +1,139 @@
+import { useRef } from 'react';
+import type { ReactElement } from 'react';
+import { useEditor } from '../state/store';
+import { useStageBackground } from '../state/stageBackground';
+import { useT } from '../i18n';
+
+/** Parse a number input, returning null for empty/invalid text. */
+function num(value: string): number | null {
+  const n = Number(value);
+  return value.trim() === '' || Number.isNaN(n) ? null : n;
+}
+
+/**
+ * Set-once-per-show stage settings (size, audience side, venue photo),
+ * moved out of the always-visible panel into a dialog. Renders its own
+ * trigger button.
+ */
+export function StageSettingsDialog(): ReactElement {
+  const t = useT();
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const performance = useEditor((s) => s.performance);
+  const setStageSize = useEditor((s) => s.setStageSize);
+  const setAudienceAt = useEditor((s) => s.setAudienceAt);
+  const setStageBackgroundOpacity = useEditor((s) => s.setStageBackgroundOpacity);
+  const backgroundImage = useStageBackground((s) => s.image);
+  const setBackground = useStageBackground((s) => s.set);
+  const clearBackground = useStageBackground((s) => s.clear);
+  const backgroundFileRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <>
+      <button
+        type="button"
+        className="btn edit-only"
+        onClick={() => dialogRef.current?.showModal()}
+      >
+        {t.stageSettings.open}
+      </button>
+      <dialog ref={dialogRef} className="export-dialog" aria-label={t.stageSettings.title}>
+        <div className="export-dialog-head">
+          <span className="panel-title" style={{ margin: 0 }}>
+            {t.stageSettings.title}
+          </span>
+          <button type="button" className="btn" onClick={() => dialogRef.current?.close()}>
+            {t.stageSettings.close}
+          </button>
+        </div>
+        <div className="dialog-fields">
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div className="field" style={{ flex: 1 }}>
+              <label htmlFor="stage-w">{t.stage.width}</label>
+              <input
+                id="stage-w"
+                type="number"
+                min={2}
+                max={60}
+                value={performance.stageWidth}
+                onChange={(e) => {
+                  const v = num(e.target.value);
+                  if (v !== null) setStageSize(v, performance.stageHeight);
+                }}
+              />
+            </div>
+            <div className="field" style={{ flex: 1 }}>
+              <label htmlFor="stage-h">{t.stage.depth}</label>
+              <input
+                id="stage-h"
+                type="number"
+                min={2}
+                max={60}
+                value={performance.stageHeight}
+                onChange={(e) => {
+                  const v = num(e.target.value);
+                  if (v !== null) setStageSize(performance.stageWidth, v);
+                }}
+              />
+            </div>
+          </div>
+          <div className="field">
+            <label htmlFor="stage-audience">{t.stage.audiencePosition}</label>
+            <select
+              id="stage-audience"
+              value={performance.audienceAt ?? 'bottom'}
+              onChange={(e) => setAudienceAt(e.target.value === 'top' ? 'top' : 'bottom')}
+            >
+              <option value="bottom">{t.stage.audienceBottom}</option>
+              <option value="top">{t.stage.audienceTop}</option>
+            </select>
+          </div>
+          <div className="field">
+            <label>{t.stage.backgroundLabel}</label>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn edit-only"
+                title={t.stage.backgroundTitle}
+                onClick={() => backgroundFileRef.current?.click()}
+              >
+                {backgroundImage === null ? t.stage.backgroundUpload : t.stage.backgroundReplace}
+              </button>
+              {backgroundImage !== null && (
+                <button
+                  type="button"
+                  className="btn edit-only"
+                  onClick={() => void clearBackground(performance.id)}
+                >
+                  {t.stage.backgroundRemove}
+                </button>
+              )}
+            </div>
+            <input
+              ref={backgroundFileRef}
+              type="file"
+              accept="image/*"
+              aria-label={t.stage.backgroundFileAria}
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file !== undefined) void setBackground(performance.id, file);
+                e.target.value = '';
+              }}
+            />
+            {backgroundImage !== null && (
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                aria-label={t.stage.backgroundOpacityAria}
+                value={performance.stageBackgroundOpacity ?? 0.5}
+                onChange={(e) => setStageBackgroundOpacity(Number(e.target.value))}
+              />
+            )}
+          </div>
+        </div>
+      </dialog>
+    </>
+  );
+}

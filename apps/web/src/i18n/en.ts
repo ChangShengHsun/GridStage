@@ -68,6 +68,36 @@ export const en = {
     tagsAria: (title: string): string => `Tags for ${title}`,
     tagsPlaceholder: 'tags, comma separated',
     collabNote: 'Leave the live session before switching choreographies.',
+    newTitleAria: 'New choreography title',
+    newTitlePlaceholder: 'Title (optional)',
+    sizeAria: 'Stage size',
+    sizes: {
+      proscenium: 'Proscenium stage',
+      classroom: 'Classroom',
+      blackbox: 'Black box',
+      gym: 'Gym',
+      custom: 'Custom…',
+    },
+    create: 'Create',
+    cancel: 'Cancel',
+  },
+
+  stageSettings: {
+    open: 'Stage settings…',
+    title: 'Stage settings',
+    close: 'Close',
+  },
+
+  beat: {
+    open: 'Beats…',
+    title: 'Music & beats',
+    close: 'Close',
+  },
+
+  prefs: {
+    openAria: 'Preferences',
+    title: 'Preferences',
+    close: 'Close',
   },
 
   export: {

@@ -2,24 +2,17 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { useEditor } from '../state/store';
 import { formatEightCount, formatTimecode } from '../state/interpolate';
-import { getLocalUser, setLocalUserName } from '../state/user';
-import {
-  collabRoom,
-  followedPeerId,
-  isCollabActive,
-  setAwarenessUser,
-  setFollowPeer,
-} from '../collab/collab';
+import { getLocalUser } from '../state/user';
+import { collabRoom, followedPeerId, isCollabActive, setFollowPeer } from '../collab/collab';
 import { usePeers } from '../hooks/usePeers';
 import { isViewMode } from '../state/viewMode';
-import { useLocaleStore, useT } from '../i18n';
+import { useT } from '../i18n';
 import { ExportDialog } from './ExportDialog';
 import { LibraryDialog } from './LibraryDialog';
+import { PrefsDialog } from './PrefsDialog';
 
 export function TopBar(): ReactElement {
   const t = useT();
-  const locale = useLocaleStore((s) => s.locale);
-  const setLocale = useLocaleStore((s) => s.setLocale);
   const title = useEditor((s) => s.performance.title);
   const bpm = useEditor((s) => s.performance.bpm);
   const countSegments = useEditor((s) => s.performance.countSegments);
@@ -30,7 +23,6 @@ export function TopBar(): ReactElement {
   const eightCount = bpm !== null ? formatEightCount(playheadMs, bpm, countSegments) : null;
 
   const peers = usePeers();
-  const [userName, setUserName] = useState(() => getLocalUser().name);
   const [shareNote, setShareNote] = useState('');
 
   const onShare = (): void => {
@@ -93,28 +85,6 @@ export function TopBar(): ReactElement {
           })}
         </span>
       )}
-      <input
-        type="text"
-        aria-label={t.topbar.displayNameAria}
-        title={t.topbar.displayNameTitle}
-        value={userName}
-        style={{ width: 110 }}
-        onChange={(e) => setUserName(e.target.value)}
-        onBlur={() => {
-          const user = setLocalUserName(userName);
-          setUserName(user.name);
-          setAwarenessUser(user.name, user.color);
-        }}
-      />
-      <select
-        aria-label={t.locale.label}
-        value={locale}
-        style={{ width: 96 }}
-        onChange={(e) => setLocale(e.target.value === 'zh' ? 'zh' : 'en')}
-      >
-        <option value="en">{t.locale.english}</option>
-        <option value="zh">{t.locale.chinese}</option>
-      </select>
       <button type="button" className="btn edit-only" onClick={onShare}>
         {isCollabActive() ? t.topbar.copyLink(collabRoom() ?? '') : t.topbar.shareLive}
       </button>
@@ -146,6 +116,7 @@ export function TopBar(): ReactElement {
         {eightCount !== null ? `  ${eightCount}` : ''}
       </span>
       <ExportDialog />
+      <PrefsDialog />
     </header>
   );
 }

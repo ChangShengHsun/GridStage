@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useEditor } from '../state/store';
 import type { TemplateKind } from '../state/templates';
@@ -14,12 +14,10 @@ import {
 import type { FormationPreset } from '../state/formationPresets';
 import type { Snapshot } from '../state/history';
 import { CommentsSection } from './CommentsSection';
+import { StageSettingsDialog } from './StageSettingsDialog';
 import { useT } from '../i18n';
-import { appendTap, bpmFromTaps, MIN_TAPS_TO_APPLY } from '../audio/tapTempo';
-import { byOrder, showEndMs } from '../state/interpolate';
-import { audioDurationMs } from '../audio/audioPlayer';
+import { byOrder } from '../state/interpolate';
 import { normalizeBadge } from '../state/badge';
-import { useStageBackground } from '../state/stageBackground';
 
 /** Parse a number input, returning null for empty/invalid text. */
 function num(value: string): number | null {
@@ -591,244 +589,6 @@ function FormationSection(): ReactElement | null {
   );
 }
 
-function StageSection(): ReactElement {
-  const t = useT();
-  const performance = useEditor((s) => s.performance);
-  const setStageSize = useEditor((s) => s.setStageSize);
-  const setAudienceAt = useEditor((s) => s.setAudienceAt);
-  const setStageBackgroundOpacity = useEditor((s) => s.setStageBackgroundOpacity);
-  const backgroundImage = useStageBackground((s) => s.image);
-  const setBackground = useStageBackground((s) => s.set);
-  const clearBackground = useStageBackground((s) => s.clear);
-  const backgroundFileRef = useRef<HTMLInputElement>(null);
-  const setBpm = useEditor((s) => s.setBpm);
-  const addCountSegment = useEditor((s) => s.addCountSegment);
-  const updateCountSegment = useEditor((s) => s.updateCountSegment);
-  const removeCountSegment = useEditor((s) => s.removeCountSegment);
-
-  const onAddCountSegment = (): void => {
-    // Playhead read on click only — subscribing would re-render every frame.
-    const s = useEditor.getState();
-    const startMs = s.playheadMs;
-    const endMs = Math.max(showEndMs(s.formations), audioDurationMs(), startMs + 8000);
-    addCountSegment(startMs, endMs);
-  };
-
-  // Tap-tempo calibration: the button is the tap target; Date.now() because
-  // the local `performance` above shadows window.performance here.
-  const [taps, setTaps] = useState<number[]>([]);
-  const liveBpm = bpmFromTaps(taps);
-  const onTap = (): void => setTaps((prev) => appendTap(prev, Date.now()));
-
-  return (
-    <>
-      <div className="panel-title">{t.stage.title}</div>
-      <div className="panel-section">
-        <div style={{ display: 'flex', gap: 8 }}>
-          <div className="field" style={{ flex: 1 }}>
-            <label htmlFor="stage-w">{t.stage.width}</label>
-            <input
-              id="stage-w"
-              type="number"
-              min={2}
-              max={60}
-              value={performance.stageWidth}
-              onChange={(e) => {
-                const v = num(e.target.value);
-                if (v !== null) setStageSize(v, performance.stageHeight);
-              }}
-            />
-          </div>
-          <div className="field" style={{ flex: 1 }}>
-            <label htmlFor="stage-h">{t.stage.depth}</label>
-            <input
-              id="stage-h"
-              type="number"
-              min={2}
-              max={60}
-              value={performance.stageHeight}
-              onChange={(e) => {
-                const v = num(e.target.value);
-                if (v !== null) setStageSize(performance.stageWidth, v);
-              }}
-            />
-          </div>
-        </div>
-        <div className="field">
-          <label htmlFor="stage-audience">{t.stage.audiencePosition}</label>
-          <select
-            id="stage-audience"
-            value={performance.audienceAt ?? 'bottom'}
-            onChange={(e) => setAudienceAt(e.target.value === 'top' ? 'top' : 'bottom')}
-          >
-            <option value="bottom">{t.stage.audienceBottom}</option>
-            <option value="top">{t.stage.audienceTop}</option>
-          </select>
-        </div>
-        <div className="field">
-          <label>{t.stage.backgroundLabel}</label>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              className="btn edit-only"
-              title={t.stage.backgroundTitle}
-              onClick={() => backgroundFileRef.current?.click()}
-            >
-              {backgroundImage === null ? t.stage.backgroundUpload : t.stage.backgroundReplace}
-            </button>
-            {backgroundImage !== null && (
-              <button
-                type="button"
-                className="btn edit-only"
-                onClick={() => void clearBackground(performance.id)}
-              >
-                {t.stage.backgroundRemove}
-              </button>
-            )}
-          </div>
-          <input
-            ref={backgroundFileRef}
-            type="file"
-            accept="image/*"
-            aria-label={t.stage.backgroundFileAria}
-            hidden
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file !== undefined) void setBackground(performance.id, file);
-              e.target.value = '';
-            }}
-          />
-          {backgroundImage !== null && (
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.05}
-              aria-label={t.stage.backgroundOpacityAria}
-              value={performance.stageBackgroundOpacity ?? 0.5}
-              onChange={(e) => setStageBackgroundOpacity(Number(e.target.value))}
-            />
-          )}
-        </div>
-        <div className="field">
-          <label htmlFor="stage-bpm">{t.stage.bpm}</label>
-          <input
-            id="stage-bpm"
-            type="number"
-            min={20}
-            max={300}
-            value={performance.bpm ?? ''}
-            onChange={(e) => setBpm(num(e.target.value))}
-          />
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            className="btn edit-only"
-            title={t.stage.calibrateBpmTitle}
-            onClick={onTap}
-          >
-            {taps.length === 0 ? t.stage.calibrateBpm : t.stage.tapLabel(taps.length)}
-          </button>
-          {taps.length > 0 && (
-            <>
-              <span className="mono" role="status">
-                {liveBpm !== null ? `≈ ${Math.round(liveBpm)} BPM` : t.stage.tapHint}
-              </span>
-              {liveBpm !== null && taps.length >= MIN_TAPS_TO_APPLY && (
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => {
-                    setBpm(Math.round(liveBpm));
-                    setTaps([]);
-                  }}
-                >
-                  {t.stage.applyBpm(Math.round(liveBpm))}
-                </button>
-              )}
-              <button type="button" className="btn" onClick={() => setTaps([])}>
-                {t.stage.resetTap}
-              </button>
-            </>
-          )}
-        </div>
-        <div className="field">
-          <span className="field-label">{t.stage.countSegments}</span>
-          {performance.countSegments.length === 0 && (
-            <span className="mono">{t.stage.countSegmentsNote}</span>
-          )}
-          {performance.countSegments.map((seg, i) => (
-            <div key={seg.id} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <input
-                type="number"
-                aria-label={t.stage.segStartAria(i + 1)}
-                min={0}
-                step={0.1}
-                style={{ flex: 1 }}
-                value={Number((seg.startMs / 1000).toFixed(1))}
-                onChange={(e) => {
-                  const v = num(e.target.value);
-                  if (v !== null) updateCountSegment(seg.id, { startMs: v * 1000 });
-                }}
-              />
-              <button
-                type="button"
-                className="btn"
-                title={t.stage.segAtPlayheadTitle}
-                onClick={() =>
-                  updateCountSegment(seg.id, { startMs: useEditor.getState().playheadMs })
-                }
-              >
-                @
-              </button>
-              <span className="mono">–</span>
-              <input
-                type="number"
-                aria-label={t.stage.segEndAria(i + 1)}
-                min={0}
-                step={0.1}
-                style={{ flex: 1 }}
-                value={Number((seg.endMs / 1000).toFixed(1))}
-                onChange={(e) => {
-                  const v = num(e.target.value);
-                  if (v !== null) updateCountSegment(seg.id, { endMs: v * 1000 });
-                }}
-              />
-              <button
-                type="button"
-                className="btn"
-                title={t.stage.segAtPlayheadTitle}
-                onClick={() =>
-                  updateCountSegment(seg.id, { endMs: useEditor.getState().playheadMs })
-                }
-              >
-                @
-              </button>
-              <button
-                type="button"
-                className="comment-delete"
-                aria-label={t.stage.removeSegmentAria(i + 1)}
-                onClick={() => removeCountSegment(seg.id)}
-              >
-                ×
-              </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            className="btn edit-only"
-            title={t.stage.addCountSegmentTitle}
-            onClick={onAddCountSegment}
-          >
-            {t.stage.addCountSegment}
-          </button>
-        </div>
-      </div>
-    </>
-  );
-}
-
 function HistorySection(): ReactElement {
   const t = useT();
   const restoreDoc = useEditor((s) => s.restoreDoc);
@@ -843,7 +603,6 @@ function HistorySection(): ReactElement {
 
   return (
     <>
-      <div className="panel-title">{t.history.title}</div>
       <div className="panel-section">
         <button
           type="button"
@@ -1008,6 +767,7 @@ function PropSection(): ReactElement | null {
 }
 
 export function PropertiesPanel(): ReactElement {
+  const t = useT();
   const hasPerformerSelection = useEditor((s) => s.selectedPerformerIds.length > 0);
   const hasPropSelection = useEditor((s) => s.selectedPropId !== null);
 
@@ -1020,8 +780,11 @@ export function PropertiesPanel(): ReactElement {
       ) : (
         <FormationSection />
       )}
-      <StageSection />
-      <HistorySection />
+      <StageSettingsDialog />
+      <details className="panel-fold">
+        <summary>{t.history.title}</summary>
+        <HistorySection />
+      </details>
     </aside>
   );
 }

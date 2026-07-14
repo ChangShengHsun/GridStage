@@ -400,6 +400,8 @@ test('version history: snapshot, mutate, restore', async ({ page }) => {
   await page.getByText('Add performer').click();
   await page.getByLabel('Stage canvas').click({ position: { x: 15, y: 15 } });
 
+  // History lives in a collapsed <details> fold now — expand it first.
+  await page.locator('summary', { hasText: 'History' }).click();
   await page.getByRole('button', { name: 'Save snapshot' }).click();
   await page.getByRole('button', { name: 'Restore' }).waitFor();
 
@@ -546,6 +548,8 @@ test('whole-show path toggle shows without crashing', async ({ page }) => {
 });
 
 test('count segments anchor count 1 away from 0:00', async ({ page }) => {
+  // BPM and count segments live in the (non-modal) Beats dialog now.
+  await page.getByRole('button', { name: 'Beats…' }).click();
   await page.locator('#stage-bpm').fill('120');
   // Default (no segments): counting runs from 0:00.
   await expect(page.getByLabel('Playhead time')).toContainText('8ct 1 · 1');
@@ -570,6 +574,7 @@ test('count segments anchor count 1 away from 0:00', async ({ page }) => {
 });
 
 test('tap tempo calibrates BPM from clicks', async ({ page }) => {
+  await page.getByRole('button', { name: 'Beats…' }).click();
   await page.getByRole('button', { name: 'Calibrate BPM' }).click(); // first tap = the downbeat
   for (let i = 0; i < 7; i++) {
     await page.waitForTimeout(500); // ~120 BPM target
@@ -586,17 +591,19 @@ test('tap tempo calibrates BPM from clicks', async ({ page }) => {
 });
 
 test('language switcher persists across reloads', async ({ page }) => {
-  // Label text is locale-dependent, so find the picker by its zh option
-  // (the header also holds the playback-speed select).
-  const pickerSelector = page.locator('header select', {
+  // The locale picker lives in the Preferences dialog (⚙) now; find it by
+  // its zh option since the label text is locale-dependent.
+  await page.getByRole('button', { name: 'Preferences' }).click();
+  const pickerSelector = page.locator('dialog select', {
     has: page.locator('option[value="zh"]'),
   });
   await expect(pickerSelector).toHaveValue('en');
   await pickerSelector.selectOption('zh');
   await expect(pickerSelector).toHaveValue('zh');
   await page.reload();
+  await page.getByRole('button', { name: '偏好設定' }).click();
   await expect(
-    page.locator('header select', { has: page.locator('option[value="zh"]') }),
+    page.locator('dialog select', { has: page.locator('option[value="zh"]') }),
   ).toHaveValue('zh');
 });
 
@@ -683,6 +690,7 @@ test('Ctrl+D duplicates the selected formation after itself', async ({ page }) =
 });
 
 test('audience side is selectable and persists in the doc', async ({ page }) => {
+  await page.getByRole('button', { name: 'Stage settings…' }).click();
   await page.getByLabel('Audience side').selectOption('top');
   const doc = await readDoc(page);
   expect((doc.performance as { audienceAt?: string }).audienceAt).toBe('top');
@@ -758,6 +766,7 @@ test('stage background image uploads, persists and can be removed', async ({ pag
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
     'base64',
   );
+  await page.getByRole('button', { name: 'Stage settings…' }).click();
   await page.setInputFiles('input[aria-label="Background image file"]', {
     name: 'venue.png',
     mimeType: 'image/png',
@@ -768,6 +777,7 @@ test('stage background image uploads, persists and can be removed', async ({ pag
 
   await page.reload();
   await page.getByText('Add performer').waitFor();
+  await page.getByRole('button', { name: 'Stage settings…' }).click();
   await expect(page.getByRole('button', { name: 'Replace image' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Remove', exact: true }).click();
@@ -826,6 +836,7 @@ test('crews: save the cast, load it into a fresh choreography with groups', asyn
   // fresh choreography, then load the crew into it
   await page.getByRole('button', { name: 'Library', exact: true }).click();
   await page.getByRole('button', { name: 'New choreography' }).click();
+  await page.getByRole('button', { name: 'Create', exact: true }).click();
   await expect(page.getByRole('listbox', { name: 'Performers' }).getByRole('option')).toHaveCount(
     0,
   );
@@ -900,7 +911,9 @@ test('grid snap: dragged performer lands on the 0.5m lattice', async ({ page }) 
 test('metronome toggle needs a BPM and latches on', async ({ page }) => {
   const metro = page.getByRole('button', { name: 'Click', exact: true });
   await expect(metro).toBeDisabled();
+  await page.getByRole('button', { name: 'Beats…' }).click();
   await page.getByLabel('BPM (empty = unknown)').fill('120');
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
   await expect(metro).toBeEnabled();
   await metro.click();
   await expect(metro).toHaveAttribute('aria-pressed', 'true');
@@ -942,6 +955,7 @@ test('library: create, switch, duplicate and delete choreographies', async ({ pa
   // start a second choreography from the library
   await page.getByRole('button', { name: 'Library', exact: true }).click();
   await page.getByRole('button', { name: 'New choreography' }).click();
+  await page.getByRole('button', { name: 'Create', exact: true }).click();
   await expect(page.getByLabel('Performance title')).toHaveValue('Untitled performance');
   await page.getByLabel('Performance title').fill('Show B');
   // audio belongs to Show A, not to the fresh doc

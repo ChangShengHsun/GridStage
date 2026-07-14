@@ -15,6 +15,16 @@ import type { LibraryEntry } from '../state/library';
 import { isCollabActive } from '../collab/collab';
 import { useT } from '../i18n';
 
+/** Common venue footprints for the new-choreography form. */
+const STAGE_SIZES = [
+  { key: 'proscenium', w: 12, h: 8 },
+  { key: 'classroom', w: 10, h: 8 },
+  { key: 'blackbox', w: 8, h: 8 },
+  { key: 'gym', w: 20, h: 15 },
+  { key: 'custom', w: 0, h: 0 },
+] as const;
+type StageSizeKey = (typeof STAGE_SIZES)[number]['key'];
+
 const parseTags = (raw: string): string[] =>
   raw
     .split(/[,，、]/)
@@ -32,6 +42,11 @@ export function LibraryDialog(): ReactElement {
   const activeId = useEditor((s) => s.performance.id);
   const [entries, setEntries] = useState<LibraryEntry[]>([]);
   const [query, setQuery] = useState('');
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [sizeKey, setSizeKey] = useState<StageSizeKey>('proscenium');
+  const [customW, setCustomW] = useState(12);
+  const [customH, setCustomH] = useState(8);
   // Switching documents mid-session would corrupt the shared Yjs doc.
   const collab = isCollabActive();
 
@@ -173,18 +188,79 @@ export function LibraryDialog(): ReactElement {
             </>
           )}
         </div>
-        <div className="export-dialog-foot">
-          <button
-            type="button"
-            className="btn btn-primary"
-            disabled={collab}
-            onClick={() => {
-              createDoc();
-              dialogRef.current?.close();
-            }}
-          >
-            {t.library.newDoc}
-          </button>
+        <div className="export-dialog-foot library-new-foot">
+          {!showNewForm ? (
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={collab}
+              onClick={() => setShowNewForm(true)}
+            >
+              {t.library.newDoc}
+            </button>
+          ) : (
+            <div className="library-new-form">
+              <input
+                type="text"
+                aria-label={t.library.newTitleAria}
+                placeholder={t.library.newTitlePlaceholder}
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+              />
+              <select
+                aria-label={t.library.sizeAria}
+                value={sizeKey}
+                onChange={(e) => setSizeKey(e.target.value as StageSizeKey)}
+              >
+                {STAGE_SIZES.map((s) => (
+                  <option key={s.key} value={s.key}>
+                    {t.library.sizes[s.key]}
+                    {s.w > 0 ? ` (${s.w}×${s.h}m)` : ''}
+                  </option>
+                ))}
+              </select>
+              {sizeKey === 'custom' && (
+                <>
+                  <input
+                    type="number"
+                    aria-label={t.stage.width}
+                    min={2}
+                    max={60}
+                    style={{ width: 70 }}
+                    value={customW}
+                    onChange={(e) => setCustomW(Number(e.target.value))}
+                  />
+                  <input
+                    type="number"
+                    aria-label={t.stage.depth}
+                    min={2}
+                    max={60}
+                    style={{ width: 70 }}
+                    value={customH}
+                    onChange={(e) => setCustomH(Number(e.target.value))}
+                  />
+                </>
+              )}
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  const preset = STAGE_SIZES.find((s) => s.key === sizeKey);
+                  const w = sizeKey === 'custom' ? customW : (preset?.w ?? 12);
+                  const h = sizeKey === 'custom' ? customH : (preset?.h ?? 8);
+                  createDoc({ title: newTitle, stageWidth: w, stageHeight: h });
+                  setShowNewForm(false);
+                  setNewTitle('');
+                  dialogRef.current?.close();
+                }}
+              >
+                {t.library.create}
+              </button>
+              <button type="button" className="btn" onClick={() => setShowNewForm(false)}>
+                {t.library.cancel}
+              </button>
+            </div>
+          )}
         </div>
       </dialog>
     </>

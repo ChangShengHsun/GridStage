@@ -69,6 +69,36 @@ export const zh: Messages = {
     tagsAria: (title: string): string => `${title} 的標籤`,
     tagsPlaceholder: '標籤，以逗號分隔',
     collabNote: '請先離開即時協作，再切換編舞作品。',
+    newTitleAria: '新編舞標題',
+    newTitlePlaceholder: '標題（可留空）',
+    sizeAria: '舞台尺寸',
+    sizes: {
+      proscenium: '鏡框式舞台',
+      classroom: '教室',
+      blackbox: '黑盒劇場',
+      gym: '體育館',
+      custom: '自訂…',
+    },
+    create: '建立',
+    cancel: '取消',
+  },
+
+  stageSettings: {
+    open: '舞台設定…',
+    title: '舞台設定',
+    close: '關閉',
+  },
+
+  beat: {
+    open: '節拍…',
+    title: '音樂與節拍',
+    close: '關閉',
+  },
+
+  prefs: {
+    openAria: '偏好設定',
+    title: '偏好設定',
+    close: '關閉',
   },
 
   export: {

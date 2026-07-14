@@ -4,6 +4,7 @@ import type { Formation } from '@openstage/shared-types';
 import { useEditor } from '../state/store';
 import { byOrder, effectiveCountSegments, eightCountMarks, showEndMs } from '../state/interpolate';
 import { audioDurationMs, getAudioElement, getWaveformPeaks } from '../audio/audioPlayer';
+import { BeatDialog } from './BeatDialog';
 import { useT } from '../i18n';
 
 const MIN_TIMELINE_MS = 30_000;
@@ -271,6 +272,7 @@ export function Timeline({
         >
           {t.timeline.tapBeat}
         </button>
+        <BeatDialog />
         <button
           type="button"
           className="btn edit-only"

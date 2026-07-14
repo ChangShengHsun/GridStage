@@ -97,9 +97,20 @@ export function openDoc(id: string): boolean {
 }
 
 /** Save the open doc, then start a fresh one (already indexed). */
-export function createDoc(): void {
+export function createDoc(options?: {
+  title?: string;
+  stageWidth?: number;
+  stageHeight?: number;
+}): void {
   saveActiveDoc();
-  useEditor.getState().loadDoc(createInitialDoc());
+  const doc = createInitialDoc();
+  const clampM = (v: number): number => Math.min(60, Math.max(2, v));
+  if (options?.title !== undefined && options.title.trim() !== '') {
+    doc.performance.title = options.title.trim();
+  }
+  if (options?.stageWidth !== undefined) doc.performance.stageWidth = clampM(options.stageWidth);
+  if (options?.stageHeight !== undefined) doc.performance.stageHeight = clampM(options.stageHeight);
+  useEditor.getState().loadDoc(doc);
   saveActiveDoc();
 }
 
