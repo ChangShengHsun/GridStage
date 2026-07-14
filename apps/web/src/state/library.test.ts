@@ -15,7 +15,9 @@ const doc: DocState = {
     sections: [],
     countSegments: [],
   },
-  performers: [{ id: 'p1', performanceId: 'perf-1', name: 'Amy', role: '', color: '#fff' }],
+  performers: [
+    { id: 'p1', performanceId: 'perf-1', name: 'Amy', role: '', color: '#fff', avatarUrl: null },
+  ],
   props: [
     {
       id: 'prop1',
@@ -38,7 +40,7 @@ const doc: DocState = {
       name: 'Formation 1',
     },
   ],
-  positions: { f1: { p1: { x: 1, y: 2, rotation: 0 } } },
+  positions: { f1: { p1: { formationId: 'f1', performerId: 'p1', x: 1, y: 2, rotation: 0 } } },
   comments: [],
 };
 

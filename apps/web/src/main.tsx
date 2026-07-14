@@ -16,3 +16,11 @@ createRoot(rootEl).render(
     <App />
   </StrictMode>,
 );
+
+// PWA: offline app shell + installability. Production only — a service
+// worker on the dev server would serve stale modules mid-edit.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    void navigator.serviceWorker.register('/sw.js');
+  });
+}

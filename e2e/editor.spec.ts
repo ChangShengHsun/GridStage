@@ -841,6 +841,29 @@ test('crews: save the cast, load it into a fresh choreography with groups', asyn
   await expect(page.getByText('Team 2026 · 2')).toBeHidden();
 });
 
+test('PWA manifest, service worker and icons are served', async ({ request }) => {
+  const manifest = await request.get('/manifest.webmanifest');
+  expect(manifest.ok()).toBeTruthy();
+  expect(((await manifest.json()) as { name: string }).name).toBe('OpenStage');
+  expect((await request.get('/sw.js')).ok()).toBeTruthy();
+  expect((await request.get('/icons/icon-192.png')).ok()).toBeTruthy();
+  expect((await request.get('/icons/icon-512.png')).ok()).toBeTruthy();
+});
+
+test.describe('touch', () => {
+  test.use({ hasTouch: true });
+
+  test('tapping a performer on the canvas selects it', async ({ page }) => {
+    await page.getByText('Add performer').click();
+    // deselect (adding auto-selects), then tap the mark at its default spot
+    await page.getByLabel('Stage canvas').click({ position: { x: 10, y: 10 } });
+    await expect(page.getByLabel('Facing degrees')).toBeHidden();
+    const at = meterToPx(1.5, 6.5);
+    await page.touchscreen.tap(at.x, at.y);
+    await expect(page.getByLabel('Facing degrees')).toBeVisible();
+  });
+});
+
 test('library: create, switch, duplicate and delete choreographies', async ({ page }) => {
   await page.getByLabel('Performance title').fill('Show A');
   await page.getByText('Add performer').click();

@@ -140,69 +140,72 @@ export function StageCanvas(): ReactElement {
     return <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />;
   }
 
+  // Stage-level pointer handlers, shared by mouse and touch (touch-action is
+  // disabled on the container so one-finger drags stay on the canvas).
+  const onStagePointerDown = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>): void => {
+    if (e.target === e.target.getStage() || e.target.name() === 'floor') {
+      const pointer = e.target.getStage()?.getPointerPosition();
+      if (pointer != null && !isPlaying) {
+        marqueeRef.current = { x0: pointer.x, y0: pointer.y, moved: false };
+      } else {
+        clearPerformerSelection();
+      }
+    }
+  };
+
+  const onStagePointerMove = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>): void => {
+    const pointer = e.target.getStage()?.getPointerPosition();
+    const drag = marqueeRef.current;
+    if (drag !== null && pointer != null) {
+      if (drag.moved || Math.abs(pointer.x - drag.x0) > 4 || Math.abs(pointer.y - drag.y0) > 4) {
+        drag.moved = true;
+        setMarquee({ x0: drag.x0, y0: drag.y0, x1: pointer.x, y1: pointer.y });
+      }
+    }
+    if (!isCollabActive()) return;
+    const now = Date.now();
+    if (now - lastCursorSentRef.current < CURSOR_BROADCAST_MS) return;
+    lastCursorSentRef.current = now;
+    if (pointer == null) return;
+    const m = toMeters(pointer.x, pointer.y);
+    setAwarenessCursor(m.x >= 0 && m.x <= stageWidth && m.y >= 0 && m.y <= stageHeight ? m : null);
+  };
+
+  const onStagePointerUp = (): void => {
+    const drag = marqueeRef.current;
+    marqueeRef.current = null;
+    setMarquee(null);
+    if (drag === null) return;
+    if (!drag.moved) {
+      clearPerformerSelection();
+      return;
+    }
+    if (isViewMode || marquee === null) return;
+    // Corners land swapped when the plan is flipped — sort in meters.
+    const c1 = toMeters(Math.min(marquee.x0, marquee.x1), Math.min(marquee.y0, marquee.y1));
+    const c2 = toMeters(Math.max(marquee.x0, marquee.x1), Math.max(marquee.y0, marquee.y1));
+    const a = { x: Math.min(c1.x, c2.x), y: Math.min(c1.y, c2.y) };
+    const b = { x: Math.max(c1.x, c2.x), y: Math.max(c1.y, c2.y) };
+    const inside = performers
+      .filter((p) => {
+        const pos = editPositions[p.id];
+        return pos !== undefined && pos.x >= a.x && pos.x <= b.x && pos.y >= a.y && pos.y <= b.y;
+      })
+      .map((p) => p.id);
+    setPerformerSelection(inside);
+  };
+
   return (
-    <div ref={containerRef} style={{ position: 'absolute', inset: 0 }}>
+    <div ref={containerRef} style={{ position: 'absolute', inset: 0, touchAction: 'none' }}>
       <Stage
         width={size.width}
         height={size.height}
-        onMouseDown={(e) => {
-          if (e.target === e.target.getStage() || e.target.name() === 'floor') {
-            const pointer = e.target.getStage()?.getPointerPosition();
-            if (pointer != null && !isPlaying) {
-              marqueeRef.current = { x0: pointer.x, y0: pointer.y, moved: false };
-            } else {
-              clearPerformerSelection();
-            }
-          }
-        }}
-        onMouseMove={(e) => {
-          const pointer = e.target.getStage()?.getPointerPosition();
-          const drag = marqueeRef.current;
-          if (drag !== null && pointer != null) {
-            if (
-              drag.moved ||
-              Math.abs(pointer.x - drag.x0) > 4 ||
-              Math.abs(pointer.y - drag.y0) > 4
-            ) {
-              drag.moved = true;
-              setMarquee({ x0: drag.x0, y0: drag.y0, x1: pointer.x, y1: pointer.y });
-            }
-          }
-          if (!isCollabActive()) return;
-          const now = Date.now();
-          if (now - lastCursorSentRef.current < CURSOR_BROADCAST_MS) return;
-          lastCursorSentRef.current = now;
-          if (pointer == null) return;
-          const m = toMeters(pointer.x, pointer.y);
-          setAwarenessCursor(
-            m.x >= 0 && m.x <= stageWidth && m.y >= 0 && m.y <= stageHeight ? m : null,
-          );
-        }}
-        onMouseUp={() => {
-          const drag = marqueeRef.current;
-          marqueeRef.current = null;
-          setMarquee(null);
-          if (drag === null) return;
-          if (!drag.moved) {
-            clearPerformerSelection();
-            return;
-          }
-          if (isViewMode || marquee === null) return;
-          // Corners land swapped when the plan is flipped — sort in meters.
-          const c1 = toMeters(Math.min(marquee.x0, marquee.x1), Math.min(marquee.y0, marquee.y1));
-          const c2 = toMeters(Math.max(marquee.x0, marquee.x1), Math.max(marquee.y0, marquee.y1));
-          const a = { x: Math.min(c1.x, c2.x), y: Math.min(c1.y, c2.y) };
-          const b = { x: Math.max(c1.x, c2.x), y: Math.max(c1.y, c2.y) };
-          const inside = performers
-            .filter((p) => {
-              const pos = editPositions[p.id];
-              return (
-                pos !== undefined && pos.x >= a.x && pos.x <= b.x && pos.y >= a.y && pos.y <= b.y
-              );
-            })
-            .map((p) => p.id);
-          setPerformerSelection(inside);
-        }}
+        onMouseDown={onStagePointerDown}
+        onTouchStart={onStagePointerDown}
+        onMouseMove={onStagePointerMove}
+        onTouchMove={onStagePointerMove}
+        onMouseUp={onStagePointerUp}
+        onTouchEnd={onStagePointerUp}
         onMouseLeave={() => {
           marqueeRef.current = null;
           setMarquee(null);
@@ -332,6 +335,10 @@ export function StageCanvas(): ReactElement {
                   setPositionLive(selectedFormationId, prop.id, m.x, m.y);
                 }}
                 onMouseDown={(e) => {
+                  e.cancelBubble = true;
+                  selectProp(prop.id);
+                }}
+                onTouchStart={(e) => {
                   e.cancelBubble = true;
                   selectProp(prop.id);
                 }}
@@ -581,6 +588,10 @@ export function StageCanvas(): ReactElement {
                   // grabbing one member drags the whole group.
                   if (e.evt.shiftKey) selectPerformer(p.id, true);
                   else if (!selectedPerformerIds.includes(p.id)) selectPerformer(p.id, false);
+                }}
+                onTouchStart={(e) => {
+                  e.cancelBubble = true;
+                  if (!selectedPerformerIds.includes(p.id)) selectPerformer(p.id, false);
                 }}
               >
                 {/* Facing wedge — a light cone showing orientation. */}

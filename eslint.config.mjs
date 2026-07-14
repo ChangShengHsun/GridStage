@@ -46,6 +46,19 @@ export default tseslint.config(
     },
   },
   {
+    // Service worker: its own global scope, not the window's.
+    files: ['apps/web/public/sw.js'],
+    languageOptions: {
+      globals: {
+        self: 'readonly',
+        caches: 'readonly',
+        fetch: 'readonly',
+        URL: 'readonly',
+        Response: 'readonly',
+      },
+    },
+  },
+  {
     // Electron main process: CommonJS by design (Electron loads it directly).
     files: ['apps/desktop/**/*.cjs'],
     languageOptions: {

@@ -1045,7 +1045,7 @@ export const useEditor = create<EditorState>()(
             selectedPropId: null,
             playheadMs: 0,
             isPlaying: false,
-          } as EditorState);
+          });
         },
 
         undo: () => {
