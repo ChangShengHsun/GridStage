@@ -247,6 +247,12 @@ export const zh: Messages = {
     deleteAria: '刪除選取的 preset',
   },
 
+  analyzer: {
+    aria: '過場警告',
+    collision: (a: string, b: string): string => `⚠ ${a} 與 ${b} 在過場中幾乎相撞`,
+    tooFast: (name: string, speed: string): string => `⚠ ${name} 需要 ${speed} m/s 的移動速度`,
+  },
+
   suggest: {
     button: '建議隊形',
     buttonTitle: '依「與上一個隊形的行走距離、間距、對稱性」評分，提出這個隊形的候選形狀',

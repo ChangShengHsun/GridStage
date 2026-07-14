@@ -1007,6 +1007,32 @@ test('library: create, switch, duplicate and delete choreographies', async ({ pa
   await expect(page.getByText('Replace audio')).toBeVisible();
 });
 
+test('transition analyzer warns about head-on swaps', async ({ page }) => {
+  await page.getByText('Add performer').click();
+  await page.getByText('Add performer').click();
+  // formation 1: deterministic spots on one line
+  await page.getByText('Dancer 1').first().click();
+  await page.locator('#pos-x').fill('2');
+  await page.locator('#pos-y').fill('4');
+  await page.getByText('Dancer 2').first().click();
+  await page.locator('#pos-x').fill('10');
+  await page.locator('#pos-y').fill('4');
+  // formation 2: swap them -> they meet in the middle
+  await page.getByText('Add formation').click();
+  await page.getByText('Dancer 1').first().click();
+  await page.locator('#pos-x').fill('10');
+  await page.getByText('Dancer 2').first().click();
+  await page.locator('#pos-x').fill('2');
+  await page.getByLabel('Stage canvas').click({ position: { x: 10, y: 10 } });
+
+  const warnings = page.getByLabel('Transition warnings');
+  await expect(warnings).toContainText('nearly collide');
+
+  // untangling the swap clears the warning
+  await page.getByRole('button', { name: 'Untangle from previous' }).click();
+  await expect(warnings).toBeHidden();
+});
+
 test('rehearsal pack PDF combines charts and personal sheets', async ({ page }) => {
   await page.getByText('Add performer').click();
   await page.getByText('Add performer').click();

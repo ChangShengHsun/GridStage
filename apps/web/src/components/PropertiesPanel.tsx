@@ -18,6 +18,8 @@ import { StageSettingsDialog } from './StageSettingsDialog';
 import { useT } from '../i18n';
 import { byOrder } from '../state/interpolate';
 import { normalizeBadge } from '../state/badge';
+import { analyzeTransition } from '@openstage/path-planner';
+import type { WalkPath } from '@openstage/path-planner';
 
 /** Parse a number input, returning null for empty/invalid text. */
 function num(value: string): number | null {
@@ -305,6 +307,8 @@ function FormationSection(): ReactElement | null {
   const copyPositionsFrom = useEditor((s) => s.copyPositionsFrom);
   const applySuggestedPositions = useEditor((s) => s.applySuggestedPositions);
   const hasPerformers = useEditor((s) => s.performers.length > 0);
+  const performers = useEditor((s) => s.performers);
+  const positions = useEditor((s) => s.positions);
   const [templateKind, setTemplateKind] = useState<TemplateKind>('line');
   const [copySourceId, setCopySourceId] = useState('');
   const [suggestions, setSuggestions] = useState<Suggestion[] | null>(null);
@@ -360,6 +364,42 @@ function FormationSection(): ReactElement | null {
   const formation = formations.find((f) => f.id === selectedFormationId);
   if (formation === undefined) return null;
   const isFirst = ![...formations].some((f) => f.orderIndex < formation.orderIndex);
+
+  // Virtual clinic: analyze the transition INTO this formation — dancers
+  // who would meet mid-walk, and dancers who have to run to make it.
+  const issues = ((): {
+    collisions: [string, string][];
+    tooFast: { name: string; speed: number }[];
+  } | null => {
+    if (isFirst) return null;
+    const ordered = byOrder(formations);
+    const previous = ordered[ordered.findIndex((f) => f.id === selectedFormationId) - 1];
+    if (previous === undefined) return null;
+    const prevPos = positions[previous.id] ?? {};
+    const currPos = positions[selectedFormationId] ?? {};
+    const walkers: string[] = [];
+    const paths: WalkPath[] = [];
+    for (const p of performers) {
+      const from = prevPos[p.id];
+      const to = currPos[p.id];
+      if (from === undefined || to === undefined) continue;
+      const control =
+        previous.transitionType === 'curve' ? from.curveControlPoints?.[0] : undefined;
+      walkers.push(p.name);
+      paths.push({
+        from: { x: from.x, y: from.y },
+        to: { x: to.x, y: to.y },
+        ...(control !== undefined ? { control: { x: control.x, y: control.y } } : {}),
+      });
+    }
+    const durationMs = formation.startTimeMs - (previous.startTimeMs + previous.durationMs);
+    const result = analyzeTransition(paths, durationMs);
+    if (result.collisions.length === 0 && result.tooFast.length === 0) return null;
+    return {
+      collisions: result.collisions.map(([i, j]) => [walkers[i] ?? '?', walkers[j] ?? '?']),
+      tooFast: result.tooFast.map((f) => ({ name: walkers[f.index] ?? '?', speed: f.speedMps })),
+    };
+  })();
 
   return (
     <>
@@ -505,6 +545,20 @@ function FormationSection(): ReactElement | null {
             )}
           </div>
         </div>
+        {issues !== null && (
+          <div className="field expert-only-ui" role="status" aria-label={t.analyzer.aria}>
+            {issues.collisions.map(([a, b]) => (
+              <span key={`c-${a}-${b}`} className="analyzer-warn">
+                {t.analyzer.collision(a, b)}
+              </span>
+            ))}
+            {issues.tooFast.map((f) => (
+              <span key={`s-${f.name}`} className="analyzer-warn">
+                {t.analyzer.tooFast(f.name, f.speed.toFixed(1))}
+              </span>
+            ))}
+          </div>
+        )}
         <button
           type="button"
           className="btn expert-only-ui"

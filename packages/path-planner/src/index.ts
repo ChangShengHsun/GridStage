@@ -191,6 +191,88 @@ function polylinesIntersect(a: readonly PathPoint[], b: readonly PathPoint[]): b
   return false;
 }
 
+/** Position along a path at time fraction t (0..1), Bézier when curved. */
+function pointAt(path: WalkPath, t: number): PathPoint {
+  const control = path.control;
+  const inv = 1 - t;
+  if (control === undefined) {
+    return { x: inv * path.from.x + t * path.to.x, y: inv * path.from.y + t * path.to.y };
+  }
+  return {
+    x: inv * inv * path.from.x + 2 * inv * t * control.x + t * t * path.to.x,
+    y: inv * inv * path.from.y + 2 * inv * t * control.y + t * t * path.to.y,
+  };
+}
+
+function pathLength(path: WalkPath): number {
+  const points = toPolyline(path);
+  let length = 0;
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i];
+    const b = points[i + 1];
+    if (a !== undefined && b !== undefined) length += distance(a, b);
+  }
+  return length;
+}
+
+export interface TransitionIssues {
+  /**
+   * Path index pairs that come within `minGapM` of each other at the SAME
+   * moment mid-transition (everyone walks their path simultaneously with
+   * linear timing — the same model playback uses).
+   */
+  collisions: [number, number][];
+  /** For each too-fast path: its index and the required average speed. */
+  tooFast: { index: number; speedMps: number }[];
+}
+
+/** Time steps sampled when checking simultaneous proximity. */
+const TIME_SAMPLES = 24;
+
+/**
+ * The virtual rehearsal clinic: flags dancers who would bump into each
+ * other mid-transition and dancers who must run to make their next spot.
+ * Distances are meters; `durationMs` is the transition's travel window.
+ *
+ * ponytail: Bézier t is treated as constant-speed (it isn't, quite) and
+ * pairs are O(n²·samples) — fine for cast-sized inputs.
+ */
+export function analyzeTransition(
+  paths: readonly WalkPath[],
+  durationMs: number,
+  options?: { minGapM?: number; maxSpeedMps?: number },
+): TransitionIssues {
+  const minGap = options?.minGapM ?? 0.45;
+  const maxSpeed = options?.maxSpeedMps ?? 2.0;
+
+  const collisions: [number, number][] = [];
+  for (let i = 0; i < paths.length; i++) {
+    for (let j = i + 1; j < paths.length; j++) {
+      const a = paths[i];
+      const b = paths[j];
+      if (a === undefined || b === undefined) continue;
+      // Endpoints are held poses, not travel — skip t=0 and t=1 (a crowded
+      // formation is a spacing choice, not a transition collision).
+      let hit = false;
+      for (let step = 1; step < TIME_SAMPLES && !hit; step++) {
+        const t = step / TIME_SAMPLES;
+        hit = distance(pointAt(a, t), pointAt(b, t)) < minGap;
+      }
+      if (hit) collisions.push([i, j]);
+    }
+  }
+
+  const tooFast: { index: number; speedMps: number }[] = [];
+  const seconds = durationMs / 1000;
+  if (seconds > 0) {
+    paths.forEach((path, index) => {
+      const speed = pathLength(path) / seconds;
+      if (speed > maxSpeed) tooFast.push({ index, speedMps: speed });
+    });
+  }
+  return { collisions, tooFast };
+}
+
 /**
  * Index pairs of paths that cross each other. Paths sharing an endpoint
  * (e.g. two dancers leaving the same cluster) are not reported. Curved

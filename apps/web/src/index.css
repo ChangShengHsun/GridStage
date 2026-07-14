@@ -610,6 +610,13 @@ input[type='color'] {
   flex-wrap: wrap;
 }
 
+/* Transition-analyzer warnings in the formation panel. */
+.analyzer-warn {
+  color: #e08052;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 /* A toggled-on toolbar button (metronome, snap…). */
 .btn-active {
   border-color: var(--tungsten);

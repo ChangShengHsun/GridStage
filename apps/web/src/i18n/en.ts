@@ -249,6 +249,12 @@ export const en = {
     deleteAria: 'Delete selected preset',
   },
 
+  analyzer: {
+    aria: 'Transition warnings',
+    collision: (a: string, b: string): string => `⚠ ${a} and ${b} nearly collide mid-transition`,
+    tooFast: (name: string, speed: string): string => `⚠ ${name} must move at ${speed} m/s`,
+  },
+
   suggest: {
     button: 'Suggest formations',
     buttonTitle:

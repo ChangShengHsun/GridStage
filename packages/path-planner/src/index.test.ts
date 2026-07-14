@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { findCrossings, hungarian, planTransition, segmentsIntersect } from './index';
+import {
+  analyzeTransition,
+  findCrossings,
+  hungarian,
+  planTransition,
+  segmentsIntersect,
+} from './index';
 import type { PathPoint } from './index';
 
 /** Brute-force optimal assignment for small n, to validate hungarian(). */
@@ -154,5 +160,60 @@ describe('segmentsIntersect / findCrossings', () => {
       { from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, control: { x: 5, y: 6 } }, // peaks at y=3
     ];
     expect(findCrossings(paths)).toEqual([[0, 1]]);
+  });
+});
+
+describe('analyzeTransition', () => {
+  it('flags two dancers passing through the same spot at the same moment', () => {
+    // Head-on swap along the same line: they meet in the middle.
+    const paths = [
+      { from: { x: 0, y: 0 }, to: { x: 10, y: 0 } },
+      { from: { x: 10, y: 0 }, to: { x: 0, y: 0 } },
+    ];
+    const result = analyzeTransition(paths, 8000);
+    expect(result.collisions).toEqual([[0, 1]]);
+  });
+
+  it('does not flag parallel walkers with a safe gap', () => {
+    const paths = [
+      { from: { x: 0, y: 0 }, to: { x: 10, y: 0 } },
+      { from: { x: 0, y: 2 }, to: { x: 10, y: 2 } },
+    ];
+    expect(analyzeTransition(paths, 8000).collisions).toEqual([]);
+  });
+
+  it('crossing paths at DIFFERENT times are not a collision', () => {
+    // B starts where A ends; they trade x-lanes but at offset positions.
+    const paths = [
+      { from: { x: 0, y: 0 }, to: { x: 10, y: 0 } },
+      { from: { x: 10, y: 0.6 }, to: { x: 0, y: 0.6 } },
+    ];
+    // They DO meet mid-way (same x at t=0.5, 0.6m apart) — gap just above
+    // the default 0.45m threshold, so no collision.
+    expect(analyzeTransition(paths, 8000).collisions).toEqual([]);
+  });
+
+  it('flags a dancer who must run', () => {
+    // 12m in 3s = 4 m/s, way over the 2 m/s default.
+    const paths = [
+      { from: { x: 0, y: 0 }, to: { x: 12, y: 0 } },
+      { from: { x: 0, y: 2 }, to: { x: 2, y: 2 } }, // 2m in 3s is fine
+    ];
+    const result = analyzeTransition(paths, 3000);
+    expect(result.tooFast.map((f) => f.index)).toEqual([0]);
+    expect(result.tooFast[0]?.speedMps).toBeCloseTo(4, 1);
+  });
+
+  it('measures curve length along the bend, not the chord', () => {
+    // Chord is 10m, but the bend makes it noticeably longer.
+    const paths = [{ from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, control: { x: 5, y: 8 } }];
+    const result = analyzeTransition(paths, 5000, { maxSpeedMps: 2.05 });
+    // straight would be exactly 2.0 m/s -> pass; the curve pushes it over
+    expect(result.tooFast).toHaveLength(1);
+  });
+
+  it('zero-duration transitions skip the speed check', () => {
+    const paths = [{ from: { x: 0, y: 0 }, to: { x: 10, y: 0 } }];
+    expect(analyzeTransition(paths, 0).tooFast).toEqual([]);
   });
 });
