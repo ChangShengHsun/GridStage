@@ -14,6 +14,7 @@ import {
 import type { FormationPreset } from '../state/formationPresets';
 import type { Snapshot } from '../state/history';
 import { CommentsSection } from './CommentsSection';
+import { NumberField } from './NumberField';
 import { StageSettingsDialog } from './StageSettingsDialog';
 import { useT } from '../i18n';
 import { byOrder } from '../state/interpolate';
@@ -133,28 +134,22 @@ function PerformerSection(): ReactElement | null {
             <div style={{ display: 'flex', gap: 8 }}>
               <div className="field" style={{ flex: 1 }}>
                 <label htmlFor="pos-x">{t.performer.xLabel}</label>
-                <input
+                <NumberField
                   id="pos-x"
-                  type="number"
                   step={0.1}
-                  value={Number(pos.x.toFixed(2))}
-                  onChange={(e) => {
-                    const v = num(e.target.value);
-                    if (v !== null) setPosition(selectedFormationId, performer.id, v, pos.y);
-                  }}
+                  decimals={2}
+                  value={pos.x}
+                  onCommit={(v) => setPosition(selectedFormationId, performer.id, v, pos.y)}
                 />
               </div>
               <div className="field" style={{ flex: 1 }}>
                 <label htmlFor="pos-y">{t.performer.yLabel}</label>
-                <input
+                <NumberField
                   id="pos-y"
-                  type="number"
                   step={0.1}
-                  value={Number(pos.y.toFixed(2))}
-                  onChange={(e) => {
-                    const v = num(e.target.value);
-                    if (v !== null) setPosition(selectedFormationId, performer.id, pos.x, v);
-                  }}
+                  decimals={2}
+                  value={pos.y}
+                  onCommit={(v) => setPosition(selectedFormationId, performer.id, pos.x, v)}
                 />
               </div>
             </div>
@@ -171,16 +166,13 @@ function PerformerSection(): ReactElement | null {
                   if (v !== null) setRotation(selectedFormationId, performer.id, v);
                 }}
               />
-              <input
-                type="number"
+              <NumberField
                 aria-label={t.performer.facingDegreesAria}
                 min={0}
                 max={359}
-                value={Math.round(pos.rotation)}
-                onChange={(e) => {
-                  const v = num(e.target.value);
-                  if (v !== null) setRotation(selectedFormationId, performer.id, v);
-                }}
+                decimals={0}
+                value={pos.rotation}
+                onCommit={(v) => setRotation(selectedFormationId, performer.id, v)}
               />
             </div>
           </>
@@ -417,31 +409,24 @@ function FormationSection(): ReactElement | null {
         <div style={{ display: 'flex', gap: 8 }}>
           <div className="field" style={{ flex: 1 }}>
             <label htmlFor="form-start">{t.formation.startLabel}</label>
-            <input
+            <NumberField
               id="form-start"
-              type="number"
               min={0}
               step={0.1}
-              value={Number((formation.startTimeMs / 1000).toFixed(1))}
-              onChange={(e) => {
-                const v = num(e.target.value);
-                if (v !== null) setFormationStart(formation.id, v * 1000);
-              }}
+              decimals={1}
+              value={formation.startTimeMs / 1000}
+              onCommit={(v) => setFormationStart(formation.id, v * 1000)}
             />
           </div>
           <div className="field" style={{ flex: 1 }}>
             <label htmlFor="form-dur">{t.formation.holdLabel}</label>
-            <input
+            <NumberField
               id="form-dur"
-              type="number"
               min={0}
               step={0.1}
-              value={Number((formation.durationMs / 1000).toFixed(1))}
-              onChange={(e) => {
-                const v = num(e.target.value);
-                if (v !== null)
-                  updateFormation(formation.id, { durationMs: Math.max(0, v * 1000) });
-              }}
+              decimals={1}
+              value={formation.durationMs / 1000}
+              onCommit={(v) => updateFormation(formation.id, { durationMs: Math.max(0, v * 1000) })}
             />
           </div>
         </div>
@@ -774,46 +759,35 @@ function PropSection(): ReactElement | null {
         <div style={{ display: 'flex', gap: 8 }}>
           <div className="field" style={{ flex: 1 }}>
             <label htmlFor="prop-width">{t.props.widthLabel}</label>
-            <input
+            <NumberField
               id="prop-width"
-              type="number"
               min={0.2}
               max={30}
               step={0.1}
               value={prop.width}
-              onChange={(e) => {
-                const w = num(e.target.value);
-                if (w !== null) updateProp(prop.id, { width: Math.max(0.2, w) });
-              }}
+              onCommit={(w) => updateProp(prop.id, { width: Math.max(0.2, w) })}
             />
           </div>
           <div className="field" style={{ flex: 1 }}>
             <label htmlFor="prop-height">{t.props.heightLabel}</label>
-            <input
+            <NumberField
               id="prop-height"
-              type="number"
               min={0.2}
               max={30}
               step={0.1}
               value={prop.height}
-              onChange={(e) => {
-                const h = num(e.target.value);
-                if (h !== null) updateProp(prop.id, { height: Math.max(0.2, h) });
-              }}
+              onCommit={(h) => updateProp(prop.id, { height: Math.max(0.2, h) })}
             />
           </div>
         </div>
         <div className="field">
           <label htmlFor="prop-rotation">{t.props.rotationLabel}</label>
-          <input
+          <NumberField
             id="prop-rotation"
-            type="number"
             step={5}
+            decimals={0}
             value={rotation}
-            onChange={(e) => {
-              const deg = num(e.target.value);
-              if (deg !== null) setRotation(selectedFormationId, prop.id, deg);
-            }}
+            onCommit={(deg) => setRotation(selectedFormationId, prop.id, deg)}
           />
         </div>
         <button type="button" className="btn" onClick={() => removeProp(prop.id)}>

@@ -2,13 +2,8 @@ import { useRef } from 'react';
 import type { ReactElement } from 'react';
 import { useEditor } from '../state/store';
 import { useStageBackground } from '../state/stageBackground';
+import { NumberField } from './NumberField';
 import { useT } from '../i18n';
-
-/** Parse a number input, returning null for empty/invalid text. */
-function num(value: string): number | null {
-  const n = Number(value);
-  return value.trim() === '' || Number.isNaN(n) ? null : n;
-}
 
 /**
  * Set-once-per-show stage settings (size, audience side, venue photo),
@@ -51,30 +46,22 @@ export function StageSettingsDialog(): ReactElement {
           <div style={{ display: 'flex', gap: 8 }}>
             <div className="field" style={{ flex: 1 }}>
               <label htmlFor="stage-w">{t.stage.width}</label>
-              <input
+              <NumberField
                 id="stage-w"
-                type="number"
                 min={2}
                 max={60}
                 value={performance.stageWidth}
-                onChange={(e) => {
-                  const v = num(e.target.value);
-                  if (v !== null) setStageSize(v, performance.stageHeight);
-                }}
+                onCommit={(v) => setStageSize(v, performance.stageHeight)}
               />
             </div>
             <div className="field" style={{ flex: 1 }}>
               <label htmlFor="stage-h">{t.stage.depth}</label>
-              <input
+              <NumberField
                 id="stage-h"
-                type="number"
                 min={2}
                 max={60}
                 value={performance.stageHeight}
-                onChange={(e) => {
-                  const v = num(e.target.value);
-                  if (v !== null) setStageSize(performance.stageWidth, v);
-                }}
+                onCommit={(v) => setStageSize(performance.stageWidth, v)}
               />
             </div>
           </div>
@@ -101,17 +88,13 @@ export function StageSettingsDialog(): ReactElement {
               ).map(({ key, label }) => (
                 <div className="field" style={{ flex: 1 }} key={key}>
                   <label htmlFor={`wing-${key}`}>{label}</label>
-                  <input
+                  <NumberField
                     id={`wing-${key}`}
-                    type="number"
                     min={0}
                     max={10}
                     step={0.5}
                     value={wings[key]}
-                    onChange={(e) => {
-                      const v = num(e.target.value);
-                      if (v !== null) setWings({ ...wings, [key]: v });
-                    }}
+                    onCommit={(v) => setWings({ ...wings, [key]: v })}
                   />
                 </div>
               ))}

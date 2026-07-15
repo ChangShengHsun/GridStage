@@ -13,6 +13,7 @@ import {
 } from '../state/library';
 import type { LibraryEntry } from '../state/library';
 import { isCollabActive } from '../collab/collab';
+import { NumberField } from './NumberField';
 import { useT } from '../i18n';
 
 /** Common venue footprints for the new-choreography form. */
@@ -221,23 +222,21 @@ export function LibraryDialog(): ReactElement {
               </select>
               {sizeKey === 'custom' && (
                 <>
-                  <input
-                    type="number"
+                  <NumberField
                     aria-label={t.stage.width}
                     min={2}
                     max={60}
                     style={{ width: 70 }}
                     value={customW}
-                    onChange={(e) => setCustomW(Number(e.target.value))}
+                    onCommit={setCustomW}
                   />
-                  <input
-                    type="number"
+                  <NumberField
                     aria-label={t.stage.depth}
                     min={2}
                     max={60}
                     style={{ width: 70 }}
                     value={customH}
-                    onChange={(e) => setCustomH(Number(e.target.value))}
+                    onCommit={setCustomH}
                   />
                 </>
               )}
