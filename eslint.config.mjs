@@ -72,6 +72,7 @@ export default tseslint.config(
         URL: 'readonly',
         Response: 'readonly',
         setTimeout: 'readonly',
+        fetch: 'readonly',
       },
     },
     rules: {
