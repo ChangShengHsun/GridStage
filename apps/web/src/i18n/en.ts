@@ -357,6 +357,8 @@ export const en = {
   timeline: {
     panelAria: 'Timeline',
     addFormation: 'Add formation',
+    resizeStartAria: 'Drag to change when this formation starts',
+    resizeEndAria: 'Drag to change how long this formation holds',
     uploadAudio: 'Upload audio',
     replaceAudio: 'Replace audio',
     removeAudio: 'Remove audio',

@@ -234,6 +234,64 @@ export function Timeline({
     selectFormation(f.id);
   };
 
+  // Resize a formation by dragging its left/right edge. Live changes show via
+  // resizePreview (no store churn); the store commits once on pointer up.
+  const resizeRef = useRef<{
+    id: string;
+    edge: 'left' | 'right';
+    downX: number;
+    origStart: number;
+    origDur: number;
+  } | null>(null);
+  const [resizePreview, setResizePreview] = useState<{
+    id: string;
+    startMs: number;
+    durMs: number;
+  } | null>(null);
+  const MIN_HOLD_MS = 500;
+
+  const onResizeDown = (
+    e: ReactPointerEvent<HTMLDivElement>,
+    f: Formation,
+    edge: 'left' | 'right',
+  ): void => {
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    selectFormation(f.id);
+    resizeRef.current = {
+      id: f.id,
+      edge,
+      downX: e.clientX,
+      origStart: f.startTimeMs,
+      origDur: f.durationMs,
+    };
+  };
+  const onResizeMove = (e: ReactPointerEvent<HTMLDivElement>): void => {
+    const r = resizeRef.current;
+    if (r === null || contentWidth <= 0) return;
+    const deltaMs = ((e.clientX - r.downX) / contentWidth) * totalMs;
+    if (r.edge === 'right') {
+      setResizePreview({
+        id: r.id,
+        startMs: r.origStart,
+        durMs: Math.max(MIN_HOLD_MS, r.origDur + deltaMs),
+      });
+    } else {
+      const end = r.origStart + r.origDur;
+      const startMs = Math.min(Math.max(0, r.origStart + deltaMs), end - MIN_HOLD_MS);
+      setResizePreview({ id: r.id, startMs, durMs: end - startMs });
+    }
+  };
+  const onResizeUp = (): void => {
+    const r = resizeRef.current;
+    resizeRef.current = null;
+    const preview = resizePreview;
+    setResizePreview(null);
+    if (r === null || preview === null) return;
+    useEditor.getState().updateFormation(r.id, { durationMs: preview.durMs });
+    if (r.edge === 'left') useEditor.getState().setFormationStart(r.id, preview.startMs);
+  };
+
   const zoomBy = (factor: number): void => {
     const viewport = bodyRef.current;
     if (viewport !== null) {
@@ -497,7 +555,18 @@ export function Timeline({
             {ordered.map((f, i) => {
               const selected = f.id === selectedFormationId;
               const next = ordered[i + 1];
-              const holdEnd = f.startTimeMs + f.durationMs;
+              const resizing = resizePreview?.id === f.id ? resizePreview : null;
+              const startMs = resizing?.startMs ?? f.startTimeMs;
+              const durMs = resizing?.durMs ?? f.durationMs;
+              const holdEnd = startMs + durMs;
+              const edgeStyle = {
+                position: 'absolute' as const,
+                top: 0,
+                bottom: 0,
+                width: 7,
+                cursor: 'ew-resize' as const,
+                touchAction: 'none' as const,
+              };
               return (
                 <div key={f.id}>
                   <div
@@ -517,8 +586,8 @@ export function Timeline({
                     }}
                     style={{
                       position: 'absolute',
-                      left: msToPx(f.startTimeMs),
-                      width: Math.max(msToPx(f.durationMs), 34),
+                      left: msToPx(startMs),
+                      width: Math.max(msToPx(durMs), 34),
                       height: '100%',
                       display: 'flex',
                       alignItems: 'center',
@@ -537,6 +606,23 @@ export function Timeline({
                     }}
                   >
                     {f.name}
+                    {/* drag the edges to lengthen/shorten the hold */}
+                    <div
+                      data-skip-scrub="true"
+                      aria-label={t.timeline.resizeStartAria}
+                      onPointerDown={(e) => onResizeDown(e, f, 'left')}
+                      onPointerMove={onResizeMove}
+                      onPointerUp={onResizeUp}
+                      style={{ ...edgeStyle, left: 0 }}
+                    />
+                    <div
+                      data-skip-scrub="true"
+                      aria-label={t.timeline.resizeEndAria}
+                      onPointerDown={(e) => onResizeDown(e, f, 'right')}
+                      onPointerMove={onResizeMove}
+                      onPointerUp={onResizeUp}
+                      style={{ ...edgeStyle, right: 0 }}
+                    />
                   </div>
                   {next !== undefined && next.startTimeMs > holdEnd && (
                     <div

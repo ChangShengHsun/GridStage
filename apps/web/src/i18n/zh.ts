@@ -353,6 +353,8 @@ export const zh: Messages = {
   timeline: {
     panelAria: '時間軸',
     addFormation: '新增隊形',
+    resizeStartAria: '拖曳以改變此隊形的開始時間',
+    resizeEndAria: '拖曳以改變此隊形停留的長度',
     uploadAudio: '上傳音訊',
     replaceAudio: '更換音訊',
     removeAudio: '移除音訊',
