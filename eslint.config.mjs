@@ -34,7 +34,8 @@ export default tseslint.config(
     },
   },
   {
-    // Plain Node scripts (migration runner etc.)
+    // Plain Node scripts (migration runner, demo generators…): JS, not TS, so
+    // TS-only return-type annotations can't apply here.
     files: ['**/*.mjs'],
     languageOptions: {
       globals: {
@@ -43,6 +44,9 @@ export default tseslint.config(
         Buffer: 'readonly',
         URL: 'readonly',
       },
+    },
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'off',
     },
   },
   {
