@@ -6,9 +6,9 @@ import { copyBackgroundBetweenDocs, deleteBackgroundForDoc } from './stageBackgr
 /**
  * Choreography library — many documents in one browser.
  *
- * The OPEN document keeps living in zustand-persist's `openstage-doc` key
+ * The OPEN document keeps living in zustand-persist's `gridstage-doc` key
  * (saved continuously, as before). The library adds one slot per document
- * (`openstage-doc:<performanceId>`) plus a small index of metadata. Switching
+ * (`gridstage-doc:<performanceId>`) plus a small index of metadata. Switching
  * saves the open doc into its slot, then loads the target via store.loadDoc.
  */
 
@@ -20,9 +20,9 @@ export interface LibraryEntry {
   archived: boolean;
 }
 
-const INDEX_KEY = 'openstage-library';
+const INDEX_KEY = 'gridstage-library';
 
-const docKey = (id: string): string => `openstage-doc:${id}`;
+const docKey = (id: string): string => `gridstage-doc:${id}`;
 
 function readIndex(): LibraryEntry[] {
   try {

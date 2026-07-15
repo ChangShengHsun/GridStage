@@ -1,4 +1,4 @@
-import type { CountSegment, Formation, FormationPosition } from '@openstage/shared-types';
+import type { CountSegment, Formation, FormationPosition } from '@gridstage/shared-types';
 import type { PositionMap } from './store';
 
 export interface StagePose {

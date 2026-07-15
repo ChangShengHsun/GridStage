@@ -1,5 +1,5 @@
 {
-  "name": "openstage",
+  "name": "gridstage",
   "version": "0.1.0",
   "private": true,
   "description": "Open-source collaborative stage formation & choreography editor",
@@ -16,7 +16,7 @@
     "build": "pnpm -r --if-present build",
     "test": "pnpm -r --if-present test",
     "e2e": "playwright test",
-    "dev:web": "pnpm --filter @openstage/web dev",
+    "dev:web": "pnpm --filter @gridstage/web dev",
     "prepare": "pnpm --filter \"./packages/*\" build"
   },
   "devDependencies": {

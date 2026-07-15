@@ -8,7 +8,7 @@ import type {
   Performance,
   Performer,
   StageProp,
-} from '@openstage/shared-types';
+} from '@gridstage/shared-types';
 import { undoOverride, useEditor } from '../state/store';
 import type { DocState, PositionMap } from '../state/store';
 import { getLocalUser } from '../state/user';
@@ -27,7 +27,7 @@ import { getAudioElement } from '../audio/audioPlayer';
  * store subscription doesn't echo it back).
  */
 
-const LOCAL_ORIGIN = 'openstage-local';
+const LOCAL_ORIGIN = 'gridstage-local';
 const POSITION_KEY_SEP = ':';
 
 export interface RemotePeer {
@@ -336,8 +336,8 @@ export function startCollab(room: string): void {
     } else {
       // Existing room wins. Keep a backup of the local doc first.
       try {
-        const localDoc = localStorage.getItem('openstage-doc');
-        if (localDoc !== null) localStorage.setItem('openstage-doc-backup', localDoc);
+        const localDoc = localStorage.getItem('gridstage-doc');
+        if (localDoc !== null) localStorage.setItem('gridstage-doc-backup', localDoc);
       } catch {
         // backup is best-effort
       }

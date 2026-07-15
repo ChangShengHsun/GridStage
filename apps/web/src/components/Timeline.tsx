@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent, ReactElement } from 'react';
-import type { Formation } from '@openstage/shared-types';
+import type { Formation } from '@gridstage/shared-types';
 import { useEditor } from '../state/store';
 import { byOrder, effectiveCountSegments, eightCountMarks, showEndMs } from '../state/interpolate';
 import { audioDurationMs, getAudioElement, getWaveformPeaks } from '../audio/audioPlayer';

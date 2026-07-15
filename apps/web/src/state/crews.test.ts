@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { deleteCrew, listCrews, saveCrew } from './crews';
-import type { Performer } from '@openstage/shared-types';
+import type { Performer } from '@gridstage/shared-types';
 
 // Node has no localStorage — a Map-backed stub is all crews.ts needs.
 const backing = new Map<string, string>();
@@ -27,7 +27,7 @@ const performers: Performer[] = [
 ];
 
 beforeEach(() => {
-  localStorage.removeItem('openstage-crews');
+  localStorage.removeItem('gridstage-crews');
 });
 
 describe('crews', () => {
@@ -50,7 +50,7 @@ describe('crews', () => {
   });
 
   it('survives corrupt storage', () => {
-    localStorage.setItem('openstage-crews', '{not json');
+    localStorage.setItem('gridstage-crews', '{not json');
     expect(listCrews()).toEqual([]);
   });
 });

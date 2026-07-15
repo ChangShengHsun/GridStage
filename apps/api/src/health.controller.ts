@@ -2,7 +2,7 @@ import { Controller, Get } from '@nestjs/common';
 
 interface HealthResponse {
   status: 'ok';
-  service: 'openstage-api';
+  service: 'gridstage-api';
   time: string;
 }
 
@@ -10,6 +10,6 @@ interface HealthResponse {
 export class HealthController {
   @Get()
   health(): HealthResponse {
-    return { status: 'ok', service: 'openstage-api', time: new Date().toISOString() };
+    return { status: 'ok', service: 'gridstage-api', time: new Date().toISOString() };
   }
 }

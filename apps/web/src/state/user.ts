@@ -1,4 +1,4 @@
-import { PERFORMER_COLORS } from '@openstage/shared-types';
+import { PERFORMER_COLORS } from '@gridstage/shared-types';
 
 /**
  * Local user identity — display name + color for comments and collaboration
@@ -11,7 +11,7 @@ export interface LocalUser {
   color: string;
 }
 
-const STORAGE_KEY = 'openstage-user';
+const STORAGE_KEY = 'gridstage-user';
 
 let cached: LocalUser | null = null;
 

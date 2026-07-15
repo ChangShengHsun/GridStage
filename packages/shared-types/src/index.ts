@@ -1,5 +1,5 @@
 /**
- * OpenStage domain model.
+ * GridStage domain model.
  *
  * Conventions:
  * - All ids are UUIDs (string).

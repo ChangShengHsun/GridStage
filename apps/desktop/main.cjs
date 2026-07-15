@@ -3,7 +3,7 @@ const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
 const RENDERER_DIR = path.join(__dirname, 'renderer');
-const RELEASES_URL = 'https://github.com/ChangShengHsun/OpenStage/releases/latest';
+const RELEASES_URL = 'https://github.com/ChangShengHsun/GridStage/releases/latest';
 
 /** True when b is a strictly newer semver than a (e.g. '0.2.1' > '0.2.0'). */
 function isNewerVersion(a, b) {
@@ -34,7 +34,7 @@ function setupAutoUpdate() {
         buttons: ['Restart & update / 重啟並更新', 'Later / 稍後'],
         defaultId: 0,
         cancelId: 1,
-        title: 'OpenStage',
+        title: 'GridStage',
         message: `New version ${info.version} is ready / 新版本 ${info.version} 已下載完成`,
       });
       if (choice === 0) autoUpdater.quitAndInstall();
@@ -43,7 +43,7 @@ function setupAutoUpdate() {
     autoUpdater.checkForUpdates().catch(() => {});
     return;
   }
-  fetch('https://api.github.com/repos/ChangShengHsun/OpenStage/releases/latest')
+  fetch('https://api.github.com/repos/ChangShengHsun/GridStage/releases/latest')
     .then((res) => (res.ok ? res.json() : null))
     .then((release) => {
       const latest =
@@ -56,7 +56,7 @@ function setupAutoUpdate() {
         buttons: ['Download / 前往下載', 'Later / 稍後'],
         defaultId: 0,
         cancelId: 1,
-        title: 'OpenStage',
+        title: 'GridStage',
         message: `Version ${latest} is available / 新版本 ${latest} 已發布`,
       });
       if (choice === 0) void shell.openExternal(RELEASES_URL);
@@ -66,7 +66,7 @@ function setupAutoUpdate() {
 
 // Serve the built web app from a real origin (app://bundle) instead of
 // file://. Chromium restricts localStorage / IndexedDB on file://, and
-// OpenStage keeps the whole document, audio, and version history there — a
+// GridStage keeps the whole document, audio, and version history there — a
 // proper secure origin is required for any of that to persist.
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true } },

@@ -1,4 +1,4 @@
--- OpenStage initial schema.
+-- GridStage initial schema.
 -- Coordinates are meters (see packages/shared-types); times are milliseconds.
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto"; -- gen_random_uuid()

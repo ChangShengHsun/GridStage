@@ -17,7 +17,7 @@ import type Konva from 'konva';
 import { useEditor } from '../state/store';
 import { byOrder, posesAtTime } from '../state/interpolate';
 import type { StagePose } from '../state/interpolate';
-import { findCrossings } from '@openstage/path-planner';
+import { findCrossings } from '@gridstage/path-planner';
 import { isCollabActive, setAwarenessCursor } from '../collab/collab';
 import { usePeers } from '../hooks/usePeers';
 import { isViewMode } from '../state/viewMode';

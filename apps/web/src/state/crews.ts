@@ -1,4 +1,4 @@
-import type { Performer } from '@openstage/shared-types';
+import type { Performer } from '@gridstage/shared-types';
 import type { RosterRow } from './csv';
 
 /**
@@ -15,7 +15,7 @@ export interface Crew {
   members: RosterRow[];
 }
 
-const CREWS_KEY = 'openstage-crews';
+const CREWS_KEY = 'gridstage-crews';
 
 function readCrews(): Crew[] {
   try {

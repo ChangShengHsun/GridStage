@@ -1,4 +1,4 @@
-import type { CountSegment } from '@openstage/shared-types';
+import type { CountSegment } from '@gridstage/shared-types';
 import { effectiveCountSegments } from '../state/interpolate';
 
 /**

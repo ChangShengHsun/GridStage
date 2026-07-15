@@ -1,4 +1,4 @@
-import type { Formation } from '@openstage/shared-types';
+import type { Formation } from '@gridstage/shared-types';
 
 /**
  * Set one formation's start time (clamped ≥ 0) and re-derive every

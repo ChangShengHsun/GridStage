@@ -1,9 +1,9 @@
 /**
- * Shared blob persistence (IndexedDB `openstage-media`) — audio tracks and
+ * Shared blob persistence (IndexedDB `gridstage-media`) — audio tracks and
  * stage background images live here, keyed per library document.
  */
 
-const DB_NAME = 'openstage-media';
+const DB_NAME = 'gridstage-media';
 const STORE = 'blobs';
 
 function openDb(): Promise<IDBDatabase> {

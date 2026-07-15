@@ -10,15 +10,15 @@ import type {
   Performer,
   PropKind,
   StageProp,
-} from '@openstage/shared-types';
+} from '@gridstage/shared-types';
 import {
   DEFAULT_FORMATION_DURATION_MS,
   DEFAULT_STAGE_HEIGHT_M,
   DEFAULT_STAGE_WIDTH_M,
   DEFAULT_TRANSITION_MS,
   PERFORMER_COLORS,
-} from '@openstage/shared-types';
-import { planTransition } from '@openstage/path-planner';
+} from '@gridstage/shared-types';
+import { planTransition } from '@gridstage/path-planner';
 import { reindexByStart } from './formationOrder';
 import { alignSpots, distributeSpots, mirrorAcrossX } from './formationTransform';
 import type { Spot } from './formationTransform';
@@ -1144,7 +1144,7 @@ export const useEditor = create<EditorState>()(
       };
     },
     {
-      name: 'openstage-doc',
+      name: 'gridstage-doc',
       partialize: (s) => ({
         performance: s.performance,
         performers: s.performers,
@@ -1184,7 +1184,7 @@ export const useEditor = create<EditorState>()(
 // Persist the fresh doc immediately: audio and background images are keyed by
 // performance.id, so a reload BEFORE the first edit must not regenerate the id
 // (zustand-persist only writes on the first set() otherwise).
-if (typeof localStorage !== 'undefined' && localStorage.getItem('openstage-doc') === null) {
+if (typeof localStorage !== 'undefined' && localStorage.getItem('gridstage-doc') === null) {
   useEditor.setState({});
 }
 

@@ -1,4 +1,4 @@
-# Handoff guide — implementing the rest of OpenStage
+# Handoff guide — implementing the rest of GridStage
 
 Audience: a future Claude session (likely Opus) continuing this project when
 Fable is unavailable. Written 2026-07-06, right after video export landed.
@@ -14,7 +14,7 @@ Everything here was verified in the live repo on that date.
 
 ## 1. Non-negotiable rules
 
-- **Legal red lines (from prompt.md):** the project name is OpenStage only.
+- **Legal red lines (from prompt.md):** the project name is GridStage only.
   Never mention third-party product/trademark names in code, UI, or docs.
   Never copy third-party code, UI, or assets.
 - **Talk to Ivan in Traditional Chinese (繁體中文); all code, comments,
@@ -32,9 +32,9 @@ Everything here was verified in the live repo on that date.
 
 - Stage units are **meters**. Rotation is **degrees, 0 = facing the audience**
   (downstage = +y in 2D plan = +z in 3D), increasing **clockwise** on the plan.
-- Persistence keys: doc in localStorage `openstage-doc` (zustand persist
-  envelope `{ state: {...} }`), audio blob in IndexedDB `openstage-media`,
-  version snapshots in IndexedDB `openstage-history`. Changing a persisted
+- Persistence keys: doc in localStorage `gridstage-doc` (zustand persist
+  envelope `{ state: {...} }`), audio blob in IndexedDB `gridstage-media`,
+  version snapshots in IndexedDB `gridstage-history`. Changing a persisted
   shape requires a backward-compatible `merge` in `store.ts` persist options
   (see how `comments` defaults to `[]`).
 - Formation invariant: **play order == start-time order**. Any start-time
@@ -57,7 +57,7 @@ apps/web/src/
   export/pdf.ts         jsPDF walk charts.  export/video.ts  MediaRecorder capture.
   audio/audioPlayer.ts  singleton audio + IndexedDB persistence + waveform peaks.
 packages/shared-types/  domain model — REBUILD after editing
-                        (`pnpm --filter @openstage/shared-types build`),
+                        (`pnpm --filter @gridstage/shared-types build`),
                         consumers import from dist/.
 packages/path-planner/  Hungarian assignment + segment-crossing detection.
 apps/collab-server/     y-websocket relay (see pin warning below).
@@ -126,7 +126,7 @@ remaining work is translation. Do not restructure anything.
   `en.ts` defines the `Messages` shape; `zh.ts` is declared `: Messages`, so
   a missing/mistyped key fails `pnpm typecheck`. Components call `useT()`,
   non-React code calls `messages()`. Locale persists in localStorage
-  `openstage-locale`; the switcher is the `<select>` in the TopBar.
+  `gridstage-locale`; the switcher is the `<select>` in the TopBar.
 - Your task: in `zh.ts`, replace every English placeholder VALUE with
   繁體中文. The file's header comment lists the rules and a dance-context
   glossary (performer 舞者, formation 隊形, …). Do not touch keys, function

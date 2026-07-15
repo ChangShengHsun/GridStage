@@ -5,7 +5,7 @@ import {
   listFormationPresets,
   saveFormationPreset,
 } from './formationPresets';
-import type { FormationPosition } from '@openstage/shared-types';
+import type { FormationPosition } from '@gridstage/shared-types';
 
 // Node has no localStorage — a Map-backed stub is all this module needs.
 const backing = new Map<string, string>();

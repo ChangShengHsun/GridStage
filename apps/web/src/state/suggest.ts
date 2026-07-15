@@ -1,4 +1,4 @@
-import { planTransition } from '@openstage/path-planner';
+import { planTransition } from '@gridstage/path-planner';
 import { templateSpots } from './templates';
 import type { Spot } from './templates';
 

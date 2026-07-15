@@ -9,9 +9,9 @@ COPY apps/api ./apps/api
 # shared-types is filtered EXPLICITLY (not just via api...) so pnpm installs
 # its devDependencies too — tsc lives there.
 RUN pnpm install --frozen-lockfile --ignore-scripts \
-  --filter @openstage/api... --filter @openstage/shared-types \
-  && pnpm --filter @openstage/shared-types build \
-  && pnpm --filter @openstage/api build
+  --filter @gridstage/api... --filter @gridstage/shared-types \
+  && pnpm --filter @gridstage/shared-types build \
+  && pnpm --filter @gridstage/api build
 
 FROM node:22-alpine
 WORKDIR /repo

@@ -18,8 +18,8 @@ import { StageSettingsDialog } from './StageSettingsDialog';
 import { useT } from '../i18n';
 import { byOrder } from '../state/interpolate';
 import { normalizeBadge } from '../state/badge';
-import { analyzeTransition } from '@openstage/path-planner';
-import type { WalkPath } from '@openstage/path-planner';
+import { analyzeTransition } from '@gridstage/path-planner';
+import type { WalkPath } from '@gridstage/path-planner';
 
 /** Parse a number input, returning null for empty/invalid text. */
 function num(value: string): number | null {

@@ -31,7 +31,7 @@ interface LocaleState {
 
 export const useLocaleStore = create<LocaleState>()(
   persist((set) => ({ locale: browserDefault(), setLocale: (locale) => set({ locale }) }), {
-    name: 'openstage-locale',
+    name: 'gridstage-locale',
   }),
 );
 

@@ -1,8 +1,8 @@
 {
-  "name": "@openstage/api",
+  "name": "@gridstage/api",
   "version": "0.1.0",
   "private": true,
-  "description": "OpenStage REST API (NestJS)",
+  "description": "GridStage REST API (NestJS)",
   "license": "MIT",
   "scripts": {
     "build": "tsc -p tsconfig.json",

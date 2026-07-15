@@ -5,7 +5,7 @@ import type { Page } from '@playwright/test';
 async function forceExpert(page: Page): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem(
-      'openstage-layout',
+      'gridstage-layout',
       JSON.stringify({ state: { uiMode: 'expert' }, version: 0 }),
     );
   });

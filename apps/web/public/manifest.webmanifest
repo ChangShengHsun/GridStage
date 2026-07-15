@@ -1,6 +1,6 @@
 {
-  "name": "OpenStage",
-  "short_name": "OpenStage",
+  "name": "GridStage",
+  "short_name": "GridStage",
   "description": "Collaborative stage formation editor",
   "start_url": ".",
   "display": "standalone",

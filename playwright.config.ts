@@ -9,13 +9,13 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'pnpm --filter @openstage/web dev',
+      command: 'pnpm --filter @gridstage/web dev',
       url: 'http://localhost:5173',
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
     },
     {
-      command: 'pnpm --filter @openstage/collab-server start',
+      command: 'pnpm --filter @gridstage/collab-server start',
       url: 'http://127.0.0.1:1234',
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,

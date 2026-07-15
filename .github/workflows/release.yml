@@ -46,6 +46,6 @@ jobs:
           " "$VERSION"
 
       - name: Build installer and publish to the GitHub release
-        run: pnpm --filter @openstage/desktop dist --publish always
+        run: pnpm --filter @gridstage/desktop dist --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Formation } from '@openstage/shared-types';
+import type { Formation } from '@gridstage/shared-types';
 import type { PositionMap } from './store';
 import {
   eightCountMarks,

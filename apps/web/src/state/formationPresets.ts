@@ -1,5 +1,5 @@
-import type { FormationPosition } from '@openstage/shared-types';
-import { planTransition } from '@openstage/path-planner';
+import type { FormationPosition } from '@gridstage/shared-types';
+import { planTransition } from '@gridstage/path-planner';
 
 /**
  * Formation presets — shapes YOU designed, saved in this browser and
@@ -16,7 +16,7 @@ export interface FormationPreset {
   spots: { fx: number; fy: number }[];
 }
 
-const PRESETS_KEY = 'openstage-presets';
+const PRESETS_KEY = 'gridstage-presets';
 
 function readPresets(): FormationPreset[] {
   try {

@@ -43,7 +43,7 @@ export function TopBar(): ReactElement {
   return (
     <header className="topbar">
       <span className="wordmark">
-        Open<em>Stage</em>
+        Grid<em>Stage</em>
       </span>
       <input
         type="text"

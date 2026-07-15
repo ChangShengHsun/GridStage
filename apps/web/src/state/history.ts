@@ -16,7 +16,7 @@ export interface Snapshot extends SnapshotMeta {
   doc: DocState;
 }
 
-const DB_NAME = 'openstage-history';
+const DB_NAME = 'gridstage-history';
 const STORE = 'snapshots';
 
 function openDb(): Promise<IDBDatabase> {

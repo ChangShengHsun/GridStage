@@ -18,9 +18,9 @@ interface PersistedDoc {
 
 async function readDoc(page: Page): Promise<PersistedDoc['state']> {
   const doc = await page.evaluate(
-    () => JSON.parse(localStorage.getItem('openstage-doc') ?? 'null') as PersistedDoc | null,
+    () => JSON.parse(localStorage.getItem('gridstage-doc') ?? 'null') as PersistedDoc | null,
   );
-  if (doc === null) throw new Error('openstage-doc not in localStorage');
+  if (doc === null) throw new Error('gridstage-doc not in localStorage');
   return doc.state;
 }
 
@@ -61,13 +61,13 @@ test.beforeEach(async ({ page }) => {
   // The suite exercises the full toolset — force expert mode (default is
   // easy). Patch, don't overwrite: layout widths must survive reloads.
   await page.addInitScript(() => {
-    const raw = localStorage.getItem('openstage-layout');
+    const raw = localStorage.getItem('gridstage-layout');
     const parsed = (raw !== null ? JSON.parse(raw) : { state: {}, version: 0 }) as {
       state: Record<string, unknown>;
       version: number;
     };
     parsed.state = { ...parsed.state, uiMode: 'expert' };
-    localStorage.setItem('openstage-layout', JSON.stringify(parsed));
+    localStorage.setItem('gridstage-layout', JSON.stringify(parsed));
   });
   await page.goto('/');
   await page.getByText('Add performer').waitFor();
@@ -87,7 +87,7 @@ test('easy mode hides power tools until expert is chosen', async ({ page }) => {
 });
 
 test('app shell renders', async ({ page }) => {
-  await expect(page.locator('.wordmark')).toHaveText('OpenStage');
+  await expect(page.locator('.wordmark')).toHaveText('GridStage');
   await expect(page.getByLabel('Stage canvas')).toBeVisible();
   await expect(page.getByRole('region', { name: 'Timeline' })).toBeVisible();
 });
@@ -946,7 +946,7 @@ test('metronome toggle needs a BPM and latches on', async ({ page }) => {
 test('PWA manifest, service worker and icons are served', async ({ request }) => {
   const manifest = await request.get('/manifest.webmanifest');
   expect(manifest.ok()).toBeTruthy();
-  expect(((await manifest.json()) as { name: string }).name).toBe('OpenStage');
+  expect(((await manifest.json()) as { name: string }).name).toBe('GridStage');
   expect((await request.get('/sw.js')).ok()).toBeTruthy();
   expect((await request.get('/icons/icon-192.png')).ok()).toBeTruthy();
   expect((await request.get('/icons/icon-512.png')).ok()).toBeTruthy();

@@ -1,5 +1,5 @@
 {
-  "name": "@openstage/web",
+  "name": "@gridstage/web",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -14,8 +14,8 @@
     "@fontsource-variable/bricolage-grotesque": "^5.2.0",
     "@fontsource-variable/instrument-sans": "^5.2.0",
     "@fontsource/ibm-plex-mono": "^5.2.0",
-    "@openstage/path-planner": "workspace:*",
-    "@openstage/shared-types": "workspace:*",
+    "@gridstage/path-planner": "workspace:*",
+    "@gridstage/shared-types": "workspace:*",
     "@react-three/fiber": "^9.6.1",
     "jspdf": "^3.0.0",
     "konva": "^10.0.0",

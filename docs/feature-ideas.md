@@ -74,6 +74,27 @@ Status legend: ✅ done · ⬜ open · 🔶 **needs Fable** (see "Which need Fab
   V3a. `state/suggest.ts`: 6 shape families scored by travel (Hungarian
   assignment) + spacing (crowding-gated) + symmetry; top-3 with mini previews
   in the Formation panel. Tuning knobs live as constants in that file.
+- 🔶 **Video → formation charts (影片轉隊形圖)** (L, research-grade) — input a
+  performance video, output an editable draft of who stood where per count.
+  **No turnkey open-source tool exists** (2026-07-15 search): dance AI projects
+  (AI-Dance-Coach, DeepDance, DanceSculpt) only do *pose comparison / scoring*,
+  not top-down positions. The real pipeline is borrowed from **sports player
+  tracking**, where every piece is open source:
+  1. Detect people per frame — pose estimation (MoveNet MultiPose, in-browser)
+     **caps at 6 people**; more needs YOLO person-detection (heavier).
+  2. Track identity across frames — multi-object tracking (LightTrack). Hardest
+     step for dance: crossing + occlusion + identical costumes → ID switching.
+  3. Perspective → stage meters — homography (needs a **fixed camera** + 4 known
+     stage-corner calibration points). Handheld/zooming video ≈ unsolvable.
+  4. Segment continuous motion into discrete counts — detect held formations.
+  Realistic MVP = **"draft generator", not automation**: require fixed overhead
+  camera, ≤6 dancers, manual corner calibration, output an editable draft the
+  user corrects. Feeds straight into the existing editor. **Licensing trap:**
+  YOLO (Ultralytics) is **AGPL** — copyleft, a real problem for GridStage;
+  resolve before adopting. Effort: weeks even on the sports stack; expectation
+  risk (users want magic, physics delivers a draft). Fable: plan + MVP scope
+  first. Refs: github.com/topics/player-tracking, Guanghan/lighttrack,
+  cemunds/awesome-sports-camera-calibration.
 - 🔶 **Stage lighting + light plot / cue sheet (編光表)** (L) — colored stage
   lights + timeline cues. A real subsystem (shared-types, store, 2D overlay,
   3D `SpotLight` wash, cue interpolation, PDF cue sheet). **Needs Fable for
@@ -91,6 +112,8 @@ judgment** and **hard algorithms where "plausible but wrong" is the failure
 mode** — not for mechanical work.
 
 - 🔶 **Formation suggestions** — heuristic + taste; wrong-but-plausible risk.
+- 🔶 **Video → formation charts** — research-grade CV pipeline + AGPL licensing
+  call + MVP scoping; "plausible but wrong" is the whole failure mode.
 - 🔶 **Stage lighting + cue sheet** — big cross-file architecture + design
   ambiguity (at minimum, Fable writes the plan and the tricky parts).
 

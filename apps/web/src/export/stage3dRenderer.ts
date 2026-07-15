@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { Formation, Performer, Performance, StageProp } from '@openstage/shared-types';
+import type { Formation, Performer, Performance, StageProp } from '@gridstage/shared-types';
 import { posesAtTime } from '../state/interpolate';
 import type { PositionMap } from '../state/store';
 

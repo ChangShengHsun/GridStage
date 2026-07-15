@@ -1,8 +1,8 @@
 {
-  "name": "@openstage/shared-types",
+  "name": "@gridstage/shared-types",
   "version": "0.1.0",
   "private": true,
-  "description": "Domain types shared by OpenStage web, api and collab-server",
+  "description": "Domain types shared by GridStage web, api and collab-server",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",

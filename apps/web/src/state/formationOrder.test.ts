@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Formation } from '@openstage/shared-types';
+import type { Formation } from '@gridstage/shared-types';
 import { reindexByStart } from './formationOrder';
 
 function f(id: string, orderIndex: number, startTimeMs: number): Formation {

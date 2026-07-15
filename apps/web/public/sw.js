@@ -1,10 +1,10 @@
 /**
- * OpenStage service worker — network-first with a cache fallback, so the
+ * GridStage service worker — network-first with a cache fallback, so the
  * editor still opens without a connection after the first visit (documents
  * live in localStorage/IndexedDB anyway; only the app shell needs caching).
  * ponytail: no precache manifest — the first online visit fills the cache.
  */
-const CACHE = 'openstage-v1';
+const CACHE = 'gridstage-v1';
 
 self.addEventListener('install', () => {
   self.skipWaiting();

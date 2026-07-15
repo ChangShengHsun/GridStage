@@ -1,4 +1,4 @@
-# OpenStage — visual design tokens
+# GridStage — visual design tokens
 
 The subject is a theater seen from the lighting grid: the app chrome is the
 darkened house, the stage canvas is the one lit surface. Every color decision
@@ -26,7 +26,7 @@ cream + serif + terracotta, broadsheet hairlines.
 | `--ink-dim`    | `#9a8f82` | secondary text, labels                           |
 | `--danger`     | `#d95f5f` | destructive actions, collision warnings          |
 
-Performer colors come from `PERFORMER_COLORS` in `@openstage/shared-types`
+Performer colors come from `PERFORMER_COLORS` in `@gridstage/shared-types`
 (colorblind-safe, distinct against `--floor`).
 
 ## Typography

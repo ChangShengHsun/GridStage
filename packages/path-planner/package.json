@@ -1,5 +1,5 @@
 {
-  "name": "@openstage/path-planner",
+  "name": "@gridstage/path-planner",
   "version": "0.1.0",
   "private": true,
   "description": "Transition planning: minimal-travel assignment (Hungarian) and path collision detection",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { beatsInWindow } from './metronome';
-import type { CountSegment } from '@openstage/shared-types';
+import type { CountSegment } from '@gridstage/shared-types';
 
 // 120 BPM = one beat every 500ms.
 const BPM = 120;

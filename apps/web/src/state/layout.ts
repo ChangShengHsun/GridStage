@@ -53,6 +53,6 @@ export const useLayout = create<LayoutState>()(
       setSnapToGrid: (on) => set({ snapToGrid: on }),
       setUiMode: (mode) => set({ uiMode: mode }),
     }),
-    { name: 'openstage-layout' },
+    { name: 'gridstage-layout' },
   ),
 );

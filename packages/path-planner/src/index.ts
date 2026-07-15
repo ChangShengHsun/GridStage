@@ -1,5 +1,5 @@
 /**
- * Transition planning for OpenStage.
+ * Transition planning for GridStage.
  *
  * - `planTransition`: which performer should take which spot in the next
  *   formation so the total walking distance is minimal — the classic

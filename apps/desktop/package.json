@@ -1,12 +1,12 @@
 {
-  "name": "@openstage/desktop",
+  "name": "@gridstage/desktop",
   "version": "0.1.0",
   "private": true,
-  "description": "OpenStage desktop shell (Electron) — wraps the web app into an installable app",
+  "description": "GridStage desktop shell (Electron) — wraps the web app into an installable app",
   "license": "MIT",
   "main": "main.cjs",
   "scripts": {
-    "renderer": "pnpm --filter @openstage/web build && node copy-renderer.mjs",
+    "renderer": "pnpm --filter @gridstage/web build && node copy-renderer.mjs",
     "start": "pnpm renderer && electron .",
     "dist": "pnpm renderer && electron-builder"
   },
@@ -15,8 +15,8 @@
     "electron-builder": "^25.1.8"
   },
   "build": {
-    "appId": "org.openstage.editor",
-    "productName": "OpenStage",
+    "appId": "org.gridstage.editor",
+    "productName": "GridStage",
     "directories": {
       "output": "release"
     },
@@ -40,7 +40,7 @@
     "publish": {
       "provider": "github",
       "owner": "ChangShengHsun",
-      "repo": "OpenStage",
+      "repo": "GridStage",
       "releaseType": "release"
     }
   },

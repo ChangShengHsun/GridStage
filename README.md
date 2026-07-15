@@ -1,4 +1,4 @@
-# OpenStage
+# GridStage
 
 Open-source collaborative stage formation & choreography editor — for choreographers,
 cheer coaches, stage managers, and dance studios.
@@ -43,7 +43,7 @@ packages/
 ## Project structure
 
 ```
-openstage/
+gridstage/
 ├── apps/
 │   ├── web/            # React + Vite frontend (2D editor, timeline, audio, PDF export)
 │   ├── api/            # NestJS REST API (auth, CRUD, media)          [needs Docker]
@@ -58,16 +58,16 @@ openstage/
 
 ## Install the desktop app (no Node.js needed)
 
-For choreographers and anyone who just wants to **use** OpenStage — you do not
+For choreographers and anyone who just wants to **use** GridStage — you do not
 need Node.js, pnpm, a terminal, or even a browser installed. The desktop app
 bundles everything.
 
-1. Go to the [**Releases**](https://github.com/ChangShengHsun/OpenStage/releases)
-   page and download the latest `OpenStage Setup <version>.exe` (Windows).
+1. Go to the [**Releases**](https://github.com/ChangShengHsun/GridStage/releases)
+   page and download the latest `GridStage Setup <version>.exe` (Windows).
 2. Double-click it and follow the installer. The app is not code-signed yet, so
    Windows SmartScreen may show a blue "Windows protected your PC" box — click
    **More info → Run anyway** (safe: it is your own build).
-3. Launch **OpenStage** from the Start menu.
+3. Launch **GridStage** from the Start menu.
 
 Everything works offline. Your work is saved automatically on that computer
 (there is no cloud account yet), so to move a piece to another machine, export a
@@ -82,8 +82,8 @@ produced.
 
 ```bash
 pnpm install
-pnpm --filter @openstage/desktop start   # run the desktop app without packaging
-pnpm --filter @openstage/desktop dist    # build the installer -> apps/desktop/release/
+pnpm --filter @gridstage/desktop start   # run the desktop app without packaging
+pnpm --filter @gridstage/desktop dist    # build the installer -> apps/desktop/release/
 ```
 
 > **Windows note:** `dist` uses electron-builder, which extracts a toolchain
@@ -105,7 +105,7 @@ The editor persists to browser localStorage — no backend required.
 ### Realtime collaboration (local)
 
 ```bash
-HOST=127.0.0.1 PORT=1234 pnpm --filter @openstage/collab-server start
+HOST=127.0.0.1 PORT=1234 pnpm --filter @gridstage/collab-server start
 pnpm dev:web
 ```
 
