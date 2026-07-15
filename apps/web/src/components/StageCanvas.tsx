@@ -196,6 +196,10 @@ export function StageCanvas(): ReactElement {
       return;
     }
     if (e.target === e.target.getStage() || e.target.name() === 'floor') {
+      // Clicking empty floor deselects the prop, re-enabling dancer editing
+      // (dancers stop listening while a prop is selected, so it stays grabbable
+      // even under a dancer).
+      selectProp(null);
       const pointer = e.target.getStage()?.getPointerPosition();
       if (pointer != null && !isPlaying) {
         marqueeRef.current = { x0: pointer.x, y0: pointer.y, moved: false };
@@ -608,7 +612,7 @@ export function StageCanvas(): ReactElement {
             );
           })()}
 
-        <Layer listening={annotateMode === 'off'}>
+        <Layer listening={annotateMode === 'off' && selectedPropId === null}>
           {performers.map((p) => {
             const pose: StagePose | undefined = livePoses?.get(p.id) ?? {
               x: editPositions[p.id]?.x ?? NaN,
