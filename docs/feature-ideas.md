@@ -106,45 +106,48 @@ Status legend: ✅ done · ⬜ open · 🔶 **needs Fable** (see "Which need Fab
   before touching files (his >10-file rule). Phases: (1) data model,
   (2) 2D overlay + cue interpolation, (3) 3D wash, (4) PDF cue sheet.
 
-## Competitive gaps vs ArrangeUs (audit 2026-07-16)
+## Competitive gaps vs leading mobile formation apps (audit 2026-07-16)
 
-Sources: arrangeus.app + tutorials page + App Store / review-aggregator
-comments. Where GridStage already wins (realtime collab, ghosts with
-crossing warnings, z-elevation/risers, video export, rehearsal-pack PDF,
-free & open source) is not repeated here — only what's still missing.
+Sources: public product pages, tutorial sites, and app-store reviews of the
+leading commercial formation apps (details in the 2026-07-16 session notes;
+per the legal red line, no third-party product names in this repo). Where
+GridStage already wins (realtime collab, ghosts with crossing warnings,
+z-elevation/risers, video export, rehearsal-pack PDF, free & open source)
+is not repeated here — only what's still missing.
 
 Functional:
 
 - ⬜ **Group rotate + stretch/scale** (M) — completes the transform set
   (swap/mirror/align/distribute exist in `state/formationTransform.ts`);
-  ArrangeUs has all four quick actions.
+  the market leader has all four quick actions.
 - ⬜ **Choreography file export/import (JSON)** (S) — share a whole doc
-  without a server, like `.arrangeus` files. Cheapest gap; also doubles as
-  a browser-independent backup. (Verify it truly doesn't exist first —
-  ExportDialog showed no JSON option on 2026-07-16.)
-- ⬜ **Dancer shapes / state markers** (M) — ArrangeUs 2026 update lets a
-  dancer's shape show a state (kneel, jump, small hand prop). We only have
+  without a server, as competitors do with their document files. Cheapest
+  gap; also doubles as a browser-independent backup. (Verify it truly
+  doesn't exist first — ExportDialog showed no JSON option on 2026-07-16.)
+- ⬜ **Dancer shapes / state markers** (M) — competitors let a dancer's
+  shape show a state (kneel, jump, small hand prop). We only have
   color + facing arrow + badge.
 
 Non-functional (from user reviews, not feature lists):
 
-- ⬜ **Responsive / touch layout** (L) — the single biggest gap. ArrangeUs's
-  core scenario is a phone on the rehearsal floor; GridStage is unusable on
-  mobile today.
-- ⬜ **Data-safety story** (M) — ArrangeUs has iCloud auto-backup + device
-  transfer. Our localStorage/IndexedDB dies with "clear browsing data" and
-  is bound to one browser. JSON export/import above is step 1; accounts /
-  cloud sync is the long-term answer.
-- ⬜ **60-performer stress test** (S) — ArrangeUs advertises 60 (free) to
-  100 (paid) dancers. We have never measured drag/playback at that scale;
-  one scripted check settles it.
-- ⬜ **Timing-edit regression check** (S) — ArrangeUs users complain that
+- ⬜ **Responsive / touch layout** (L) — the single biggest gap. The
+  competitors' core scenario is a phone on the rehearsal floor; GridStage
+  is unusable on mobile today.
+- ⬜ **Data-safety story** (M) — competitors have cloud auto-backup +
+  device transfer. Our localStorage/IndexedDB dies with "clear browsing
+  data" and is bound to one browser. JSON export/import above is step 1;
+  accounts / cloud sync is the long-term answer.
+- ⬜ **60-performer stress test** (S) — commercial apps advertise 60–100
+  dancers. We have never measured drag/playback at that scale; one
+  scripted check settles it.
+- ⬜ **Timing-edit regression check** (S) — competitor users complain that
   fixing an early music-sync point shifts and ruins all later formations.
   Verify our timeline doesn't share the failure mode (edit an early
   formation's start with later ones synced), pin with a test.
-- **Community / distribution** (not code) — 457K+ users, 5.0 App Store
-  rating, official tutorials, active IG/TikTok vs our zero. Demo videos +
-  in-app guide (in progress) are the right first moves.
+- **Community / distribution** (not code) — the market leader has 457K+
+  users, top app-store ratings, official tutorials, active social media vs
+  our zero. Demo videos + in-app guide (in progress) are the right first
+  moves.
 
 ## Which need Fable (vs any model)
 
