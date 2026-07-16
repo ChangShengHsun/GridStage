@@ -17,7 +17,8 @@ Status legend: ✅ done · ⬜ open · 🔶 **needs Fable** (see "Which need Fab
   formation panel.
 - ✅ **Performer badge** — one CJK char / up to 4 letters inside the 2D mark
   and as a paper tag on the face in 3D (Ivan-requested).
-- ⬜ **Snap-to-grid toggle** (S) — 0.5m grid snapping while dragging.
+- ✅ **Snap-to-grid toggle** — implemented (persisted in `state/layout.ts`,
+  applied in StageCanvas); status was stale here until 2026-07-16.
 - ✅ **Delete key + clipboard hotkeys** — Delete/Backspace, Ctrl+C/V positions,
   Ctrl+A, Ctrl+D duplicate formation, Escape (2026-07-13).
 
@@ -104,6 +105,46 @@ Status legend: ✅ done · ⬜ open · 🔶 **needs Fable** (see "Which need Fab
   Sonnet can execute the mechanical phases. Propose the staged plan to Ivan
   before touching files (his >10-file rule). Phases: (1) data model,
   (2) 2D overlay + cue interpolation, (3) 3D wash, (4) PDF cue sheet.
+
+## Competitive gaps vs ArrangeUs (audit 2026-07-16)
+
+Sources: arrangeus.app + tutorials page + App Store / review-aggregator
+comments. Where GridStage already wins (realtime collab, ghosts with
+crossing warnings, z-elevation/risers, video export, rehearsal-pack PDF,
+free & open source) is not repeated here — only what's still missing.
+
+Functional:
+
+- ⬜ **Group rotate + stretch/scale** (M) — completes the transform set
+  (swap/mirror/align/distribute exist in `state/formationTransform.ts`);
+  ArrangeUs has all four quick actions.
+- ⬜ **Choreography file export/import (JSON)** (S) — share a whole doc
+  without a server, like `.arrangeus` files. Cheapest gap; also doubles as
+  a browser-independent backup. (Verify it truly doesn't exist first —
+  ExportDialog showed no JSON option on 2026-07-16.)
+- ⬜ **Dancer shapes / state markers** (M) — ArrangeUs 2026 update lets a
+  dancer's shape show a state (kneel, jump, small hand prop). We only have
+  color + facing arrow + badge.
+
+Non-functional (from user reviews, not feature lists):
+
+- ⬜ **Responsive / touch layout** (L) — the single biggest gap. ArrangeUs's
+  core scenario is a phone on the rehearsal floor; GridStage is unusable on
+  mobile today.
+- ⬜ **Data-safety story** (M) — ArrangeUs has iCloud auto-backup + device
+  transfer. Our localStorage/IndexedDB dies with "clear browsing data" and
+  is bound to one browser. JSON export/import above is step 1; accounts /
+  cloud sync is the long-term answer.
+- ⬜ **60-performer stress test** (S) — ArrangeUs advertises 60 (free) to
+  100 (paid) dancers. We have never measured drag/playback at that scale;
+  one scripted check settles it.
+- ⬜ **Timing-edit regression check** (S) — ArrangeUs users complain that
+  fixing an early music-sync point shifts and ruins all later formations.
+  Verify our timeline doesn't share the failure mode (edit an early
+  formation's start with later ones synced), pin with a test.
+- **Community / distribution** (not code) — 457K+ users, 5.0 App Store
+  rating, official tutorials, active IG/TikTok vs our zero. Demo videos +
+  in-app guide (in progress) are the right first moves.
 
 ## Which need Fable (vs any model)
 
