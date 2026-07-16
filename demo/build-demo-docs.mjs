@@ -14,7 +14,14 @@ import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'apps', 'web', 'public', 'seed-demo.html');
+const OUT = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  'apps',
+  'web',
+  'public',
+  'seed-demo.html',
+);
 
 const STAGE_W = 12;
 const STAGE_H = 8;
@@ -193,10 +200,14 @@ function verify(doc) {
       const pos = doc.positions[f.id]?.[p.id];
       if (!pos) throw new Error(`${doc.performance.title}: ${f.name} missing ${p.name}`);
       if (pos.x < 0 || pos.x > STAGE_W || pos.y < 0 || pos.y > STAGE_H) {
-        throw new Error(`${doc.performance.title}: ${f.name}/${p.name} off stage (${pos.x},${pos.y})`);
+        throw new Error(
+          `${doc.performance.title}: ${f.name}/${p.name} off stage (${pos.x},${pos.y})`,
+        );
       }
       if (f.transitionType === 'curve' && !pos.curveControlPoints) {
-        throw new Error(`${doc.performance.title}: ${f.name}/${p.name} curve without control point`);
+        throw new Error(
+          `${doc.performance.title}: ${f.name}/${p.name} curve without control point`,
+        );
       }
     }
   }

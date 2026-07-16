@@ -31,8 +31,7 @@ export function NumberField({
   ...rest
 }: NumberFieldProps): ReactElement {
   const [draft, setDraft] = useState<string | null>(null);
-  const shown =
-    draft ?? String(decimals !== undefined ? Number(value.toFixed(decimals)) : value);
+  const shown = draft ?? String(decimals !== undefined ? Number(value.toFixed(decimals)) : value);
   return (
     <input
       type="number"

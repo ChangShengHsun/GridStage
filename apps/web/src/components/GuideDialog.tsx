@@ -38,45 +38,45 @@ export function GuideDialog(): ReactElement {
       >
         {open && (
           <>
-        <div className="export-dialog-head">
-          <span className="panel-title" style={{ margin: 0 }}>
-            {t.guide.title}
-          </span>
-          <button type="button" className="btn" onClick={() => dialogRef.current?.close()}>
-            {t.guide.close}
-          </button>
-        </div>
-        <div className="guide-body">
-          {GUIDE.map((section, i) => (
-            <details key={section.id} className="guide-section" open={i === 0}>
-              <summary>{section.title}</summary>
-              {section.intro !== undefined && <p className="guide-intro">{section.intro}</p>}
-              {section.demo !== undefined && (
-                <p className="guide-demo">▶ 跟著做：從 Library 開啟範例「{section.demo}」</p>
-              )}
-              {section.features.map((f) => (
-                <div key={f.title} className="guide-feature">
-                  <h4>{f.title}</h4>
-                  {f.body.map((line, li) => (
-                    <p key={li}>{line}</p>
-                  ))}
-                  {f.tip !== undefined && <p className="guide-tip">💡 {f.tip}</p>}
-                  {f.shot !== undefined && (
-                    <img
-                      className="guide-shot"
-                      src={`/guide/${f.shot}`}
-                      alt={f.title}
-                      loading="lazy"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
+            <div className="export-dialog-head">
+              <span className="panel-title" style={{ margin: 0 }}>
+                {t.guide.title}
+              </span>
+              <button type="button" className="btn" onClick={() => dialogRef.current?.close()}>
+                {t.guide.close}
+              </button>
+            </div>
+            <div className="guide-body">
+              {GUIDE.map((section, i) => (
+                <details key={section.id} className="guide-section" open={i === 0}>
+                  <summary>{section.title}</summary>
+                  {section.intro !== undefined && <p className="guide-intro">{section.intro}</p>}
+                  {section.demo !== undefined && (
+                    <p className="guide-demo">▶ 跟著做：從 Library 開啟範例「{section.demo}」</p>
                   )}
-                </div>
+                  {section.features.map((f) => (
+                    <div key={f.title} className="guide-feature">
+                      <h4>{f.title}</h4>
+                      {f.body.map((line, li) => (
+                        <p key={li}>{line}</p>
+                      ))}
+                      {f.tip !== undefined && <p className="guide-tip">💡 {f.tip}</p>}
+                      {f.shot !== undefined && (
+                        <img
+                          className="guide-shot"
+                          src={`/guide/${f.shot}`}
+                          alt={f.title}
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </details>
               ))}
-            </details>
-          ))}
-        </div>
+            </div>
           </>
         )}
       </dialog>
