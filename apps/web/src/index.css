@@ -540,6 +540,25 @@ input[type='color'] {
 .guide-dialog::backdrop {
   background: rgba(10, 8, 6, 0.65);
 }
+
+/* Backup reminder: a small banner above the timeline, bottom-right. */
+.backup-nudge {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 460px;
+  padding: 10px 14px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 12.5px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+}
 .guide-body {
   overflow-y: auto;
   padding: 8px 16px 20px;

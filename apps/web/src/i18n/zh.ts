@@ -116,6 +116,12 @@ export const zh: Messages = {
     close: '關閉',
   },
 
+  backup: {
+    reminder: '你的作品只存在這個瀏覽器裡——匯出備份檔，清除瀏覽資料才不會把它刪掉。',
+    exportNow: '匯出備份',
+    later: '之後再說',
+  },
+
   export: {
     open: '匯出…',
     title: '匯出',

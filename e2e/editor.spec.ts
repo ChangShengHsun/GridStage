@@ -255,6 +255,23 @@ test('state marker is per-formation and survives reload', async ({ page }) => {
   expect((state.positions[f2?.id ?? '']?.[pid] as WithMarker | undefined)?.marker).toBeUndefined();
 });
 
+test('backup nudge appears for real work and snoozes for a week', async ({ page }) => {
+  // Fresh doc: no nudge.
+  await expect(page.getByText('Export backup')).toBeHidden();
+  // Three performers cross the "real work" threshold; the check runs at
+  // mount, so it shows after a reload.
+  for (let i = 0; i < 3; i++) await page.getByText('Add performer').click();
+  await page.reload();
+  await page.getByText('Add performer').waitFor();
+  await expect(page.getByRole('button', { name: 'Export backup' })).toBeVisible();
+  // "Later" snoozes across reloads.
+  await page.getByRole('button', { name: 'Later', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Export backup' })).toBeHidden();
+  await page.reload();
+  await page.getByText('Add performer').waitFor();
+  await expect(page.getByText('Export backup')).toBeHidden();
+});
+
 test('section markers: add, name, persist, remove', async ({ page }) => {
   await page.getByRole('button', { name: 'Add section' }).click();
   // The rename box is focused immediately; type a name and commit.

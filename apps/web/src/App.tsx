@@ -18,6 +18,7 @@ import { useStageBackground } from './state/stageBackground';
 import { useT } from './i18n';
 import { useLayout } from './state/layout';
 import { PanelResizer } from './components/PanelResizer';
+import { BackupNudge } from './components/BackupNudge';
 
 export function App(): ReactElement {
   const t = useT();
@@ -132,6 +133,7 @@ export function App(): ReactElement {
         </>
       )}
       <PanelResizer side="timeline" />
+      {!isViewMode && <BackupNudge />}
       <input
         ref={fileInputRef}
         type="file"

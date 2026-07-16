@@ -1,6 +1,7 @@
 import { useEditor } from './store';
 import type { DocState } from './store';
 import { safeFilename } from '../export/filename';
+import { recordExport } from './backupNudge';
 
 /**
  * Choreography file export/import — a plain JSON snapshot of one DocState,
@@ -80,4 +81,5 @@ export function exportActiveDocFile(): void {
   a.download = `${safeFilename(doc.performance.title)}.gridstage.json`;
   a.click();
   URL.revokeObjectURL(url);
+  recordExport(); // quiets the backup nudge for a week
 }

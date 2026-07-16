@@ -115,6 +115,13 @@ export const en = {
     close: 'Close',
   },
 
+  backup: {
+    reminder:
+      'Your work lives only in this browser — export a backup file so clearing browser data can’t erase it.',
+    exportNow: 'Export backup',
+    later: 'Later',
+  },
+
   export: {
     open: 'Export…',
     title: 'Export',
