@@ -115,6 +115,22 @@ export const en = {
     close: 'Close',
   },
 
+  refVideo: {
+    panelAria: 'Reference video',
+    dragHint: 'Drag to move; pull the corner to resize',
+    toSplit: 'Split',
+    toPip: 'PiP',
+    layoutTitle: 'Switch between the floating window and a half-screen split',
+    close: 'Close',
+    formatError: 'This browser cannot decode the video (try MP4/H.264).',
+    offsetLabel: 'Offset (s)',
+    offsetTitle:
+      'Where timeline 0 sits inside the video — the lead-in before the piece starts (countdown, applause…)',
+    alignHere: 'Align here',
+    alignTitle:
+      'Pause the video on a known beat, drag the playhead to that beat, then click: the offset is computed for you',
+  },
+
   backup: {
     reminder:
       'Your work lives only in this browser — export a backup file so clearing browser data can’t erase it.',
@@ -390,6 +406,10 @@ export const en = {
     resizeEndAria: 'Drag to change how long this formation holds',
     uploadAudio: 'Upload audio',
     replaceAudio: 'Replace audio',
+    refVideo: 'Ref video',
+    refVideoTitle:
+      'Load a reference video (MV, competition footage, a rehearsal recording) that plays in sync with the charts. Its sound becomes the master. Not saved — pick the file again next session.',
+    refVideoFileAria: 'Reference video file',
     removeAudio: 'Remove audio',
     tapBeat: 'Tap beat',
     tapBeatTitle: 'Drop a beat marker at the playhead (great while music plays)',

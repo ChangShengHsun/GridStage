@@ -116,6 +116,20 @@ export const zh: Messages = {
     close: '關閉',
   },
 
+  refVideo: {
+    panelAria: '參考影片',
+    dragHint: '拖曳移動；拉右下角調整大小',
+    toSplit: '分割',
+    toPip: '浮窗',
+    layoutTitle: '在浮動小窗與左右分割畫面之間切換',
+    close: '關閉',
+    formatError: '瀏覽器無法解碼這支影片（建議用 MP4/H.264）。',
+    offsetLabel: '偏移（秒）',
+    offsetTitle: '時間軸 0 秒對應影片中的哪個時間點——也就是開頭的倒數、掌聲等前置長度',
+    alignHere: '對齊到播放頭',
+    alignTitle: '把影片暫停在一個明確的拍點、把播放頭拖到同一拍，按下後自動算出偏移',
+  },
+
   backup: {
     reminder: '你的作品只存在這個瀏覽器裡——匯出備份檔，清除瀏覽資料才不會把它刪掉。',
     exportNow: '匯出備份',
@@ -384,6 +398,10 @@ export const zh: Messages = {
     resizeEndAria: '拖曳以改變此隊形停留的長度',
     uploadAudio: '上傳音訊',
     replaceAudio: '更換音訊',
+    refVideo: '參考影片',
+    refVideoTitle:
+      '載入一支參考影片（MV、比賽錄影、排練錄影），與隊形圖同步播放；影片的聲音會成為主音軌。不會儲存——下次開啟需重新選檔。',
+    refVideoFileAria: '參考影片檔案',
     removeAudio: '移除音訊',
     tapBeat: '標記節拍',
     tapBeatTitle: '在播放頭處放下節拍標記（播放音樂時特別好用）',

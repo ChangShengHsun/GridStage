@@ -272,6 +272,81 @@ test('backup nudge appears for real work and snoozes for a week', async ({ page 
   await expect(page.getByText('Export backup')).toBeHidden();
 });
 
+test('reference video: loads, seeks with the offset, switches layouts, drives playback', async ({
+  page,
+}) => {
+  // Record a 3s webm in-page (canvas capture) — no binary fixture in the repo.
+  const videoBytes = await page.evaluate(async () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 160;
+    canvas.height = 120;
+    const ctx = canvas.getContext('2d');
+    if (ctx === null) throw new Error('no 2d context');
+    const recorder = new MediaRecorder(canvas.captureStream(10), { mimeType: 'video/webm' });
+    const chunks: Blob[] = [];
+    recorder.ondataavailable = (e) => chunks.push(e.data);
+    const stopped = new Promise<Blob>((resolve) => {
+      recorder.onstop = () => resolve(new Blob(chunks, { type: 'video/webm' }));
+    });
+    recorder.start();
+    const startedAt = performance.now();
+    await new Promise<void>((resolve) => {
+      const draw = (): void => {
+        ctx.fillStyle = `hsl(${((performance.now() - startedAt) / 10).toFixed(0)}, 70%, 50%)`;
+        ctx.fillRect(0, 0, 160, 120);
+        if (performance.now() - startedAt > 3000) {
+          recorder.stop();
+          resolve();
+        } else {
+          requestAnimationFrame(draw);
+        }
+      };
+      draw();
+    });
+    return Array.from(new Uint8Array(await (await stopped).arrayBuffer()));
+  });
+
+  await page.getByLabel('Reference video file').setInputFiles({
+    name: 'ref.webm',
+    mimeType: 'video/webm',
+    buffer: Buffer.from(videoBytes),
+  });
+  await expect(page.getByLabel('Reference video', { exact: true })).toBeVisible();
+
+  // Offset 1s: with the playhead paused at 0, the video seeks to 1.0s.
+  await page.locator('#ref-video-offset').fill('1');
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.querySelector<HTMLVideoElement>('.ref-video-el')?.currentTime ?? -1,
+      ),
+    )
+    .toBeGreaterThan(0.8);
+
+  // Layout round-trip PiP → split → PiP.
+  await page.getByRole('button', { name: 'Split', exact: true }).click();
+  await expect(page.locator('.stage-area-split')).toBeVisible();
+  await page.getByRole('button', { name: 'PiP', exact: true }).click();
+  await expect(page.locator('.stage-area-split')).toHaveCount(0);
+
+  // Play: the video is the clock — it advances past the seeked position.
+  await page.getByRole('button', { name: 'Play' }).click();
+  await page.waitForTimeout(700);
+  await page.getByRole('button', { name: 'Pause' }).click();
+  const videoTime = await page.evaluate(
+    () => document.querySelector<HTMLVideoElement>('.ref-video-el')?.currentTime ?? -1,
+  );
+  expect(videoTime).toBeGreaterThan(1.2);
+  const paused = await page.evaluate(
+    () => document.querySelector<HTMLVideoElement>('.ref-video-el')?.paused ?? false,
+  );
+  expect(paused).toBe(true);
+
+  // Close removes the panel; playback falls back to the rAF clock.
+  await page.getByLabel('Reference video', { exact: true }).getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByLabel('Reference video', { exact: true })).toBeHidden();
+});
+
 test('section markers: add, name, persist, remove', async ({ page }) => {
   await page.getByRole('button', { name: 'Add section' }).click();
   // The rename box is focused immediately; type a name and commit.

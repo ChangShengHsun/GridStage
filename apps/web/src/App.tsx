@@ -19,6 +19,8 @@ import { useT } from './i18n';
 import { useLayout } from './state/layout';
 import { PanelResizer } from './components/PanelResizer';
 import { BackupNudge } from './components/BackupNudge';
+import { RefVideo } from './components/RefVideo';
+import { useRefVideo } from './state/refVideo';
 
 export function App(): ReactElement {
   const t = useT();
@@ -32,6 +34,7 @@ export function App(): ReactElement {
   const setAnnotateMode = useEditor((s) => s.setAnnotateMode);
   const { togglePlay } = usePlayback();
   useAppHotkeys(togglePlay);
+  const refVideoSplit = useRefVideo((s) => s.objectUrl !== null && s.layout === 'split');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [audioVersion, setAudioVersion] = useState(0);
@@ -67,7 +70,12 @@ export function App(): ReactElement {
     >
       <TopBar />
       <CastPanel />
-      <main className="stage-area" aria-label={t.stage.canvasAria}>
+      <main
+        className={`stage-area${refVideoSplit ? ' stage-area-split' : ''}`}
+        aria-label={t.stage.canvasAria}
+      >
+        <RefVideo />
+        <div className="stage-canvas-slot">
         {show3d ? (
           <Suspense fallback={<p className="empty-note">{t.stage.loading3d}</p>}>
             <Stage3D />
@@ -115,6 +123,7 @@ export function App(): ReactElement {
           >
             {show3d ? '2D' : '3D'}
           </button>
+        </div>
         </div>
       </main>
       <PropertiesPanel />

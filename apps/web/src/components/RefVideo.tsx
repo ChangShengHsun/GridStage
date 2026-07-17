@@ -1,0 +1,130 @@
+import { useRef, useState } from 'react';
+import type { PointerEvent as ReactPointerEvent, ReactElement } from 'react';
+import { registerVideoElement, useRefVideo } from '../state/refVideo';
+import { useEditor } from '../state/store';
+import { NumberField } from './NumberField';
+import { useT } from '../i18n';
+
+/**
+ * The reference-video panel (docs/ref-video-sync-design.md). One <video>
+ * element shared by both layouts — the wrapper's class switches between a
+ * draggable PiP window and a split pane, so toggling never resets playback.
+ * The timeline is the only transport: no native video controls.
+ */
+export function RefVideo(): ReactElement | null {
+  const t = useT();
+  const objectUrl = useRefVideo((s) => s.objectUrl);
+  const fileName = useRefVideo((s) => s.fileName);
+  const offsetMs = useRefVideo((s) => s.offsetMs);
+  const layout = useRefVideo((s) => s.layout);
+  const setOffsetMs = useRefVideo((s) => s.setOffsetMs);
+  const setLayout = useRefVideo((s) => s.setLayout);
+  const clear = useRefVideo((s) => s.clear);
+  const [error, setError] = useState(false);
+  // PiP position, draggable by the header (session-local, default bottom-left).
+  const [pos, setPos] = useState({ left: 12, bottom: 12 });
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const dragRef = useRef<{
+    startX: number;
+    startY: number;
+    baseLeft: number;
+    baseBottom: number;
+  } | null>(null);
+
+  if (objectUrl === null) return null;
+
+  const onHeaderPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
+    if (layout !== 'pip') return;
+    // Capturing on a button press would swallow its click — buttons opt out.
+    if (e.target instanceof Element && e.target.closest('button') !== null) return;
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      baseLeft: pos.left,
+      baseBottom: pos.bottom,
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onHeaderPointerMove = (e: ReactPointerEvent<HTMLDivElement>): void => {
+    const d = dragRef.current;
+    if (d === null) return;
+    setPos({
+      left: d.baseLeft + (e.clientX - d.startX),
+      bottom: d.baseBottom - (e.clientY - d.startY),
+    });
+  };
+  const onHeaderPointerUp = (): void => {
+    dragRef.current = null;
+  };
+
+  return (
+    <div
+      className={layout === 'pip' ? 'ref-video-pip' : 'ref-video-splitpane'}
+      style={layout === 'pip' ? { left: pos.left, bottom: pos.bottom } : undefined}
+      aria-label={t.refVideo.panelAria}
+    >
+      <div
+        className="ref-video-head"
+        onPointerDown={onHeaderPointerDown}
+        onPointerMove={onHeaderPointerMove}
+        onPointerUp={onHeaderPointerUp}
+        title={layout === 'pip' ? t.refVideo.dragHint : undefined}
+      >
+        <span className="ref-video-name">{fileName}</span>
+        <button
+          type="button"
+          className="btn"
+          title={t.refVideo.layoutTitle}
+          onClick={() => setLayout(layout === 'pip' ? 'split' : 'pip')}
+        >
+          {layout === 'pip' ? t.refVideo.toSplit : t.refVideo.toPip}
+        </button>
+        <button type="button" className="btn" onClick={clear}>
+          {t.refVideo.close}
+        </button>
+      </div>
+      {error ? (
+        <p className="empty-note" role="alert">
+          {t.refVideo.formatError}
+        </p>
+      ) : (
+        <video
+          ref={(el) => {
+            videoRef.current = el;
+            registerVideoElement(el);
+          }}
+          className="ref-video-el"
+          src={objectUrl}
+          playsInline
+          preload="auto"
+          onError={() => setError(true)}
+        />
+      )}
+      <div className="ref-video-controls">
+        <label htmlFor="ref-video-offset" title={t.refVideo.offsetTitle}>
+          {t.refVideo.offsetLabel}
+        </label>
+        <NumberField
+          id="ref-video-offset"
+          step={0.1}
+          decimals={2}
+          style={{ width: 72 }}
+          value={offsetMs / 1000}
+          onCommit={(v) => setOffsetMs(v * 1000)}
+        />
+        <button
+          type="button"
+          className="btn"
+          title={t.refVideo.alignTitle}
+          onClick={() => {
+            const video = videoRef.current;
+            if (video === null) return;
+            setOffsetMs(video.currentTime * 1000 - useEditor.getState().playheadMs);
+          }}
+        >
+          {t.refVideo.alignHere}
+        </button>
+      </div>
+    </div>
+  );
+}

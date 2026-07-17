@@ -541,6 +541,77 @@ input[type='color'] {
   background: rgba(10, 8, 6, 0.65);
 }
 
+/* Reference video (docs/ref-video-sync-design.md). The canvas lives in a
+   slot so split mode can push it to the right half; by default the slot is
+   invisible plumbing (fills the stage area exactly as before). */
+.stage-canvas-slot {
+  position: absolute;
+  inset: 0;
+}
+.stage-area-split .stage-canvas-slot {
+  left: 50%;
+}
+.ref-video-pip,
+.ref-video-splitpane {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  z-index: 5;
+}
+.ref-video-pip {
+  position: absolute;
+  width: 340px;
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  /* Native corner resize — no JS. */
+  resize: both;
+  overflow: hidden;
+  min-width: 220px;
+  min-height: 160px;
+  max-width: 70%;
+  max-height: 80%;
+}
+.ref-video-splitpane {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  border-width: 0 1px 0 0;
+}
+.ref-video-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  cursor: grab;
+  touch-action: none;
+}
+.ref-video-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  color: var(--ink);
+}
+.ref-video-el {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  object-fit: contain;
+  background: #000;
+}
+.ref-video-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  font-size: 11.5px;
+}
+
 /* Backup reminder: a small banner above the timeline, bottom-right. */
 .backup-nudge {
   position: fixed;

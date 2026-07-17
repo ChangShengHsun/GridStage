@@ -4,6 +4,7 @@ import type { Formation } from '@gridstage/shared-types';
 import { useEditor } from '../state/store';
 import { byOrder, effectiveCountSegments, eightCountMarks, showEndMs } from '../state/interpolate';
 import { audioDurationMs, getAudioElement, getWaveformPeaks } from '../audio/audioPlayer';
+import { useRefVideo } from '../state/refVideo';
 import { BeatDialog } from './BeatDialog';
 import { useT } from '../i18n';
 
@@ -67,6 +68,7 @@ export function Timeline({
   const contentRef = useRef<HTMLDivElement>(null);
   const waveformRef = useRef<HTMLCanvasElement>(null);
   const dragRef = useRef<DragState | null>(null);
+  const refVideoInputRef = useRef<HTMLInputElement>(null);
   // When a zoom changes, keep this time anchored under this viewport-x pixel.
   const anchorRef = useRef<{ ms: number; px: number } | null>(null);
 
@@ -322,6 +324,26 @@ export function Timeline({
             {t.timeline.removeAudio}
           </button>
         )}
+        <button
+          type="button"
+          className="btn edit-only expert-only-ui"
+          title={t.timeline.refVideoTitle}
+          onClick={() => refVideoInputRef.current?.click()}
+        >
+          {t.timeline.refVideo}
+        </button>
+        <input
+          ref={refVideoInputRef}
+          type="file"
+          accept="video/*"
+          aria-label={t.timeline.refVideoFileAria}
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (file !== undefined) useRefVideo.getState().load(file);
+          }}
+        />
         <button
           type="button"
           className="btn edit-only expert-only-ui"
