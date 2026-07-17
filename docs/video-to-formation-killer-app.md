@@ -84,6 +84,15 @@ constraint; detection on a paused frame handles a full stage).
 
 ## 6. Build ladder
 
+> **M0 SHIPPED 2026-07-17** (same day as this research; stages A–D each
+> committed separately). vision/homography.ts (DLT + inverse, 6 unit
+> tests), vision/detector.ts (YOLOX-nano ONNX, WebGPU→wasm, verified 6/7
+> on a real six-dancer photo, ~1.8s/frame on CPU), CalibrationOverlay
+> (draggable pins + live reprojected meter grid), vision/capture.ts
+> (captureAtTime + Hungarian assignment + ambiguity flagging, 5 unit
+> tests + stubbed-detector e2e). Next on the ladder: M1 facing / M2
+> whole-video (loop captureAtTime at 1s, threshold on mean displacement).
+
 - **M0 — Capture this frame** (1–2 weeks, the killer MVP):
   calibration overlay (click 4 corners on the paused video; store per
   session next to refVideo state) → "Capture formation" button in the
