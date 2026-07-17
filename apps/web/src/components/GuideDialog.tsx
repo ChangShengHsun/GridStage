@@ -64,7 +64,7 @@ export function GuideDialog(): ReactElement {
                       {f.shot !== undefined && (
                         <img
                           className="guide-shot"
-                          src={`/guide/${f.shot}`}
+                          src={`${import.meta.env.BASE_URL}guide/${f.shot}`}
                           alt={f.title}
                           loading="lazy"
                           onError={(e) => {

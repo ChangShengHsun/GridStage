@@ -40,7 +40,8 @@ self.addEventListener('fetch', (event) => {
         });
         if (cached !== undefined) return cached;
         if (event.request.mode === 'navigate') {
-          const shell = await caches.match('/', { ignoreSearch: true });
+          // Scope-relative: the app may be hosted at a subpath (GitHub Pages).
+          const shell = await caches.match(self.registration.scope, { ignoreSearch: true });
           if (shell !== undefined) return shell;
         }
         return Response.error();

@@ -3,6 +3,9 @@ import react from '@vitejs/plugin-react';
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Subpath hosting (GitHub Pages serves at /GridStage/) — see
+  // .github/workflows/pages.yml. Default stays '/' for dev, e2e and desktop.
+  base: process.env.GRIDSTAGE_BASE ?? '/',
   plugins: [react()],
   optimizeDeps: {
     // Pre-bundle deps the dev server would otherwise optimize on demand —

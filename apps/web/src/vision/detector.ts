@@ -13,7 +13,7 @@
  */
 import type * as OrtTypes from 'onnxruntime-web';
 
-const MODEL_URL = '/models/yolox_nano.onnx';
+const MODEL_URL = `${import.meta.env.BASE_URL}models/yolox_nano.onnx`;
 const INPUT_SIZE = 416;
 const STRIDES = [8, 16, 32];
 const PERSON_CLASS = 0;

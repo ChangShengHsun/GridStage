@@ -28,6 +28,6 @@ void migrateMediaDatabases().finally(() => {
 // worker on the dev server would serve stale modules mid-edit.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register('/sw.js');
+    void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`);
   });
 }

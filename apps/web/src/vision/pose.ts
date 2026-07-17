@@ -14,7 +14,7 @@ import type { PersonBox } from './detector';
 import { applyHomography, normalizeStageRotation } from './homography';
 import type { Homography, Point2 } from './homography';
 
-const MODEL_URL = '/models/rtmpose-t.onnx';
+const MODEL_URL = `${import.meta.env.BASE_URL}models/rtmpose-t.onnx`;
 const INPUT_W = 192;
 const INPUT_H = 256;
 const SIMCC_RATIO = 2;

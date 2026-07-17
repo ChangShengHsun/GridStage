@@ -1,0 +1,48 @@
+# Deploys the web app to GitHub Pages on every push to main, so phone
+# users (Android/iOS) can open it in a browser and "Add to Home Screen" —
+# the PWA manifest + service worker make it behave like an installed app.
+# Live at: https://changshenghsun.github.io/GridStage/
+name: Deploy to GitHub Pages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; a newer push supersedes a running one.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build for the /GridStage/ subpath
+        run: pnpm --filter @gridstage/web build
+        env:
+          GRIDSTAGE_BASE: /GridStage/
+      - uses: actions/configure-pages@v5
+        with:
+          # First run enables Pages on the repo via the API.
+          enablement: true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
+      - id: deployment
+        uses: actions/deploy-pages@v4
