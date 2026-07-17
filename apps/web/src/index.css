@@ -597,12 +597,26 @@ input[type='color'] {
   font-size: 11.5px;
   color: var(--ink);
 }
+.ref-video-frame {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
 .ref-video-el {
   flex: 1;
   min-height: 0;
   width: 100%;
   object-fit: contain;
   background: #000;
+}
+.calibration-overlay {
+  position: absolute;
+  inset: 0;
+}
+.calibration-overlay svg {
+  display: block;
+  touch-action: none;
 }
 .ref-video-controls {
   display: flex;

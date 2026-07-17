@@ -129,6 +129,16 @@ export const en = {
     alignHere: 'Align here',
     alignTitle:
       'Pause the video on a known beat, drag the playhead to that beat, then click: the offset is computed for you',
+    calibrate: 'Calibrate',
+    calibrateDone: 'Done',
+    calibrateTitle:
+      'Drag the four pins onto the stage corners in the video; the green meter grid shows when it’s right',
+    calibrationAria: 'Stage corner calibration',
+    degenerateCorners: 'Corners overlap — spread the pins apart',
+    cornerUpLeft: 'upstage L',
+    cornerUpRight: 'upstage R',
+    cornerDownRight: 'downstage R',
+    cornerDownLeft: 'downstage L',
   },
 
   backup: {

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { Point2 } from '../vision/homography';
 
 /**
  * Reference video — play an imported video against the charts on ONE shared
@@ -16,10 +17,21 @@ interface RefVideoState {
   fileName: string;
   offsetMs: number;
   layout: RefVideoLayout;
+  /**
+   * Stage-corner calibration for video→formation capture: the four stage
+   * corners as VIDEO-INTRINSIC pixels (videoWidth×videoHeight space), in
+   * stage order upstage-left, upstage-right, downstage-right,
+   * downstage-left. Null until the user calibrates.
+   */
+  corners: Point2[] | null;
+  /** Calibration overlay visible (pins + reprojected meter grid). */
+  calibrating: boolean;
   load: (file: File) => void;
   clear: () => void;
   setOffsetMs: (ms: number) => void;
   setLayout: (layout: RefVideoLayout) => void;
+  setCorners: (corners: Point2[] | null) => void;
+  setCalibrating: (on: boolean) => void;
 }
 
 export const useRefVideo = create<RefVideoState>((set, get) => ({
@@ -27,18 +39,28 @@ export const useRefVideo = create<RefVideoState>((set, get) => ({
   fileName: '',
   offsetMs: 0,
   layout: 'pip',
+  corners: null,
+  calibrating: false,
   load: (file) => {
     const old = get().objectUrl;
     if (old !== null) URL.revokeObjectURL(old);
-    set({ objectUrl: URL.createObjectURL(file), fileName: file.name, offsetMs: 0 });
+    set({
+      objectUrl: URL.createObjectURL(file),
+      fileName: file.name,
+      offsetMs: 0,
+      corners: null,
+      calibrating: false,
+    });
   },
   clear: () => {
     const old = get().objectUrl;
     if (old !== null) URL.revokeObjectURL(old);
-    set({ objectUrl: null, fileName: '' });
+    set({ objectUrl: null, fileName: '', corners: null, calibrating: false });
   },
   setOffsetMs: (ms) => set({ offsetMs: ms }),
   setLayout: (layout) => set({ layout }),
+  setCorners: (corners) => set({ corners }),
+  setCalibrating: (on) => set({ calibrating: on }),
 }));
 
 // The single <video> element, registered by RefVideo.tsx — the playback

@@ -272,10 +272,8 @@ test('backup nudge appears for real work and snoozes for a week', async ({ page 
   await expect(page.getByText('Export backup')).toBeHidden();
 });
 
-test('reference video: loads, seeks with the offset, switches layouts, drives playback', async ({
-  page,
-}) => {
-  // Record a 3s webm in-page (canvas capture) — no binary fixture in the repo.
+/** Record a 3s webm in-page (canvas capture) — no binary fixture in the repo. */
+async function recordTestWebm(page: Page): Promise<Buffer> {
   const videoBytes = await page.evaluate(async () => {
     const canvas = document.createElement('canvas');
     canvas.width = 160;
@@ -305,11 +303,16 @@ test('reference video: loads, seeks with the offset, switches layouts, drives pl
     });
     return Array.from(new Uint8Array(await (await stopped).arrayBuffer()));
   });
+  return Buffer.from(videoBytes);
+}
 
+test('reference video: loads, seeks with the offset, switches layouts, drives playback', async ({
+  page,
+}) => {
   await page.getByLabel('Reference video file').setInputFiles({
     name: 'ref.webm',
     mimeType: 'video/webm',
-    buffer: Buffer.from(videoBytes),
+    buffer: await recordTestWebm(page),
   });
   await expect(page.getByLabel('Reference video', { exact: true })).toBeVisible();
 
@@ -345,6 +348,40 @@ test('reference video: loads, seeks with the offset, switches layouts, drives pl
   // Close removes the panel; playback falls back to the rAF clock.
   await page.getByLabel('Reference video', { exact: true }).getByRole('button', { name: 'Close' }).click();
   await expect(page.getByLabel('Reference video', { exact: true })).toBeHidden();
+});
+
+test('stage-corner calibration shows a live meter grid and draggable pins', async ({ page }) => {
+  await page.getByLabel('Reference video file').setInputFiles({
+    name: 'ref.webm',
+    mimeType: 'video/webm',
+    buffer: await recordTestWebm(page),
+  });
+  await expect(page.getByLabel('Reference video', { exact: true })).toBeVisible();
+  // Split layout gives the overlay a real size to hit-test against.
+  await page.getByRole('button', { name: 'Split', exact: true }).click();
+  await page.getByRole('button', { name: 'Calibrate' }).click();
+  const overlay = page.getByRole('application', { name: 'Stage corner calibration' });
+  await expect(overlay).toBeVisible();
+  // Default 12x8m stage: 13 vertical + 9 horizontal grid lines.
+  await expect(overlay.locator('line')).toHaveCount(22);
+
+  // Drag the upstage-left pin and verify it moved.
+  const pin = overlay.locator('circle').first();
+  const before = await pin.boundingBox();
+  expect(before).not.toBeNull();
+  if (before === null) return;
+  await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(before.x + 60, before.y + 40, { steps: 5 });
+  await page.mouse.up();
+  const after = await pin.boundingBox();
+  expect(after).not.toBeNull();
+  if (after === null) return;
+  expect(Math.abs(after.x - before.x)).toBeGreaterThan(30);
+  // Grid still renders after the drag (homography stayed solvable).
+  await expect(overlay.locator('line')).toHaveCount(22);
+  await page.getByRole('button', { name: 'Done', exact: true }).click();
+  await expect(overlay).toBeHidden();
 });
 
 test('section markers: add, name, persist, remove', async ({ page }) => {

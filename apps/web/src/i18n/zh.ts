@@ -128,6 +128,15 @@ export const zh: Messages = {
     offsetTitle: '時間軸 0 秒對應影片中的哪個時間點——也就是開頭的倒數、掌聲等前置長度',
     alignHere: '對齊到播放頭',
     alignTitle: '把影片暫停在一個明確的拍點、把播放頭拖到同一拍，按下後自動算出偏移',
+    calibrate: '校準舞台',
+    calibrateDone: '完成校準',
+    calibrateTitle: '把四個釘子拖到影片中舞台的四個角上；綠色的公尺網格貼合地板就代表校準正確',
+    calibrationAria: '舞台四角校準',
+    degenerateCorners: '角點重疊——請把釘子拉開',
+    cornerUpLeft: '後台左',
+    cornerUpRight: '後台右',
+    cornerDownRight: '前台右',
+    cornerDownLeft: '前台左',
   },
 
   backup: {

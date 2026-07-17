@@ -3,6 +3,7 @@ import type { PointerEvent as ReactPointerEvent, ReactElement } from 'react';
 import { registerVideoElement, useRefVideo } from '../state/refVideo';
 import { useEditor } from '../state/store';
 import { NumberField } from './NumberField';
+import { CalibrationOverlay } from './CalibrationOverlay';
 import { useT } from '../i18n';
 
 /**
@@ -20,6 +21,8 @@ export function RefVideo(): ReactElement | null {
   const setOffsetMs = useRefVideo((s) => s.setOffsetMs);
   const setLayout = useRefVideo((s) => s.setLayout);
   const clear = useRefVideo((s) => s.clear);
+  const calibrating = useRefVideo((s) => s.calibrating);
+  const setCalibrating = useRefVideo((s) => s.setCalibrating);
   const [error, setError] = useState(false);
   // PiP position, draggable by the header (session-local, default bottom-left).
   const [pos, setPos] = useState({ left: 12, bottom: 12 });
@@ -88,17 +91,20 @@ export function RefVideo(): ReactElement | null {
           {t.refVideo.formatError}
         </p>
       ) : (
-        <video
-          ref={(el) => {
-            videoRef.current = el;
-            registerVideoElement(el);
-          }}
-          className="ref-video-el"
-          src={objectUrl}
-          playsInline
-          preload="auto"
-          onError={() => setError(true)}
-        />
+        <div className="ref-video-frame">
+          <video
+            ref={(el) => {
+              videoRef.current = el;
+              registerVideoElement(el);
+            }}
+            className="ref-video-el"
+            src={objectUrl}
+            playsInline
+            preload="auto"
+            onError={() => setError(true)}
+          />
+          {calibrating && <CalibrationOverlay videoRef={videoRef} />}
+        </div>
       )}
       <div className="ref-video-controls">
         <label htmlFor="ref-video-offset" title={t.refVideo.offsetTitle}>
@@ -123,6 +129,15 @@ export function RefVideo(): ReactElement | null {
           }}
         >
           {t.refVideo.alignHere}
+        </button>
+        <button
+          type="button"
+          className={`btn${calibrating ? ' btn-active' : ''}`}
+          aria-pressed={calibrating}
+          title={t.refVideo.calibrateTitle}
+          onClick={() => setCalibrating(!calibrating)}
+        >
+          {calibrating ? t.refVideo.calibrateDone : t.refVideo.calibrate}
         </button>
       </div>
     </div>
