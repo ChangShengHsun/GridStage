@@ -27,6 +27,8 @@ export function RefVideo(): ReactElement | null {
   const [error, setError] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [captureNote, setCaptureNote] = useState('');
+  const [scanProgress, setScanProgress] = useState<number | null>(null);
+  const scanAbortRef = useRef<AbortController | null>(null);
   // PiP position, draggable by the header (session-local, default bottom-left).
   const [pos, setPos] = useState({ left: 12, bottom: 12 });
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -196,6 +198,64 @@ export function RefVideo(): ReactElement | null {
           }}
         >
           {t.refVideo.capture}
+        </button>
+        <button
+          type="button"
+          className="btn"
+          disabled={corners === null || capturing}
+          title={corners === null ? t.refVideo.captureNeedsCalibration : t.refVideo.scanTitle}
+          onClick={() => {
+            if (scanProgress !== null) {
+              scanAbortRef.current?.abort(); // second click = cancel
+              return;
+            }
+            const video = videoRef.current;
+            if (video === null || corners === null) return;
+            const controller = new AbortController();
+            scanAbortRef.current = controller;
+            setScanProgress(0);
+            void (async () => {
+              const { scanVideo } = await import('../vision/scan');
+              const s = useEditor.getState();
+              const fid = s.selectedFormationId;
+              const current = s.positions[fid] ?? {};
+              const reference = s.performers
+                .map((p) => {
+                  const pos = current[p.id];
+                  return pos === undefined
+                    ? null
+                    : { performerId: p.id, x: pos.x, y: pos.y };
+                })
+                .filter((r): r is { performerId: string; x: number; y: number } => r !== null);
+              const held = await scanVideo(video, {
+                offsetMs: useRefVideo.getState().offsetMs,
+                stageWidth: s.performance.stageWidth,
+                stageHeight: s.performance.stageHeight,
+                corners,
+                reference,
+                onProgress: setScanProgress,
+                signal: controller.signal,
+              });
+              if (held === null) {
+                setCaptureNote(t.refVideo.scanCancelled);
+              } else if (held.length === 0) {
+                setCaptureNote(t.refVideo.scanNothing);
+              } else {
+                s.applyScanFormations(held);
+                setCaptureNote(t.refVideo.scanDone(held.length));
+              }
+              window.setTimeout(() => setCaptureNote(''), 6000);
+            })()
+              .catch((err: unknown) => {
+                setCaptureNote(err instanceof Error ? err.message : String(err));
+                window.setTimeout(() => setCaptureNote(''), 6000);
+              })
+              .finally(() => setScanProgress(null));
+          }}
+        >
+          {scanProgress === null
+            ? t.refVideo.scan
+            : t.refVideo.scanCancel(Math.round(scanProgress * 100))}
         </button>
       </div>
       {captureNote !== '' && (

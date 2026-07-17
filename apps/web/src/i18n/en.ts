@@ -149,6 +149,14 @@ export const en = {
       uncertain === 0
         ? `Placed ${placed} dancer${placed === 1 ? '' : 's'} — drag to fine-tune`
         : `Placed ${placed} dancer${placed === 1 ? '' : 's'}; ${uncertain} uncertain (selected) — check who is who`,
+    scan: 'Scan whole video',
+    scanTitle:
+      'Sample the video every second and add a formation for every held position — a draft you then clean up',
+    scanCancel: (percent: number): string => `Cancel ${percent}%`,
+    scanCancelled: 'Scan cancelled — nothing was changed',
+    scanNothing: 'No held formations found — try Capture on paused frames instead',
+    scanDone: (n: number): string =>
+      `Added ${n} formation${n === 1 ? '' : 's'} from the video — one Undo removes them all`,
   },
 
   backup: {

@@ -128,6 +128,18 @@ interface EditorState extends DocState {
   setPosition: (formationId: string, performerId: string, x: number, y: number) => void;
   /** Write many positions in one undo step (video-capture drafts). */
   setPositionsBulk: (formationId: string, updates: Record<string, { x: number; y: number }>) => void;
+  /**
+   * Append the formations found by a whole-video scan (M2) in ONE undo
+   * step. Existing formations are never touched; durations come from how
+   * long each formation was held in the video.
+   */
+  applyScanFormations: (
+    results: readonly {
+      startTimeMs: number;
+      endTimeMs: number;
+      positions: Record<string, { x: number; y: number }>;
+    }[],
+  ) => void;
   /** Same, but WITHOUT recording history — for continuous drag frames. */
   setPositionLive: (formationId: string, performerId: string, x: number, y: number) => void;
   setRotation: (formationId: string, performerId: string, rotation: number) => void;
@@ -931,6 +943,57 @@ export const useEditor = create<EditorState>()(
               };
             }
             return { positions: { ...s.positions, [formationId]: next } };
+          }),
+
+        applyScanFormations: (results) =>
+          mutateDoc((s) => {
+            if (results.length === 0) return {};
+            const b = stageBounds(s.performance);
+            const formations = [...s.formations];
+            const positions = { ...s.positions };
+            // Dancers a hold didn't detect keep their previous spot, so every
+            // formation stays fully populated (the editor's invariant).
+            const lastExisting = [...formations].sort((x, y) => x.orderIndex - y.orderIndex)[
+              formations.length - 1
+            ];
+            let carry: Record<string, { x: number; y: number }> = Object.fromEntries(
+              Object.entries(
+                (lastExisting !== undefined ? positions[lastExisting.id] : undefined) ?? {},
+              ).map(([pid, pos]) => [pid, { x: pos.x, y: pos.y }]),
+            );
+            let nextIndex = formations.length;
+            for (const r of results) {
+              const id = newId();
+              const merged = { ...carry, ...r.positions };
+              carry = merged;
+              formations.push({
+                id,
+                performanceId: s.performance.id,
+                orderIndex: nextIndex,
+                startTimeMs: Math.max(0, Math.round(r.startTimeMs)),
+                durationMs: Math.max(1000, Math.round(r.endTimeMs - r.startTimeMs)),
+                transitionType: 'linear',
+                name: `Formation ${nextIndex + 1}`,
+              });
+              positions[id] = Object.fromEntries(
+                Object.entries(merged).map(([pid, p]) => [
+                  pid,
+                  {
+                    formationId: id,
+                    performerId: pid,
+                    x: clamp(p.x, b.minX, b.maxX),
+                    y: clamp(p.y, b.minY, b.maxY),
+                    rotation: 0,
+                  },
+                ]),
+              );
+              nextIndex += 1;
+            }
+            // Keep the play-order invariant (orderIndex == start-time order).
+            const reindexed = [...formations]
+              .sort((a, f) => a.startTimeMs - f.startTimeMs || a.orderIndex - f.orderIndex)
+              .map((f, i) => ({ ...f, orderIndex: i }));
+            return { formations: reindexed, positions };
           }),
 
         setCurveControl: (formationId, performerId, x, y) =>

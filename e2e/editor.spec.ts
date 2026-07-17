@@ -272,9 +272,9 @@ test('backup nudge appears for real work and snoozes for a week', async ({ page 
   await expect(page.getByText('Export backup')).toBeHidden();
 });
 
-/** Record a 3s webm in-page (canvas capture) — no binary fixture in the repo. */
-async function recordTestWebm(page: Page): Promise<Buffer> {
-  const videoBytes = await page.evaluate(async () => {
+/** Record a webm in-page (canvas capture) — no binary fixture in the repo. */
+async function recordTestWebm(page: Page, durationMs = 3000): Promise<Buffer> {
+  const videoBytes = await page.evaluate(async (lengthMs) => {
     const canvas = document.createElement('canvas');
     canvas.width = 160;
     canvas.height = 120;
@@ -292,7 +292,7 @@ async function recordTestWebm(page: Page): Promise<Buffer> {
       const draw = (): void => {
         ctx.fillStyle = `hsl(${((performance.now() - startedAt) / 10).toFixed(0)}, 70%, 50%)`;
         ctx.fillRect(0, 0, 160, 120);
-        if (performance.now() - startedAt > 3000) {
+        if (performance.now() - startedAt > lengthMs) {
           recorder.stop();
           resolve();
         } else {
@@ -302,7 +302,7 @@ async function recordTestWebm(page: Page): Promise<Buffer> {
       draw();
     });
     return Array.from(new Uint8Array(await (await stopped).arrayBuffer()));
-  });
+  }, durationMs);
   return Buffer.from(videoBytes);
 }
 
@@ -399,7 +399,10 @@ test('video capture places detected dancers into the selected formation', async 
   // stage. Stub the detector with two known boxes; foot points land at
   // (3, 4) and (9, 6) meters.
   await page.evaluate(async () => {
-    const refVideo = (await import('/src/state/refVideo.ts')) as {
+    // Vite dev-server module URLs — a variable keeps tsc from resolving them.
+    const refVideoPath = '/src/state/refVideo.ts';
+    const detectorPath = '/src/vision/detector.ts';
+    const refVideo = (await import(refVideoPath)) as {
       useRefVideo: {
         getState: () => { setCorners: (c: { x: number; y: number }[]) => void };
       };
@@ -410,7 +413,7 @@ test('video capture places detected dancers into the selected formation', async 
       { x: 160, y: 120 },
       { x: 0, y: 120 },
     ]);
-    const detector = (await import('/src/vision/detector.ts')) as {
+    const detector = (await import(detectorPath)) as {
       setDetectorOverride: (
         fn: (
           img: CanvasImageSource,
@@ -443,6 +446,97 @@ test('video capture places detected dancers into the selected formation', async 
       { x: 9, y: 6 },
     ]),
   );
+});
+
+test('whole-video scan adds a formation per held position', async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.getByText('Add performer').click();
+  await page.getByText('Add performer').click();
+  await page.getByLabel('Reference video file').setInputFiles({
+    name: 'show.webm',
+    mimeType: 'video/webm',
+    buffer: await recordTestWebm(page, 8500),
+  });
+  await expect(page.getByLabel('Reference video', { exact: true })).toBeVisible();
+
+  // Calibrate linearly (full 160x120 frame = 12x8m stage) and stub the
+  // detector to act out: hold A (t<3.5s), transition, hold B (t>5.5s).
+  await page.evaluate(async () => {
+    // Vite dev-server module URLs — a variable keeps tsc from resolving them.
+    const refVideoPath = '/src/state/refVideo.ts';
+    const detectorPath = '/src/vision/detector.ts';
+    const refVideo = (await import(refVideoPath)) as {
+      useRefVideo: {
+        getState: () => { setCorners: (c: { x: number; y: number }[]) => void };
+      };
+    };
+    refVideo.useRefVideo.getState().setCorners([
+      { x: 0, y: 0 },
+      { x: 160, y: 0 },
+      { x: 160, y: 120 },
+      { x: 0, y: 120 },
+    ]);
+    const detector = (await import(detectorPath)) as {
+      setDetectorOverride: (
+        fn: (
+          img: CanvasImageSource,
+          w: number,
+          h: number,
+        ) => Promise<{ x: number; y: number; width: number; height: number; score: number }[]>,
+      ) => void;
+    };
+    const box = (
+      footX: number,
+      footY: number,
+    ): { x: number; y: number; width: number; height: number; score: number } => ({
+      x: footX - 10,
+      y: footY - 40,
+      width: 20,
+      height: 40,
+      score: 0.9,
+    });
+    detector.setDetectorOverride((img) => {
+      const t = img instanceof HTMLVideoElement ? img.currentTime : 0;
+      if (t < 3.5) {
+        // Hold A: (3,4) and (9,6) meters -> (40,60) and (120,90) px.
+        return Promise.resolve([box(40, 60), box(120, 90)]);
+      }
+      if (t < 5.5) {
+        // Transition: both drifting.
+        const k = (t - 3.5) * 30;
+        return Promise.resolve([box(40 + k, 60), box(120 - k, 90)]);
+      }
+      // Hold B: (6,2) and (3,6) meters -> (80,30) and (40,90) px.
+      return Promise.resolve([box(80, 30), box(40, 90)]);
+    });
+  });
+
+  await page.getByRole('button', { name: 'Scan whole video' }).click();
+  await expect(page.getByText(/Added 2 formations/)).toBeVisible({ timeout: 60_000 });
+
+  const state = await readDoc(page);
+  // 1 default + 2 scanned.
+  expect(state.formations).toHaveLength(3);
+  const ordered = [...state.formations].sort((a, b) => a.orderIndex - b.orderIndex);
+  const holdA = ordered[1];
+  const holdB = ordered[2];
+  expect(holdA?.startTimeMs).toBe(0);
+  expect(holdB?.startTimeMs ?? 0).toBeGreaterThanOrEqual(6000);
+  const spotsA = Object.values(state.positions[holdA?.id ?? ''] ?? {}).map((p) => ({
+    x: Math.round(p.x),
+    y: Math.round(p.y),
+  }));
+  expect(spotsA).toEqual(expect.arrayContaining([{ x: 3, y: 4 }, { x: 9, y: 6 }]));
+  const spotsB = Object.values(state.positions[holdB?.id ?? ''] ?? {}).map((p) => ({
+    x: Math.round(p.x),
+    y: Math.round(p.y),
+  }));
+  expect(spotsB).toEqual(expect.arrayContaining([{ x: 6, y: 2 }, { x: 3, y: 6 }]));
+
+  // One Undo removes the whole scan.
+  await page.getByRole('button', { name: 'Undo' }).click();
+  const afterUndo = await readDoc(page);
+  expect(afterUndo.formations).toHaveLength(1);
 });
 
 test('section markers: add, name, persist, remove', async ({ page }) => {

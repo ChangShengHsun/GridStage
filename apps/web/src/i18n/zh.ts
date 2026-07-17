@@ -146,6 +146,12 @@ export const zh: Messages = {
       uncertain === 0
         ? `已放置 ${placed} 位舞者——拖曳微調即可`
         : `已放置 ${placed} 位舞者；${uncertain} 位不確定（已選取）——請確認誰是誰`,
+    scan: '掃描整支影片',
+    scanTitle: '每 1 秒取樣一次，把影片中每個「停住的隊形」自動加成 formation——先出草稿再清理',
+    scanCancel: (percent: number): string => `取消 ${percent}%`,
+    scanCancelled: '已取消掃描——沒有任何變更',
+    scanNothing: '沒有找到停住的隊形——可改用暫停畫面的「擷取隊形」',
+    scanDone: (n: number): string => `已從影片新增 ${n} 個隊形——按一次復原可全部移除`,
   },
 
   backup: {
