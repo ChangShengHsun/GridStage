@@ -75,27 +75,21 @@ Status legend: ✅ done · ⬜ open · 🔶 **needs Fable** (see "Which need Fab
   V3a. `state/suggest.ts`: 6 shape families scored by travel (Hungarian
   assignment) + spacing (crowding-gated) + symmetry; top-3 with mini previews
   in the Formation panel. Tuning knobs live as constants in that file.
-- 🔶 **Video → formation charts (影片轉隊形圖)** (L, research-grade) — input a
-  performance video, output an editable draft of who stood where per count.
-  **No turnkey open-source tool exists** (2026-07-15 search): dance AI projects
-  (AI-Dance-Coach, DeepDance, DanceSculpt) only do _pose comparison / scoring_,
-  not top-down positions. The real pipeline is borrowed from **sports player
-  tracking**, where every piece is open source:
-  1. Detect people per frame — pose estimation (MoveNet MultiPose, in-browser)
-     **caps at 6 people**; more needs YOLO person-detection (heavier).
-  2. Track identity across frames — multi-object tracking (LightTrack). Hardest
-     step for dance: crossing + occlusion + identical costumes → ID switching.
-  3. Perspective → stage meters — homography (needs a **fixed camera** + 4 known
-     stage-corner calibration points). Handheld/zooming video ≈ unsolvable.
-  4. Segment continuous motion into discrete counts — detect held formations.
-     Realistic MVP = **"draft generator", not automation**: require fixed overhead
-     camera, ≤6 dancers, manual corner calibration, output an editable draft the
-     user corrects. Feeds straight into the existing editor. **Licensing trap:**
-     YOLO (Ultralytics) is **AGPL** — copyleft, a real problem for GridStage;
-     resolve before adopting. Effort: weeks even on the sports stack; expectation
-     risk (users want magic, physics delivers a draft). Fable: plan + MVP scope
-     first. Refs: github.com/topics/player-tracking, Guanghan/lighttrack,
-     cemunds/awesome-sports-camera-calibration.
+- 🔶 **Video → formation charts (影片轉隊形圖)** (M0 ≈ 1–2 weeks, then a
+  ladder) — RESEARCHED IN DEPTH 2026-07-17, full analysis + build ladder in
+  `docs/video-to-formation-killer-app.md`. Headlines vs the 07-15 note:
+  the market gap is confirmed (still nobody does it; "AI dance" apps all go
+  the opposite direction), and the MVP got much easier — **capture ONE
+  paused frame at a time inside the shipped ref-video panel** (detection
+  boxes + foot point + 4-corner homography + our existing Hungarian
+  matcher), which deletes identity tracking entirely. License-safe stack:
+  YOLOX/RF-DETR via onnxruntime-web (Apache-2.0/MIT; the AGPL trap is
+  avoided, and the old "6-person cap" concern was a realtime-pose limit
+  that doesn't apply to paused-frame detection). Ladder: M0 capture-frame →
+  M1 facing (RTMPose) → M2 auto-segment whole video (OC-SORT) → M3
+  rehearsal-vs-plan deviation report (the deepest moat). Fable for M0's
+  calibration UX + integration design; the detection glue is executable by
+  any model once designed.
 - 🔶 **Stage lighting + light plot / cue sheet (編光表)** (L) — colored stage
   lights + timeline cues. A real subsystem (shared-types, store, 2D overlay,
   3D `SpotLight` wash, cue interpolation, PDF cue sheet). **Needs Fable for
