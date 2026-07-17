@@ -93,10 +93,15 @@ constraint; detection on a paused frame handles a full stage).
   like the CJK font.
 - **M1 — Facing**: RTMPose on each person crop → shoulder vector →
   rotation per dancer. Optional toggle.
-- **M2 — Auto-segment the whole video**: sample 2–5 fps, track with
-  OC-SORT, find low-motion windows = held formations, propose a formation
-  list with timestamps; each proposal is just an M0 capture the user
-  accepts/rejects.
+- **M2 — Auto-segment the whole video** (CONFIRMED by Ivan 2026-07-17 as a
+  required follow-up: one-click "render the whole video"): sample the video
+  at 1s intervals, run the SAME per-frame capture on each sample, and when
+  the captured positions differ clearly from the last accepted formation
+  (mean displacement over a threshold), add a new formation at that
+  timestamp. Per-frame capture + Hungarian chaining may make OC-SORT
+  tracking unnecessary at 1s granularity — decide when building M2.
+  M0's orchestrator must therefore expose a reusable
+  `captureAtTime(videoSeconds)` so M2 is a loop around it, not a rewrite.
 - **M3 — Deviation report**: rehearsal video + planned doc → per-dancer
   error table / heatmap over time. Unique in the market.
 
