@@ -1701,3 +1701,77 @@ test('understudy: unchecking "Performing this run" hides the dancer everywhere',
   await page.getByRole('checkbox', { name: 'Performing this run' }).check();
   await expect(page.getByText('absent')).toBeHidden();
 });
+
+test('comment resolve tucks the note into a Resolved fold', async ({ page }) => {
+  await page.getByText('Add formation').click();
+  await page.getByLabel('New comment').fill('watch the spacing here');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(page.getByText('watch the spacing here')).toBeVisible();
+
+  await page.getByRole('button', { name: /^Resolve comment/ }).click();
+  // Now lives under the fold, hidden until opened.
+  await expect(page.getByText('watch the spacing here')).toBeHidden();
+  await page.getByText('Resolved (1)').click();
+  await expect(page.getByText('watch the spacing here')).toBeVisible();
+  await page.getByRole('button', { name: /^Reopen comment/ }).click();
+  await expect(page.getByText('Resolved (1)')).toBeHidden();
+});
+
+test('GIF export downloads an animated gif', async ({ page }) => {
+  await page.getByText('Add performer').click();
+  await page.getByText('Add formation').click();
+  await page.getByRole('button', { name: 'Export…' }).click();
+  await page.getByRole('button', { name: 'GIF', exact: true }).click();
+  const downloadPromise = page.waitForEvent('download', { timeout: 60_000 });
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/\.gif$/);
+  expect((await stat(await download.path())).size).toBeGreaterThan(20_000);
+});
+
+test('walk charts PDF includes rehearsal annotations', async ({ page }) => {
+  await page.getByText('Add performer').click();
+  await page.getByText('Add formation').click();
+  // A pen stroke and a labeled pin, straight into the store.
+  await page.evaluate(async () => {
+    const storePath = '/src/state/store.ts';
+    const { useEditor } = (await import(storePath)) as {
+      useEditor: {
+        getState: () => {
+          selectedFormationId: string;
+          addAnnotation: (a: {
+            formationId: string;
+            kind: 'stroke' | 'pin';
+            color: string;
+            points?: number[];
+            x?: number;
+            y?: number;
+            text?: string;
+          }) => void;
+        };
+      };
+    };
+    const s = useEditor.getState();
+    s.addAnnotation({
+      formationId: s.selectedFormationId,
+      kind: 'stroke',
+      color: '#e05252',
+      points: [1, 1, 3, 2, 5, 1.5],
+    });
+    s.addAnnotation({
+      formationId: s.selectedFormationId,
+      kind: 'pin',
+      color: '#5b8ff0',
+      x: 6,
+      y: 4,
+      text: 'watch spacing',
+    });
+  });
+  await page.getByRole('button', { name: 'Export…' }).click();
+  await page.getByRole('button', { name: 'PDF · Walk charts' }).click();
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/-walk-charts\.pdf$/);
+  expect((await stat(await download.path())).size).toBeGreaterThan(3_000);
+});

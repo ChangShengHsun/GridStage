@@ -10,7 +10,7 @@ export default defineConfig({
   optimizeDeps: {
     // Pre-bundle deps the dev server would otherwise optimize on demand —
     // an on-demand optimize reloads the page mid-test/mid-click.
-    include: ['jspdf', 'yjs', 'y-websocket', 'three', '@react-three/fiber'],
+    include: ['jspdf', 'yjs', 'y-websocket', 'three', '@react-three/fiber', 'gifenc'],
     // onnxruntime-web must NOT be pre-bundled: it locates its .wasm files
     // via import.meta.url, which pre-bundling rewrites and breaks.
     exclude: ['onnxruntime-web'],

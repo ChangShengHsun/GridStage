@@ -215,6 +215,8 @@ export interface DocComment {
   authorName: string;
   text: string;
   createdAt: string;
+  /** Resolved notes collapse out of the way instead of drowning new ones. */
+  resolved?: boolean;
 }
 
 export interface VersionSnapshot {

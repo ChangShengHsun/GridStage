@@ -504,6 +504,14 @@ input[type='color'] {
   overflow-wrap: break-word;
 }
 
+.comment-resolved {
+  opacity: 0.55;
+}
+
+.comment-resolved .comment-text {
+  text-decoration: line-through;
+}
+
 /* ---- Empty states ---------------------------------------------------- */
 
 .empty-note {

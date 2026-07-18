@@ -182,6 +182,9 @@ export const en = {
     file: 'File · Choreography (.json)',
     fileNote:
       'The whole choreography as one JSON file — share it or keep it as a backup, and bring it back via Library → Import. Audio and background images are not included.',
+    gif: 'GIF',
+    gifNote:
+      'Small animated GIF of the whole show (2D plan, 640px, 8 fps) — rendered offline, drops straight into a group chat.',
     videoViewLabel: 'View',
     videoViewAria: 'Video export view (2D or 3D)',
     videoNote: 'Records the playback in real time — the export takes as long as the show.',
@@ -431,6 +434,11 @@ export const en = {
   comments: {
     title: 'Comments',
     none: 'No comments yet.',
+    resolveTitle: 'Mark resolved',
+    reopenTitle: 'Reopen',
+    resolveAria: (excerpt: string): string => `Resolve comment: ${excerpt}`,
+    reopenAria: (excerpt: string): string => `Reopen comment: ${excerpt}`,
+    resolvedFold: (n: number): string => `Resolved (${n})`,
     deleteAria: (excerpt: string): string => `Delete comment: ${excerpt}`,
     placeholderFormation: 'Note on this formation…',
     placeholderPerformer: 'Note on this performer…',

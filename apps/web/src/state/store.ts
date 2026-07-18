@@ -192,6 +192,8 @@ interface EditorState extends DocState {
 
   addComment: (text: string, performerId: string | null, authorName: string) => void;
   removeComment: (id: string) => void;
+  /** Flip a comment's resolved flag (resolved notes collapse in the panel). */
+  toggleCommentResolved: (id: string) => void;
 
   setPlayhead: (ms: number) => void;
   setIsPlaying: (playing: boolean) => void;
@@ -1241,6 +1243,13 @@ export const useEditor = create<EditorState>()(
 
         removeComment: (id) =>
           mutateDoc((s) => ({ comments: s.comments.filter((c) => c.id !== id) })),
+
+        toggleCommentResolved: (id) =>
+          mutateDoc((s) => ({
+            comments: s.comments.map((c) =>
+              c.id === id ? { ...c, resolved: c.resolved !== true } : c,
+            ),
+          })),
 
         setPlayhead: (ms) => set({ playheadMs: Math.max(0, ms) }),
         setIsPlaying: (playing) => set({ isPlaying: playing }),

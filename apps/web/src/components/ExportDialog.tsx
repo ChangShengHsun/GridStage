@@ -3,10 +3,11 @@ import type { ReactElement } from 'react';
 import { useT } from '../i18n';
 import type { VideoMode } from '../export/video';
 
-type ExportKind = 'video' | 'pdf-charts' | 'pdf-sheets' | 'pdf-pack' | 'png' | 'file';
+type ExportKind = 'video' | 'gif' | 'pdf-charts' | 'pdf-sheets' | 'pdf-pack' | 'png' | 'file';
 
 const KINDS: readonly ExportKind[] = [
   'video',
+  'gif',
   'pdf-charts',
   'pdf-sheets',
   'pdf-pack',
@@ -32,15 +33,17 @@ export function ExportDialog(): ReactElement {
   const kindLabel = (k: ExportKind): string =>
     k === 'video'
       ? t.export.video
-      : k === 'pdf-charts'
-        ? t.export.pdfCharts
-        : k === 'pdf-sheets'
-          ? t.export.pdfSheets
-          : k === 'pdf-pack'
-            ? t.export.pdfPack
-            : k === 'png'
-              ? t.export.png
-              : t.export.file;
+      : k === 'gif'
+        ? t.export.gif
+        : k === 'pdf-charts'
+          ? t.export.pdfCharts
+          : k === 'pdf-sheets'
+            ? t.export.pdfSheets
+            : k === 'pdf-pack'
+              ? t.export.pdfPack
+              : k === 'png'
+                ? t.export.png
+                : t.export.file;
 
   const startVideo = (): void => {
     if (videoProgress !== null) {
@@ -70,6 +73,23 @@ export function ExportDialog(): ReactElement {
     window.setTimeout(() => setNote(''), 4000);
   };
 
+  // Shares the video export's progress/cancel plumbing — one export at a time.
+  const startGif = (): void => {
+    if (videoProgress !== null) {
+      videoAbortRef.current?.abort();
+      return;
+    }
+    const controller = new AbortController();
+    videoAbortRef.current = controller;
+    setVideoProgress(0);
+    void import('../export/gif')
+      .then((m) =>
+        m.exportPerformanceGif({ onProgress: setVideoProgress, signal: controller.signal }),
+      )
+      .catch(showError)
+      .finally(() => setVideoProgress(null));
+  };
+
   const startExport = (): void => {
     // PDF exports are async (the CJK font may need downloading) — surface
     // failures in the dialog instead of a silent rejection.
@@ -83,6 +103,7 @@ export function ExportDialog(): ReactElement {
       import('../export/png').then((m) => m.exportFormationPng()).catch(showError);
     else if (kind === 'file')
       import('../state/docFile').then((m) => m.exportActiveDocFile()).catch(showError);
+    else if (kind === 'gif') startGif();
     else startVideo();
   };
 
@@ -133,6 +154,7 @@ export function ExportDialog(): ReactElement {
                 <p className="empty-note">{t.export.videoNote}</p>
               </>
             )}
+            {kind === 'gif' && <p className="empty-note">{t.export.gifNote}</p>}
             {kind === 'pdf-charts' && <p className="empty-note">{t.export.chartsNote}</p>}
             {kind === 'pdf-sheets' && <p className="empty-note">{t.export.sheetsNote}</p>}
             {kind === 'pdf-pack' && <p className="empty-note">{t.export.packNote}</p>}

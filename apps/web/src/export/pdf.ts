@@ -35,6 +35,7 @@ export function chartText(): string {
     ...s.performers.flatMap((p) => [p.name, p.role]),
     ...s.props.map((p) => p.name),
     ...s.formations.map((f) => f.name),
+    ...s.annotations.map((a) => a.text ?? ''),
   ].join('');
 }
 
@@ -166,6 +167,33 @@ export function drawWalkChartsInto(doc: jsPDF, font: string): void {
       doc.setFontSize(7);
       doc.setTextColor(DIM);
       doc.text(prop.name, labelX, labelY + 1, { align: 'center' });
+    }
+
+    // Rehearsal annotations (pen strokes + text pins), under the marks.
+    for (const note of s.annotations.filter((a) => a.formationId === formation.id)) {
+      if (note.kind === 'stroke' && note.points !== undefined && note.points.length >= 4) {
+        doc.setDrawColor(note.color);
+        doc.setLineWidth(0.5);
+        const pts: [number, number][] = [];
+        for (let i = 0; i + 1 < note.points.length; i += 2) {
+          pts.push(toPage(note.points[i] ?? 0, note.points[i + 1] ?? 0));
+        }
+        const first = pts[0] as [number, number];
+        const segments = pts.slice(1).map((pt, i) => {
+          const prev = pts[i] as [number, number];
+          return [pt[0] - prev[0], pt[1] - prev[1]];
+        });
+        doc.lines(segments, first[0], first[1], [1, 1], 'S', false);
+      } else if (note.kind === 'pin' && note.x !== undefined && note.y !== undefined) {
+        const [px, py] = toPage(note.x, note.y);
+        doc.setFillColor(note.color);
+        doc.circle(px, py, 1.1, 'F');
+        if (note.text !== undefined && note.text !== '') {
+          doc.setFontSize(7);
+          doc.setTextColor(INK);
+          doc.text(note.text, px + 2.2, py + 0.8);
+        }
+      }
     }
 
     // Marks

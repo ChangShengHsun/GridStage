@@ -175,6 +175,8 @@ export const zh: Messages = {
     file: '檔案 · 編舞 (.json)',
     fileNote:
       '整份編舞輸出成一個 JSON 檔——可以分享給別人，也可以當備份；用「文件庫 → 匯入檔案」帶回來。音樂與背景圖不會包含在內。',
+    gif: 'GIF',
+    gifNote: '整場演出的小型動圖（2D 平面、640px、每秒 8 格）——離線算圖，直接丟群組聊天室最方便。',
     videoViewLabel: '視角',
     videoViewAria: '影片匯出視角（2D 或 3D）',
     videoNote: '以實際播放速度錄製——匯出需要與演出等長的時間。',
@@ -418,6 +420,11 @@ export const zh: Messages = {
   comments: {
     title: '留言',
     none: '尚無留言。',
+    resolveTitle: '標記為已解決',
+    reopenTitle: '重新開啟',
+    resolveAria: (excerpt: string): string => `解決留言：${excerpt}`,
+    reopenAria: (excerpt: string): string => `重新開啟留言：${excerpt}`,
+    resolvedFold: (n: number): string => `已解決（${n}）`,
     deleteAria: (excerpt: string): string => `刪除留言：${excerpt}`,
     placeholderFormation: '為這個隊形留言…',
     placeholderPerformer: '為這位舞者留言…',
