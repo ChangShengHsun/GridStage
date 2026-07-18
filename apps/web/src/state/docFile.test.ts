@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { parseDocFile, serializeDoc } from './docFile';
+import { docFileName, parseDocFile, serializeDoc } from './docFile';
 import { createInitialDoc } from './store';
+
+describe('docFileName', () => {
+  it('uses the single-segment .gridstage extension (Windows associations)', () => {
+    expect(docFileName('My Show')).toBe('my-show.gridstage');
+  });
+});
 
 describe('parseDocFile', () => {
   it('round-trips a serialized doc', () => {

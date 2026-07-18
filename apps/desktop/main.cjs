@@ -1,5 +1,6 @@
 const { app, BrowserWindow, dialog, protocol, net, shell } = require('electron');
 const path = require('node:path');
+const fs = require('node:fs');
 const { pathToFileURL } = require('node:url');
 
 const RENDERER_DIR = path.join(__dirname, 'renderer');
@@ -72,23 +73,83 @@ protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true } },
 ]);
 
+/**
+ * "Open with GridStage" (.gridstage file association, declared in
+ * package.json build.fileAssociations). Windows/Linux pass the file path in
+ * argv — of the launching process, or of the second instance a double-click
+ * spawns while we run. macOS uses the open-file event instead.
+ */
+let mainWindow = null;
+let pendingDocPath = null;
+
+function docPathFromArgv(argv) {
+  const found = argv.find((arg) => arg.endsWith('.gridstage') || arg.endsWith('.gridstage.json'));
+  return found !== undefined && fs.existsSync(found) ? found : null;
+}
+
+function openDocPath(filePath) {
+  if (filePath === null) return;
+  if (mainWindow === null || mainWindow.webContents.isLoading()) {
+    pendingDocPath = filePath; // delivered after did-finish-load
+    return;
+  }
+  try {
+    mainWindow.webContents.send('gridstage:open-doc', fs.readFileSync(filePath, 'utf8'));
+  } catch {
+    // Unreadable file — the renderer never hears about it; nothing to clean up.
+  }
+}
+
+// Must be registered before app ready or the first open-file is lost.
+app.on('open-file', (event, filePath) => {
+  event.preventDefault();
+  openDocPath(filePath);
+});
+
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+}
+app.on('second-instance', (_event, argv) => {
+  if (mainWindow !== null) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+  openDocPath(docPathFromArgv(argv));
+});
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1440,
     height: 900,
     backgroundColor: '#191512',
     autoHideMenuBar: true,
-    webPreferences: { contextIsolation: true },
+    webPreferences: {
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.cjs'),
+    },
   });
   // Any external link opens in the system browser, never inside the app frame.
   win.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url);
     return { action: 'deny' };
   });
+  win.webContents.on('did-finish-load', () => {
+    const queued = pendingDocPath;
+    pendingDocPath = null;
+    openDocPath(queued);
+  });
+  win.on('closed', () => {
+    if (mainWindow === win) mainWindow = null;
+  });
   void win.loadURL('app://bundle/index.html');
+  mainWindow = win;
 }
 
 app.whenReady().then(() => {
+  if (!gotSingleInstanceLock) return; // this instance is quitting
+  // Windows/Linux put a double-clicked file's path in the launch argv.
+  openDocPath(docPathFromArgv(process.argv));
   protocol.handle('app', (request) => {
     const { pathname } = new URL(request.url);
     const rel = pathname === '/' ? 'index.html' : decodeURIComponent(pathname).replace(/^\/+/, '');

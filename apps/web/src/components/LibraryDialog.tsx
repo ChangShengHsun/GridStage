@@ -229,7 +229,7 @@ export function LibraryDialog(): ReactElement {
               <input
                 ref={importInputRef}
                 type="file"
-                accept=".json,application/json"
+                accept=".gridstage,.json,application/json"
                 aria-label={t.library.importFileAria}
                 style={{ display: 'none' }}
                 onChange={(e) => {

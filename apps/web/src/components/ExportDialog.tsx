@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useT } from '../i18n';
 import type { VideoMode } from '../export/video';
+import { canShareDocFile, shareActiveDocFile } from '../state/docFile';
 
 type ExportKind = 'video' | 'gif' | 'pdf-charts' | 'pdf-sheets' | 'pdf-pack' | 'png' | 'file';
 
@@ -168,6 +169,17 @@ export function ExportDialog(): ReactElement {
           </div>
         </div>
         <div className="export-dialog-foot">
+          {kind === 'file' && canShareDocFile() && (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                shareActiveDocFile().catch(showError);
+              }}
+            >
+              {t.export.fileShare}
+            </button>
+          )}
           <button type="button" className="btn btn-primary" onClick={startExport}>
             {videoProgress === null
               ? t.export.start

@@ -871,19 +871,20 @@ test('personal walk sheets PDF downloads', async ({ page }) => {
   expect(download.suggestedFilename()).toContain('walk-sheets.pdf');
 });
 
-test('choreography JSON exports and imports back as a new library entry', async ({ page }) => {
-  // Export the open doc as a .gridstage.json file.
+test('choreography file exports and imports back as a new library entry', async ({ page }) => {
+  // Export the open doc as a .gridstage file.
   await page.getByRole('button', { name: 'Export…' }).click();
-  await page.getByRole('button', { name: 'File · Choreography (.json)' }).click();
+  await page.getByRole('button', { name: 'File · Choreography (.gridstage)' }).click();
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export', exact: true }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toContain('.gridstage.json');
+  expect(download.suggestedFilename()).toMatch(/\.gridstage$/);
   const filePath = await download.path();
   const buffer = await readFile(filePath);
   await page.getByRole('button', { name: 'Close' }).click();
 
   // Import it back: always lands as a NEW doc (fresh id) and opens.
+  // Legacy double-extension name on purpose — old backups must keep working.
   const idBefore = (await readDoc(page)).performance.id;
   await page.getByRole('button', { name: 'Library' }).click();
   await page.getByLabel('Choreography file').setInputFiles({

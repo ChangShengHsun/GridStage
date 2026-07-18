@@ -117,6 +117,11 @@ Functional:
 - ✅ **Choreography file export/import (JSON)** (2026-07-17) — Export →
   File writes `<title>.gridstage.json`; Library → Import brings it back
   under a fresh id (can never overwrite). Media blobs not included.
+- ✅ **File hand-off UX** (2026-07-18) — extension is now single-segment
+  `.gridstage` (legacy .gridstage.json still imports): desktop file
+  association (double-click opens the app), Android share-sheet in
+  (share_target) and out (navigator.share button). iOS share-in not
+  supported by the platform — Files app + Library → Import instead.
 - ✅ **Dancer shapes / state markers** (2026-07-17) — per-FORMATION shape
   ring (square/triangle/diamond) on `FormationPosition.marker`, edited in
   the performer panel, hidden during playback.

@@ -3,7 +3,7 @@ import type { DocState } from './store';
 /**
  * Backup nudge — everything lives in this browser's localStorage/IndexedDB,
  * so "clear browsing data" deletes the user's work. Once a doc holds real
- * work, suggest exporting a .gridstage.json backup every so often.
+ * work, suggest exporting a .gridstage backup every so often.
  */
 
 const KEY = 'gridstage-backup-nudge';

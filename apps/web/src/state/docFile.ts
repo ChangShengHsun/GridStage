@@ -2,6 +2,8 @@ import { useEditor } from './store';
 import type { DocState } from './store';
 import { safeFilename } from '../export/filename';
 import { recordExport } from './backupNudge';
+import { importDocIntoLibrary } from './library';
+import { isCollabActive } from '../collab/collab';
 
 /**
  * Choreography file export/import — a plain JSON snapshot of one DocState,
@@ -61,10 +63,18 @@ export function parseDocFile(text: string): DocState | null {
   };
 }
 
-/** Download the open document as `<title>.gridstage.json`. */
-export function exportActiveDocFile(): void {
+/**
+ * Pure: download name for a doc. Single-segment `.gridstage` (not
+ * `.gridstage.json`) because Windows file associations only look at the last
+ * suffix — we can own `.gridstage`, we must never claim `.json`.
+ */
+export function docFileName(title: string): string {
+  return `${safeFilename(title)}.gridstage`;
+}
+
+function activeDocSnapshot(): DocState {
   const s = useEditor.getState();
-  const doc: DocState = {
+  return {
     performance: s.performance,
     performers: s.performers,
     props: s.props,
@@ -73,11 +83,52 @@ export function exportActiveDocFile(): void {
     comments: s.comments,
     annotations: s.annotations,
   };
+}
+
+/** Download the open document as `<title>.gridstage`. */
+export function exportActiveDocFile(): void {
+  const doc = activeDocSnapshot();
   const url = URL.createObjectURL(new Blob([serializeDoc(doc)], { type: 'application/json' }));
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${safeFilename(doc.performance.title)}.gridstage.json`;
+  a.download = docFileName(doc.performance.title);
   a.click();
   URL.revokeObjectURL(url);
   recordExport(); // quiets the backup nudge for a week
+}
+
+/** True when this browser can hand a choreography file to the share sheet. */
+export function canShareDocFile(): boolean {
+  const probe = new File(['{}'], 'probe.gridstage', { type: 'application/json' });
+  return typeof navigator.canShare === 'function' && navigator.canShare({ files: [probe] });
+}
+
+/** Open the system share sheet with the current doc (phones/tablets). */
+export async function shareActiveDocFile(): Promise<void> {
+  const doc = activeDocSnapshot();
+  const file = new File([serializeDoc(doc)], docFileName(doc.performance.title), {
+    type: 'application/json',
+  });
+  try {
+    await navigator.share({ files: [file], title: doc.performance.title });
+    recordExport();
+  } catch (err) {
+    // Closing the share sheet rejects with AbortError — that is not a failure.
+    if (err instanceof DOMException && err.name === 'AbortError') return;
+    throw err;
+  }
+}
+
+/**
+ * Import a choreography file from raw text — the shared entry for every
+ * non-picker path (desktop "open with", Android share target). Returns false
+ * when the text is not a GridStage document or a live-collab session is open
+ * (switching docs mid-session would corrupt the shared Yjs doc).
+ */
+export function importDocText(text: string): boolean {
+  if (isCollabActive()) return false;
+  const doc = parseDocFile(text);
+  if (doc === null) return false;
+  importDocIntoLibrary(doc);
+  return true;
 }

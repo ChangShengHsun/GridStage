@@ -8,6 +8,8 @@ import '@fontsource-variable/instrument-sans';
 import '@fontsource/ibm-plex-mono/400.css';
 import './index.css';
 import { App } from './App';
+import { consumeSharedDoc } from './state/shareTarget';
+import { listenDesktopOpenDoc } from './state/desktopOpen';
 
 const rootEl = document.getElementById('root');
 if (rootEl === null) {
@@ -22,6 +24,10 @@ void migrateMediaDatabases().finally(() => {
       <App />
     </StrictMode>,
   );
+  // Files arriving from outside the app: Android share sheet, desktop
+  // double-click. After render so the imported doc lands in a live UI.
+  void consumeSharedDoc();
+  listenDesktopOpenDoc();
 });
 
 // PWA: offline app shell + installability. Production only — a service

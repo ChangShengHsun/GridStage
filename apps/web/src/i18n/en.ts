@@ -55,7 +55,8 @@ export const en = {
     empty: 'Only this choreography so far — New choreography starts another.',
     newDoc: 'New choreography',
     importDoc: 'Import file',
-    importTitle: 'Open a .gridstage.json file exported from Export → File',
+    importTitle:
+      'Open a .gridstage file exported from Export → File (older .gridstage.json works too)',
     importFileAria: 'Choreography file',
     importFailed: 'Not a GridStage choreography file',
     openDoc: 'Open',
@@ -196,9 +197,10 @@ export const en = {
       'Everything in one printable file: roster, every walk chart, then each dancer’s personal sheet with times and 8-counts.',
     png: 'PNG · Formation snapshot',
     pngNote: 'One image of the selected formation — quick to paste into a group chat.',
-    file: 'File · Choreography (.json)',
+    file: 'File · Choreography (.gridstage)',
     fileNote:
-      'The whole choreography as one JSON file — share it or keep it as a backup, and bring it back via Library → Import. Audio and background images are not included.',
+      'The whole choreography as one .gridstage file — send it to a teammate or keep it as a backup, and bring it back via Library → Import. On desktop, double-clicking the file opens it in GridStage. Audio and background images are not included.',
+    fileShare: 'Share…',
     gif: 'GIF',
     gifNote:
       'Small animated GIF of the whole show (2D plan, 640px, 8 fps) — rendered offline, drops straight into a group chat.',

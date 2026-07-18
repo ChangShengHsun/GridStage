@@ -50,7 +50,8 @@ export default tseslint.config(
     },
   },
   {
-    // Service worker: its own global scope, not the window's.
+    // Service worker: its own global scope, not the window's. Plain JS, so
+    // TS-only return-type annotations can't apply here.
     files: ['apps/web/public/sw.js'],
     languageOptions: {
       globals: {
@@ -60,6 +61,9 @@ export default tseslint.config(
         URL: 'readonly',
         Response: 'readonly',
       },
+    },
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'off',
     },
   },
   {
