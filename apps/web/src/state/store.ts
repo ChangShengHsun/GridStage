@@ -17,6 +17,7 @@ import {
   DEFAULT_STAGE_HEIGHT_M,
   DEFAULT_STAGE_WIDTH_M,
   DEFAULT_TRANSITION_MS,
+  isPerformerActive,
   PERFORMER_COLORS,
 } from '@gridstage/shared-types';
 import { planTransition } from '@gridstage/path-planner';
@@ -61,6 +62,8 @@ interface EditorState extends DocState {
   playbackRate: number;
   /** Session-only: click on every beat while playing (needs a BPM). */
   metronomeOn: boolean;
+  /** Session-only: loop the selected formation (transition in + hold). */
+  loopOn: boolean;
   /** Session-only canvas tool: draw strokes / drop pins / off. */
   annotateMode: 'off' | 'pen' | 'pin';
 
@@ -194,6 +197,7 @@ interface EditorState extends DocState {
   setIsPlaying: (playing: boolean) => void;
   setPlaybackRate: (rate: number) => void;
   setMetronomeOn: (on: boolean) => void;
+  setLoopOn: (on: boolean) => void;
   setAnnotateMode: (mode: 'off' | 'pen' | 'pin') => void;
   addAnnotation: (a: Omit<Annotation, 'id' | 'performanceId'>) => void;
   removeAnnotation: (id: string) => void;
@@ -371,6 +375,7 @@ export const useEditor = create<EditorState>()(
         isPlaying: false,
         playbackRate: 1,
         metronomeOn: false,
+        loopOn: false,
         annotateMode: 'off',
 
         setTitle: (title) => mutateDoc((s) => ({ performance: { ...s.performance, title } })),
@@ -1241,6 +1246,7 @@ export const useEditor = create<EditorState>()(
         setIsPlaying: (playing) => set({ isPlaying: playing }),
         setPlaybackRate: (rate) => set({ playbackRate: Math.min(2, Math.max(0.5, rate)) }),
         setMetronomeOn: (on) => set({ metronomeOn: on }),
+        setLoopOn: (on) => set({ loopOn: on }),
         setAnnotateMode: (mode) => set({ annotateMode: mode }),
 
         addAnnotation: (a) =>
@@ -1353,3 +1359,13 @@ useEditor.subscribe(healFormationSelection);
 // a reloaded doc sits with a stale selection until the first set() — the stage
 // looks empty and drags write nowhere. Heal once at boot as well.
 healFormationSelection(useEditor.getState());
+
+/**
+ * Doc state as every export should see it: understudies (active === false)
+ * removed from the cast. Their positions stay in the maps but nothing
+ * iterates them once the performer list is filtered.
+ */
+export function exportableState(): ReturnType<typeof useEditor.getState> {
+  const s = useEditor.getState();
+  return { ...s, performers: s.performers.filter(isPerformerActive) };
+}

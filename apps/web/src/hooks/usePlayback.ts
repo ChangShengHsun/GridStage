@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useEditor } from '../state/store';
-import { showEndMs } from '../state/interpolate';
+import { loopRangeMs, showEndMs } from '../state/interpolate';
 import { audioDurationMs, getAudioElement } from '../audio/audioPlayer';
 import {
   getVideoElement,
@@ -59,6 +59,22 @@ export function usePlayback(): { togglePlay: () => void } {
             ? audio.currentTime * 1000
             : s.playheadMs + (now - lastTick) * s.playbackRate;
       lastTick = now;
+      // Loop the selected formation's segment: jump back instead of ending.
+      const loop = s.loopOn ? loopRangeMs(s) : null;
+      if (loop !== null && (t >= loop.endMs || (media !== null && media.ended))) {
+        if (video !== null) {
+          video.currentTime = timelineMsToVideoSeconds(
+            loop.startMs,
+            useRefVideo.getState().offsetMs,
+          );
+        } else if (audio !== null) {
+          audio.currentTime = loop.startMs / 1000;
+        }
+        lastTick = now;
+        s.setPlayhead(loop.startMs);
+        rafRef.current = requestAnimationFrame(tick);
+        return;
+      }
       if (t >= endMs || (media !== null && media.ended)) {
         s.setPlayhead(endMs);
         s.setIsPlaying(false);
@@ -113,7 +129,13 @@ export function usePlayback(): { togglePlay: () => void } {
     }
     const endMs = playbackEndMs();
     if (endMs <= 0) return;
-    if (s.playheadMs >= endMs - 10) s.setPlayhead(0);
+    // Looping: start from the loop's beginning when outside its range.
+    const loop = s.loopOn ? loopRangeMs(s) : null;
+    if (loop !== null && (s.playheadMs < loop.startMs || s.playheadMs >= loop.endMs - 10)) {
+      s.setPlayhead(loop.startMs);
+    } else if (s.playheadMs >= endMs - 10) {
+      s.setPlayhead(0);
+    }
     s.setIsPlaying(true);
   }, []);
 

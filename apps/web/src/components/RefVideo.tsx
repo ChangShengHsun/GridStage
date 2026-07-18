@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent, ReactElement } from 'react';
+import { isPerformerActive } from '@gridstage/shared-types';
 import { registerVideoElement, useRefVideo } from '../state/refVideo';
 import { useEditor } from '../state/store';
 import { NumberField } from './NumberField';
@@ -160,6 +161,7 @@ export function RefVideo(): ReactElement | null {
               const fid = s.selectedFormationId;
               const current = s.positions[fid] ?? {};
               const reference = s.performers
+                .filter(isPerformerActive)
                 .map((p) => {
                   const pos = current[p.id];
                   return pos === undefined ? null : { performerId: p.id, x: pos.x, y: pos.y };
@@ -219,6 +221,7 @@ export function RefVideo(): ReactElement | null {
               const fid = s.selectedFormationId;
               const current = s.positions[fid] ?? {};
               const reference = s.performers
+                .filter(isPerformerActive)
                 .map((p) => {
                   const pos = current[p.id];
                   return pos === undefined ? null : { performerId: p.id, x: pos.x, y: pos.y };

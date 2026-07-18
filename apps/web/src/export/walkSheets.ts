@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { useEditor } from '../state/store';
+import { exportableState } from '../state/store';
 import { byOrder, formatEightCount, formatTimecode } from '../state/interpolate';
 import { safeFilename } from './filename';
 import { ensureCjkFont, hasCjk } from './pdfFont';
@@ -21,7 +21,7 @@ const DIM = '#8a8074';
  * subset is embedded so Chinese names print instead of being skipped.
  */
 export async function exportWalkSheetsPdf(): Promise<void> {
-  const s = useEditor.getState();
+  const s = exportableState();
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
   const allText = [
@@ -40,7 +40,7 @@ export async function exportWalkSheetsPdf(): Promise<void> {
  * fresh doc). The font must already be registered via ensureCjkFont.
  */
 export function drawWalkSheetsInto(doc: jsPDF, font: string): void {
-  const s = useEditor.getState();
+  const s = exportableState();
   const ordered = byOrder(s.formations);
   // Without the CJK font, drop text helvetica cannot render (draws garbage).
   const pdfSafe = (text: string): string =>

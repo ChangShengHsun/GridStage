@@ -47,6 +47,8 @@ export function Timeline({
   const setPlaybackRate = useEditor((s) => s.setPlaybackRate);
   const metronomeOn = useEditor((s) => s.metronomeOn);
   const setMetronomeOn = useEditor((s) => s.setMetronomeOn);
+  const loopOn = useEditor((s) => s.loopOn);
+  const setLoopOn = useEditor((s) => s.setLoopOn);
   const beatMarkersMs = useEditor((s) => s.performance.beatMarkersMs);
   const bpm = useEditor((s) => s.performance.bpm);
   const selectedFormationId = useEditor((s) => s.selectedFormationId);
@@ -369,6 +371,15 @@ export function Timeline({
         </button>
         <button
           type="button"
+          className={`btn${loopOn ? ' btn-active' : ''}`}
+          aria-pressed={loopOn}
+          title={t.timeline.loopTitle}
+          onClick={() => setLoopOn(!loopOn)}
+        >
+          {t.timeline.loop}
+        </button>
+        <button
+          type="button"
           className={`btn${metronomeOn ? ' btn-active' : ''}`}
           disabled={bpm === null}
           aria-pressed={metronomeOn}
@@ -615,6 +626,8 @@ export function Timeline({
                       alignItems: 'center',
                       background: selected ? 'rgba(232, 168, 76, 0.25)' : 'rgba(46, 42, 38, 0.9)',
                       border: `1px solid ${selected ? '#e8a84c' : '#3a322b'}`,
+                      // The formation's label color, as a flag along the left edge.
+                      ...(f.color !== undefined && { borderLeft: `4px solid ${f.color}` }),
                       borderRadius: 4,
                       color: '#ece5db',
                       fontFamily: "'Instrument Sans Variable', sans-serif",

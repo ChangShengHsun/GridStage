@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import {
   Stage,
@@ -16,6 +16,7 @@ import {
 } from 'react-konva';
 import type Konva from 'konva';
 import { useEditor } from '../state/store';
+import { isPerformerActive } from '@gridstage/shared-types';
 import { byOrder, posesAtTime } from '../state/interpolate';
 import type { StagePose } from '../state/interpolate';
 import { findCrossings } from '@gridstage/path-planner';
@@ -58,7 +59,9 @@ export function StageCanvas(): ReactElement {
   const [size, setSize] = useState<CanvasSize>({ width: 0, height: 0 });
 
   const performance = useEditor((s) => s.performance);
-  const performers = useEditor((s) => s.performers);
+  const allPerformers = useEditor((s) => s.performers);
+  // Understudies stay in the cast but never on the stage.
+  const performers = useMemo(() => allPerformers.filter(isPerformerActive), [allPerformers]);
   const props = useEditor((s) => s.props);
   const selectedPropId = useEditor((s) => s.selectedPropId);
   const selectProp = useEditor((s) => s.selectProp);

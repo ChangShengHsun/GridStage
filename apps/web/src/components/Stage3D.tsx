@@ -5,6 +5,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { CanvasTexture, DoubleSide } from 'three';
 import type { PerspectiveCamera } from 'three';
 import { useEditor } from '../state/store';
+import { isPerformerActive } from '@gridstage/shared-types';
 import { posesAtTime } from '../state/interpolate';
 import type { StagePose } from '../state/interpolate';
 import { useT } from '../i18n';
@@ -158,7 +159,9 @@ function Performer3D({
 export default function Stage3D(): ReactElement {
   const t = useT();
   const performance = useEditor((s) => s.performance);
-  const performers = useEditor((s) => s.performers);
+  const allPerformers = useEditor((s) => s.performers);
+  // Understudies stay in the cast but never on the stage.
+  const performers = useMemo(() => allPerformers.filter(isPerformerActive), [allPerformers]);
   const formations = useEditor((s) => s.formations);
   const positions = useEditor((s) => s.positions);
   const selectedFormationId = useEditor((s) => s.selectedFormationId);

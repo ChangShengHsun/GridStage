@@ -1,4 +1,4 @@
-import { useEditor } from '../state/store';
+import { exportableState } from '../state/store';
 import { byOrder } from '../state/interpolate';
 import { safeFilename } from './filename';
 import { messages } from '../i18n';
@@ -13,7 +13,7 @@ const H = 720;
  * export draws, frozen at the formation's start time (= its stored spots).
  */
 export function exportFormationPng(): void {
-  const s = useEditor.getState();
+  const s = exportableState();
   const formation =
     s.formations.find((f) => f.id === s.selectedFormationId) ?? byOrder(s.formations)[0];
   if (formation === undefined) return;

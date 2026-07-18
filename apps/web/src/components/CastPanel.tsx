@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
+import { isPerformerActive } from '@gridstage/shared-types';
 import { useEditor } from '../state/store';
 import { parseRoster } from '../state/csv';
 import { deleteCrew, listCrews, saveCrew } from '../state/crews';
@@ -97,13 +98,14 @@ export function CastPanel(): ReactElement {
         <div role="listbox" aria-label={t.cast.performersAria} aria-multiselectable="true">
           {performers.map((p) => {
             const selected = selectedPerformerIds.includes(p.id);
+            const active = isPerformerActive(p);
             return (
               <div
                 key={p.id}
                 role="option"
                 aria-selected={selected}
                 tabIndex={0}
-                className={`cast-row${selected ? ' selected' : ''}`}
+                className={`cast-row${selected ? ' selected' : ''}${active ? '' : ' cast-row-inactive'}`}
                 onClick={(e) => selectPerformer(p.id, e.shiftKey)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -114,7 +116,8 @@ export function CastPanel(): ReactElement {
               >
                 <span className="cast-dot" style={{ background: p.color }} />
                 <span className="cast-name">{p.name}</span>
-                {p.role !== '' && <span className="cast-role">{p.role}</span>}
+                {!active && <span className="cast-role">{t.cast.absentTag}</span>}
+                {active && p.role !== '' && <span className="cast-role">{p.role}</span>}
               </div>
             );
           })}

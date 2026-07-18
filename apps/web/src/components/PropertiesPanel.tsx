@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
+import { isPerformerActive } from '@gridstage/shared-types';
 import { useEditor } from '../state/store';
 import type { TemplateKind } from '../state/templates';
 import { suggestFormations } from '../state/suggest';
@@ -79,6 +80,15 @@ function PerformerSection(): ReactElement | null {
             onChange={(e) => updatePerformer(performer.id, { role: e.target.value })}
           />
         </div>
+        <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12 }}>
+          <input
+            type="checkbox"
+            checked={isPerformerActive(performer)}
+            title={t.performer.activeTitle}
+            onChange={(e) => updatePerformer(performer.id, { active: e.target.checked })}
+          />
+          {t.performer.activeLabel}
+        </label>
         <div className="field">
           <label htmlFor="perf-color">{t.performer.color}</label>
           <input
@@ -365,7 +375,9 @@ function FormationSection(): ReactElement | null {
   const copyPositionsFrom = useEditor((s) => s.copyPositionsFrom);
   const applySuggestedPositions = useEditor((s) => s.applySuggestedPositions);
   const hasPerformers = useEditor((s) => s.performers.length > 0);
-  const performers = useEditor((s) => s.performers);
+  const allPerformers = useEditor((s) => s.performers);
+  // Understudies are excluded from analysis and generated layouts.
+  const performers = useMemo(() => allPerformers.filter(isPerformerActive), [allPerformers]);
   const positions = useEditor((s) => s.positions);
   const [templateKind, setTemplateKind] = useState<TemplateKind>('line');
   const [copySourceId, setCopySourceId] = useState('');
@@ -379,7 +391,7 @@ function FormationSection(): ReactElement | null {
     if (name === null || name.trim() === '') return;
     saveFormationPreset(
       name.trim(),
-      s.performers.map((p) => p.id),
+      s.performers.filter(isPerformerActive).map((p) => p.id),
       s.positions[s.selectedFormationId] ?? {},
       s.performance.stageWidth,
       s.performance.stageHeight,
@@ -394,7 +406,7 @@ function FormationSection(): ReactElement | null {
     applySuggestedPositions(
       applyPresetToCast(
         preset,
-        s.performers.map((p) => p.id),
+        s.performers.filter(isPerformerActive).map((p) => p.id),
         s.positions[s.selectedFormationId] ?? {},
         s.performance.stageWidth,
         s.performance.stageHeight,
@@ -411,7 +423,7 @@ function FormationSection(): ReactElement | null {
     const previousSpots = previous !== undefined ? (s.positions[previous.id] ?? null) : null;
     setSuggestions(
       suggestFormations(
-        s.performers.map((p) => p.id),
+        s.performers.filter(isPerformerActive).map((p) => p.id),
         previousSpots,
         s.performance.stageWidth,
         s.performance.stageHeight,
@@ -422,6 +434,13 @@ function FormationSection(): ReactElement | null {
   const formation = formations.find((f) => f.id === selectedFormationId);
   if (formation === undefined) return null;
   const isFirst = ![...formations].some((f) => f.orderIndex < formation.orderIndex);
+  // The walk-in (transition) is the gap after the previous formation's hold;
+  // editing it moves THIS formation's start (later formations never shift).
+  const orderedFormations = byOrder(formations);
+  const prevFormation =
+    orderedFormations[orderedFormations.findIndex((f) => f.id === selectedFormationId) - 1];
+  const prevEndMs =
+    prevFormation === undefined ? null : prevFormation.startTimeMs + prevFormation.durationMs;
 
   // Virtual clinic: analyze the transition INTO this formation — dancers
   // who would meet mid-walk, and dancers who have to run to make it.
@@ -494,6 +513,44 @@ function FormationSection(): ReactElement | null {
               value={formation.durationMs / 1000}
               onCommit={(v) => updateFormation(formation.id, { durationMs: Math.max(0, v * 1000) })}
             />
+          </div>
+          {prevEndMs !== null && (
+            <div className="field" style={{ flex: 1 }}>
+              <label htmlFor="form-walkin" title={t.formation.walkInTitle}>
+                {t.formation.walkInLabel}
+              </label>
+              <NumberField
+                id="form-walkin"
+                min={0}
+                step={0.1}
+                decimals={1}
+                value={Math.max(0, formation.startTimeMs - prevEndMs) / 1000}
+                onCommit={(v) => setFormationStart(formation.id, prevEndMs + Math.max(0, v) * 1000)}
+              />
+            </div>
+          )}
+        </div>
+        <div className="field expert-only-ui">
+          <label htmlFor="form-color" title={t.formation.colorTitle}>
+            {t.formation.colorLabel}
+          </label>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input
+              id="form-color"
+              type="color"
+              title={t.formation.colorTitle}
+              value={formation.color ?? '#e8843c'}
+              onChange={(e) => updateFormation(formation.id, { color: e.target.value })}
+            />
+            {formation.color !== undefined && (
+              <button
+                type="button"
+                className="btn"
+                onClick={() => updateFormation(formation.id, { color: undefined })}
+              >
+                {t.formation.colorClear}
+              </button>
+            )}
           </div>
         </div>
         <div className="field">

@@ -1678,3 +1678,26 @@ test('phone layout: side panels become drawers behind edge tabs', async ({ page 
   await expect(castPanel).toBeVisible();
   await expect(page.locator('.panel-resize')).toHaveCount(3);
 });
+
+test('understudy: unchecking "Performing this run" hides the dancer everywhere', async ({
+  page,
+}) => {
+  await page.getByText('Add performer').click();
+  await page.getByText('Add performer').click();
+  // Dancer 2 goes on the bench.
+  await page.getByText('Dancer 2').first().click();
+  await page.getByRole('checkbox', { name: 'Performing this run' }).uncheck();
+
+  // Cast keeps the row (marked absent); the stage canvas hides the mark.
+  await expect(page.getByText('absent')).toBeVisible();
+  const marks = page.getByLabel('Stage canvas').locator('canvas').first();
+  await expect(marks).toBeVisible();
+  // The whole-cast select-all only drags one visible mark now: verify via
+  // the persisted doc that the flag landed, and via re-check restoring it.
+  const doc = await readDoc(page);
+  const benched = doc.performers.find((p) => p.name === 'Dancer 2');
+  expect((benched as { active?: boolean } | undefined)?.active).toBe(false);
+
+  await page.getByRole('checkbox', { name: 'Performing this run' }).check();
+  await expect(page.getByText('absent')).toBeHidden();
+});

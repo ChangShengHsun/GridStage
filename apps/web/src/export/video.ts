@@ -1,4 +1,4 @@
-import { useEditor } from '../state/store';
+import { exportableState } from '../state/store';
 import { formatEightCount, formatTimecode, posesAtTime, showEndMs } from '../state/interpolate';
 import { propOutline } from '../state/props';
 import { safeFilename } from './filename';
@@ -43,7 +43,7 @@ export async function exportPerformanceVideo({
   onProgress,
   signal,
 }: VideoExportOptions): Promise<void> {
-  const s = useEditor.getState();
+  const s = exportableState();
   const msg = messages();
   const durationMs = showEndMs(s.formations);
   if (durationMs <= 0) throw new Error(msg.videoExport.errNothingToExport);

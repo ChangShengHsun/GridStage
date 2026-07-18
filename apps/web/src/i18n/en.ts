@@ -194,6 +194,7 @@ export const en = {
 
   cast: {
     title: 'Cast',
+    absentTag: 'absent',
     addPerformer: 'Add performer',
     importCsv: 'Import CSV',
     importCsvTitle: 'CSV columns: name, role, color (header row optional)',
@@ -239,6 +240,9 @@ export const en = {
     name: 'Name',
     role: 'Role',
     rolePlaceholder: 'e.g. captain, flyer',
+    activeLabel: 'Performing this run',
+    activeTitle:
+      'Uncheck to mark an understudy or absence: the dancer keeps every position but is hidden from the stage, exports and analysis',
     color: 'Color',
     xLabel: 'X (m)',
     yLabel: 'Y (m)',
@@ -289,6 +293,12 @@ export const en = {
     name: 'Name',
     startLabel: 'Start (s)',
     holdLabel: 'Hold (s)',
+    walkInLabel: 'Walk-in (s)',
+    walkInTitle:
+      'How long dancers have to walk from the previous formation into this one — editing it moves this formation, never the later ones',
+    colorLabel: 'Card color',
+    colorTitle: 'Tints this formation card on the timeline — e.g. one color per song section',
+    colorClear: 'Clear',
     transitionLabel: 'Transition to next',
     transitionLinear: 'Linear (straight paths)',
     transitionCurve: 'Curve (drag the path handles)',
@@ -442,6 +452,9 @@ export const en = {
     removeAudio: 'Remove audio',
     tapBeat: 'Tap beat',
     tapBeatTitle: 'Drop a beat marker at the playhead (great while music plays)',
+    loop: 'Loop',
+    loopTitle:
+      'Repeat the selected formation: plays from the previous formation into this one, over and over — pick a formation to rehearse its transition',
     metronome: 'Click',
     metronomeTitle: 'Metronome: click on every beat while playing (count 1 is accented)',
     metronomeNeedsBpm: 'Set a BPM first (Stage panel)',

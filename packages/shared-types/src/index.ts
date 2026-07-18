@@ -137,6 +137,8 @@ export interface Formation {
   /** How performers travel to the NEXT formation. */
   transitionType: TransitionType;
   name: string;
+  /** Optional label color for the timeline card (hex), e.g. per song section. */
+  color?: string;
 }
 
 export interface Performer {
@@ -158,6 +160,12 @@ export interface Performer {
    * performers at once. Optional — absent means ungrouped.
    */
   tags?: string[];
+  /**
+   * False = understudy/absent this run: kept in the cast with all their
+   * positions, but hidden from the stage, exports and analysis.
+   * Absent means active.
+   */
+  active?: boolean;
 }
 
 export interface FormationPosition {
@@ -227,6 +235,9 @@ export interface MediaAsset {
 }
 
 /** Stage defaults used when creating a new performance (typical dance studio). */
+/** Absent flag = active; only an explicit false hides the performer. */
+export const isPerformerActive = (p: Performer): boolean => p.active !== false;
+
 export const DEFAULT_STAGE_WIDTH_M = 12;
 export const DEFAULT_STAGE_HEIGHT_M = 8;
 export const DEFAULT_FORMATION_DURATION_MS = 8_000;

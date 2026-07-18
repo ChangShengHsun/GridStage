@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { useEditor } from '../state/store';
+import { exportableState } from '../state/store';
 import { byOrder, formatTimecode } from '../state/interpolate';
 import { placeOutline, propOutline } from '../state/props';
 import { safeFilename } from './filename';
@@ -20,7 +20,7 @@ const DIM = '#8a8074';
  * When any text is CJK the bundled Noto Sans TC subset is embedded.
  */
 export async function exportPerformancePdf(): Promise<void> {
-  const s = useEditor.getState();
+  const s = exportableState();
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const font = await ensureCjkFont(doc, hasCjk(chartText()));
   drawWalkChartsInto(doc, font);
@@ -29,7 +29,7 @@ export async function exportPerformancePdf(): Promise<void> {
 
 /** Every string the charts print — the pack checks it for CJK too. */
 export function chartText(): string {
-  const s = useEditor.getState();
+  const s = exportableState();
   return [
     s.performance.title,
     ...s.performers.flatMap((p) => [p.name, p.role]),
@@ -43,7 +43,7 @@ export function chartText(): string {
  * page. The font must already be registered via ensureCjkFont.
  */
 export function drawWalkChartsInto(doc: jsPDF, font: string): void {
-  const s = useEditor.getState();
+  const s = exportableState();
   const ordered = byOrder(s.formations);
 
   drawRosterPage(doc, s.performance.title, font);
@@ -217,7 +217,7 @@ export function drawWalkChartsInto(doc: jsPDF, font: string): void {
 }
 
 function drawRosterPage(doc: jsPDF, title: string, font: string): void {
-  const s = useEditor.getState();
+  const s = exportableState();
 
   doc.setFont(font, 'bold');
   doc.setFontSize(20);

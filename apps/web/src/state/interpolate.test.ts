@@ -6,6 +6,7 @@ import {
   formatEightCount,
   formatTimecode,
   lerpAngle,
+  loopRangeMs,
   posesAtTime,
   showEndMs,
 } from './interpolate';
@@ -143,6 +144,26 @@ describe('helpers', () => {
 
   it('ignores degenerate segments (end <= start)', () => {
     expect(formatEightCount(0, 120, [{ id: 'x', startMs: 5000, endMs: 5000 }])).toBeNull();
+  });
+});
+
+describe('loopRangeMs', () => {
+  it('spans from the previous formation start through the selected end', () => {
+    expect(loopRangeMs({ formations: [f1, f2], selectedFormationId: 'f2' })).toEqual({
+      startMs: 0,
+      endMs: 4000,
+    });
+  });
+
+  it('first formation loops just its own hold', () => {
+    expect(loopRangeMs({ formations: [f1, f2], selectedFormationId: 'f1' })).toEqual({
+      startMs: 0,
+      endMs: 1000,
+    });
+  });
+
+  it('returns null for an unknown selection', () => {
+    expect(loopRangeMs({ formations: [f1, f2], selectedFormationId: 'nope' })).toBeNull();
   });
 });
 
