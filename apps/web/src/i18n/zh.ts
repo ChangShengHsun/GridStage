@@ -152,6 +152,22 @@ export const zh: Messages = {
     scanCancelled: '已取消掃描——沒有任何變更',
     scanNothing: '沒有找到停住的隊形——可改用暫停畫面的「擷取隊形」',
     scanDone: (n: number): string => `已從影片新增 ${n} 個隊形——按一次復原可全部移除`,
+    review: '檢討',
+    reviewTitle:
+      '把這格暫停畫面與播放頭當下的隊形圖比對：每人偏差、C位是否置中、左右對稱度。先選取「一位」舞者即指定其為C位。',
+    reviewNoPlan: '播放頭這個時間點沒有隊形圖可以比對',
+    reviewHeader: (timecode: string): string => `排練檢討 @ ${timecode}`,
+    reviewMean: (mean: string): string => `平均偏離隊形圖：${mean}m`,
+    reviewCenter: (name: string, dist: string, side: string): string =>
+      `C位 ${name}：偏離中線 ${dist}m（${side.trim()}）`,
+    reviewCenterNone: '未指定C位——檢討前先選取一位舞者即可檢查C位',
+    reviewAsymmetry: (value: string): string => `左右對稱偏差：${value}m（0＝完全對稱）`,
+    reviewDancer: (name: string, offset: string, direction: string): string =>
+      `${name} 偏 ${offset}m（${direction}）`,
+    reviewLeft: '偏左',
+    reviewRight: '偏右',
+    reviewUpstage: '偏後',
+    reviewDownstage: '偏前',
   },
 
   backup: {

@@ -113,6 +113,13 @@ constraint; detection on a paused frame handles a full stage).
   `captureAtTime(videoSeconds)` so M2 is a loop around it, not a rewrite.
 - **M3 — Deviation report**: rehearsal video + planned doc → per-dancer
   error table / heatmap over time. Unique in the market.
+  **First cut SHIPPED 2026-07-18 (v0.7.0)**: the Review button compares
+  one paused frame against the interpolated plan at the playhead —
+  per-dancer signed drift (worst first), C-spot centering (select one
+  dancer to designate C位) and left–right asymmetry (Hungarian mirror
+  match; 0 = perfect). Pure math in `vision/review.ts`. Still open for a
+  full M3: scanning the WHOLE video into a per-formation error timeline /
+  heatmap, and per-dancer facing deviation.
 
 ## 7. Risks
 

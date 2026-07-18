@@ -1775,3 +1775,61 @@ test('walk charts PDF includes rehearsal annotations', async ({ page }) => {
   expect(download.suggestedFilename()).toMatch(/-walk-charts\.pdf$/);
   expect((await stat(await download.path())).size).toBeGreaterThan(3_000);
 });
+
+test('rehearsal review reports drift, C-spot and symmetry for a paused frame', async ({
+  page,
+}) => {
+  await page.getByText('Add performer').click();
+  await page.getByText('Add performer').click();
+  // Plan: Dancer 1 at (3,4), Dancer 2 at (9,6).
+  await page.getByText('Dancer 1').first().click();
+  await page.locator('#pos-x').fill('3');
+  await page.locator('#pos-y').fill('4');
+  await page.getByText('Dancer 2').first().click();
+  await page.locator('#pos-x').fill('9');
+  await page.locator('#pos-y').fill('6');
+
+  await page.getByLabel('Reference video file').setInputFiles({
+    name: 'ref.webm',
+    mimeType: 'video/webm',
+    buffer: await recordTestWebm(page),
+  });
+  await expect(page.getByLabel('Reference video', { exact: true })).toBeVisible();
+
+  // Full-frame calibration (linear px->m) + detector stub: feet land at
+  // (3.5, 4) and (9, 6) — Dancer 1 drifted 0.5m stage-right, Dancer 2 exact.
+  await page.evaluate(async () => {
+    const refVideoPath = '/src/state/refVideo.ts';
+    const detectorPath = '/src/vision/detector.ts';
+    const refVideo = (await import(refVideoPath)) as {
+      useRefVideo: { getState: () => { setCorners: (c: { x: number; y: number }[]) => void } };
+    };
+    refVideo.useRefVideo.getState().setCorners([
+      { x: 0, y: 0 },
+      { x: 160, y: 0 },
+      { x: 160, y: 120 },
+      { x: 0, y: 120 },
+    ]);
+    const detector = (await import(detectorPath)) as {
+      setDetectorOverride: (
+        fn: () => Promise<{ x: number; y: number; width: number; height: number; score: number }[]>,
+      ) => void;
+    };
+    detector.setDetectorOverride(() =>
+      Promise.resolve([
+        { x: 36.67, y: 20, width: 20, height: 40, score: 0.9 },
+        { x: 110, y: 50, width: 20, height: 40, score: 0.85 },
+      ]),
+    );
+  });
+
+  // Designate Dancer 1 as the C-spot by selecting exactly that dancer.
+  await page.getByText('Dancer 1').first().click();
+  await page.getByRole('button', { name: 'Review', exact: true }).click();
+
+  await expect(page.getByText(/Rehearsal check @/)).toBeVisible();
+  await expect(page.getByText(/Average drift from the chart: 0\.25m/)).toBeVisible();
+  await expect(page.getByText(/C-spot Dancer 1: 2\.50m left of the center line/)).toBeVisible();
+  await expect(page.getByText(/Left–right asymmetry/)).toBeVisible();
+  await expect(page.getByText(/Dancer 1 0\.50m/)).toBeVisible();
+});

@@ -157,6 +157,23 @@ export const en = {
     scanNothing: 'No held formations found — try Capture on paused frames instead',
     scanDone: (n: number): string =>
       `Added ${n} formation${n === 1 ? '' : 's'} from the video — one Undo removes them all`,
+    review: 'Review',
+    reviewTitle:
+      'Compare this paused frame against the planned chart at the playhead: per-dancer drift, C-spot centering and symmetry. Select ONE dancer first to designate the C-spot.',
+    reviewNoPlan: 'No planned positions at the playhead — nothing to compare against',
+    reviewHeader: (timecode: string): string => `Rehearsal check @ ${timecode}`,
+    reviewMean: (mean: string): string => `Average drift from the chart: ${mean}m`,
+    reviewCenter: (name: string, dist: string, side: string): string =>
+      `C-spot ${name}: ${dist}m ${side.trim()} of the center line`,
+    reviewCenterNone: 'No C-spot designated — select one dancer before reviewing to check it',
+    reviewAsymmetry: (value: string): string =>
+      `Left–right asymmetry: ${value}m (0 = perfect mirror)`,
+    reviewDancer: (name: string, offset: string, direction: string): string =>
+      `${name} ${offset}m (${direction})`,
+    reviewLeft: 'left',
+    reviewRight: 'right',
+    reviewUpstage: 'upstage',
+    reviewDownstage: 'downstage',
   },
 
   backup: {

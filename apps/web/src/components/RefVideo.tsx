@@ -3,6 +3,8 @@ import type { PointerEvent as ReactPointerEvent, ReactElement } from 'react';
 import { isPerformerActive } from '@gridstage/shared-types';
 import { registerVideoElement, useRefVideo } from '../state/refVideo';
 import { useEditor } from '../state/store';
+import { posesAtTime } from '../state/interpolate';
+import type { ReviewReport } from '../vision/review';
 import { NumberField } from './NumberField';
 import { CalibrationOverlay } from './CalibrationOverlay';
 import { useT } from '../i18n';
@@ -30,6 +32,8 @@ export function RefVideo(): ReactElement | null {
   const [captureNote, setCaptureNote] = useState('');
   const [scanProgress, setScanProgress] = useState<number | null>(null);
   const scanAbortRef = useRef<AbortController | null>(null);
+  // Rehearsal review (M3): detected-vs-plan report for the paused frame.
+  const [review, setReview] = useState<{ report: ReviewReport; timecode: string } | null>(null);
   // PiP position, draggable by the header (session-local, default bottom-left).
   const [pos, setPos] = useState({ left: 12, bottom: 12 });
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -257,12 +261,135 @@ export function RefVideo(): ReactElement | null {
             ? t.refVideo.scan
             : t.refVideo.scanCancel(Math.round(scanProgress * 100))}
         </button>
+        <button
+          type="button"
+          className="btn"
+          disabled={corners === null || capturing}
+          title={corners === null ? t.refVideo.captureNeedsCalibration : t.refVideo.reviewTitle}
+          onClick={() => {
+            const video = videoRef.current;
+            if (video === null || corners === null) return;
+            setCapturing(true);
+            void (async () => {
+              const { captureAtTime } = await import('../vision/capture');
+              const { reviewFrame } = await import('../vision/review');
+              const { formatTimecode } = await import('../state/interpolate');
+              const s = useEditor.getState();
+              // The PLAN is the interpolated chart at the playhead — that is
+              // what the paused frame is supposed to look like.
+              const plan = posesAtTime(s.formations, s.positions, s.playheadMs);
+              const reference = s.performers
+                .filter(isPerformerActive)
+                .map((p) => {
+                  const pose = plan.get(p.id);
+                  return pose === undefined
+                    ? null
+                    : { performerId: p.id, x: pose.x, y: pose.y };
+                })
+                .filter((r): r is { performerId: string; x: number; y: number } => r !== null);
+              if (reference.length === 0) {
+                setCaptureNote(t.refVideo.reviewNoPlan);
+                window.setTimeout(() => setCaptureNote(''), 6000);
+                return;
+              }
+              const result = await captureAtTime(
+                video,
+                corners,
+                s.performance.stageWidth,
+                s.performance.stageHeight,
+                reference,
+              );
+              if (result === 'no-calibration') {
+                setCaptureNote(t.refVideo.degenerateCorners);
+                window.setTimeout(() => setCaptureNote(''), 6000);
+              } else if (result === 'no-people') {
+                setCaptureNote(t.refVideo.captureNoPeople);
+                window.setTimeout(() => setCaptureNote(''), 6000);
+              } else {
+                const planRecord = Object.fromEntries(
+                  reference.map((r) => [r.performerId, { x: r.x, y: r.y }]),
+                );
+                const centerId =
+                  s.selectedPerformerIds.length === 1 ? (s.selectedPerformerIds[0] ?? null) : null;
+                setReview({
+                  report: reviewFrame(result.positions, planRecord, {
+                    axisX: s.performance.stageWidth / 2,
+                    centerPerformerId: centerId,
+                  }),
+                  timecode: formatTimecode(s.playheadMs),
+                });
+              }
+            })()
+              .catch((err: unknown) => {
+                setCaptureNote(err instanceof Error ? err.message : String(err));
+                window.setTimeout(() => setCaptureNote(''), 6000);
+              })
+              .finally(() => setCapturing(false));
+          }}
+        >
+          {t.refVideo.review}
+        </button>
       </div>
       {captureNote !== '' && (
         <p className="ref-video-note" role="status">
           {captureNote}
         </p>
       )}
+      {review !== null && <ReviewNote review={review} onClose={() => setReview(null)} />}
+    </div>
+  );
+}
+
+/** The M3 report, rendered as a compact list under the video controls. */
+function ReviewNote({
+  review,
+  onClose,
+}: {
+  review: { report: ReviewReport; timecode: string };
+  onClose: () => void;
+}): ReactElement {
+  const t = useT();
+  const performers = useEditor((s) => s.performers);
+  const nameOf = (id: string): string => performers.find((p) => p.id === id)?.name ?? '?';
+  const side = (dx: number): string => (dx > 0 ? t.refVideo.reviewRight : t.refVideo.reviewLeft);
+  const depth = (dy: number): string =>
+    dy > 0 ? t.refVideo.reviewDownstage : t.refVideo.reviewUpstage;
+  const { report } = review;
+  const worst = report.perDancer[0];
+
+  return (
+    <div className="ref-video-note review-report" role="status">
+      <div className="comment-head">
+        <span className="comment-author">{t.refVideo.reviewHeader(review.timecode)}</span>
+        <button type="button" className="comment-delete" onClick={onClose}>
+          ×
+        </button>
+      </div>
+      <div>{t.refVideo.reviewMean(report.meanOffsetM.toFixed(2))}</div>
+      {report.centerDxM !== null && report.centerPerformerId !== null ? (
+        <div>
+          {t.refVideo.reviewCenter(
+            nameOf(report.centerPerformerId),
+            Math.abs(report.centerDxM).toFixed(2),
+            side(report.centerDxM),
+          )}
+        </div>
+      ) : (
+        <div>{t.refVideo.reviewCenterNone}</div>
+      )}
+      {report.asymmetryM !== null && (
+        <div>{t.refVideo.reviewAsymmetry(report.asymmetryM.toFixed(2))}</div>
+      )}
+      {worst !== undefined &&
+        report.perDancer.slice(0, 5).map((d) => (
+          <div key={d.performerId} className="mono">
+            {t.refVideo.reviewDancer(
+              nameOf(d.performerId),
+              d.offsetM.toFixed(2),
+              `${side(d.dxM)} ${Math.abs(d.dxM).toFixed(1)} · ${depth(d.dyM)} ${Math.abs(d.dyM).toFixed(1)}`,
+            )}
+          </div>
+        ))}
     </div>
   );
 }
