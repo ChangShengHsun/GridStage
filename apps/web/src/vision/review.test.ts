@@ -36,10 +36,14 @@ describe('reviewFrame', () => {
   });
 
   it('has no center reading when the C dancer was not detected', () => {
-    const report = reviewFrame({ a: { x: 1, y: 1 } }, { a: { x: 1, y: 1 } }, {
-      axisX: 6,
-      centerPerformerId: 'c',
-    });
+    const report = reviewFrame(
+      { a: { x: 1, y: 1 } },
+      { a: { x: 1, y: 1 } },
+      {
+        axisX: 6,
+        centerPerformerId: 'c',
+      },
+    );
     expect(report.centerPerformerId).toBeNull();
     expect(report.centerDxM).toBeNull();
   });

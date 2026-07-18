@@ -1776,9 +1776,7 @@ test('walk charts PDF includes rehearsal annotations', async ({ page }) => {
   expect((await stat(await download.path())).size).toBeGreaterThan(3_000);
 });
 
-test('rehearsal review reports drift, C-spot and symmetry for a paused frame', async ({
-  page,
-}) => {
+test('rehearsal review reports drift, C-spot and symmetry for a paused frame', async ({ page }) => {
   await page.getByText('Add performer').click();
   await page.getByText('Add performer').click();
   // Plan: Dancer 1 at (3,4), Dancer 2 at (9,6).

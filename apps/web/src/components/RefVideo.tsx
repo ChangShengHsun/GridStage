@@ -282,9 +282,7 @@ export function RefVideo(): ReactElement | null {
                 .filter(isPerformerActive)
                 .map((p) => {
                   const pose = plan.get(p.id);
-                  return pose === undefined
-                    ? null
-                    : { performerId: p.id, x: pose.x, y: pose.y };
+                  return pose === undefined ? null : { performerId: p.id, x: pose.x, y: pose.y };
                 })
                 .filter((r): r is { performerId: string; x: number; y: number } => r !== null);
               if (reference.length === 0) {

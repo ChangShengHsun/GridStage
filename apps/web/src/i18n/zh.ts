@@ -463,7 +463,8 @@ export const zh: Messages = {
     tapBeat: '標記節拍',
     tapBeatTitle: '在播放頭處放下節拍標記（播放音樂時特別好用）',
     loop: '循環',
-    loopTitle: '反覆播放選取的隊形：從上一個隊形走位進來、停到這個隊形結束，不斷重複——點選要排的隊形即可',
+    loopTitle:
+      '反覆播放選取的隊形：從上一個隊形走位進來、停到這個隊形結束，不斷重複——點選要排的隊形即可',
     metronome: '節拍器',
     metronomeTitle: '節拍器：播放時每拍發出 click（第 1 拍加重音）',
     metronomeNeedsBpm: '請先設定 BPM（舞台面板）',
