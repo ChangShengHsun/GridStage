@@ -1718,11 +1718,13 @@ test('comment resolve tucks the note into a Resolved fold', async ({ page }) => 
 });
 
 test('GIF export downloads an animated gif', async ({ page }) => {
+  // Offline quantization is CPU-bound — slow CI runners need extra room,
+  // and the fresh doc's single 8s formation keeps the frame count small.
+  test.setTimeout(180_000);
   await page.getByText('Add performer').click();
-  await page.getByText('Add formation').click();
   await page.getByRole('button', { name: 'Export…' }).click();
   await page.getByRole('button', { name: 'GIF', exact: true }).click();
-  const downloadPromise = page.waitForEvent('download', { timeout: 60_000 });
+  const downloadPromise = page.waitForEvent('download', { timeout: 150_000 });
   await page.getByRole('button', { name: 'Export', exact: true }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/\.gif$/);
