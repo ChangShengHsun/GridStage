@@ -29,18 +29,18 @@ Status legend: ✅ done · ⬜ open · 🔶 **needs Fable** (see "Which need Fab
 - ⬜ **Count-based ruler mode** (M) — switch the ruler from seconds to
   8-counts when BPM is set; dancers think in counts. Mechanical once BPM +
   beat markers exist.
-- ⬜ **Per-transition duration editing** (M) — today transition time = the gap
-  between formations; an explicit handle/field on the gap makes it visible.
-  Touches the timing model, so tread carefully.
-- ⬜ **Loop a time range** (S) — rehearse one transition over and over.
+- ✅ **Per-transition duration editing** (2026-07-18) — explicit Walk-in (s)
+  field on the formation panel; edits move only that formation.
+- ✅ **Loop a time range** (2026-07-18) — Loop toggle repeats the selected
+  formation's walk-in + hold on every clock (video/audio/rAF).
 
 ## Performers & cast
 
 - ✅ **Performer groups/tags** (2026-07-13) — comma-separated tags on each
   performer; Cast-panel chips select the whole group in one click (then all
   group ops — align/distribute/templates/group-drag — just work).
-- ⬜ **Alternates / understudies** (M) — mark a performer inactive without
-  deleting their positions (weekly attendance changes).
+- ✅ **Alternates / understudies** (2026-07-18) — Performer.active flag;
+  benched dancers keep positions but leave stage/exports/analysis.
 - ✅ **Per-performer path view** — "Show whole-show path" in the performer
   panel: numbered stops + dashed legs on the canvas.
 
@@ -52,8 +52,8 @@ Status legend: ✅ done · ⬜ open · 🔶 **needs Fable** (see "Which need Fab
   no CJK font — embedding a subset font is the known upgrade).
 - ✅ **PNG snapshot of current formation** (2026-07-13) — export-dialog entry,
   reuses the 2D video renderer frozen at the formation start.
-- ⬜ **GIF export** (M) — reuse the exporter's frame draw + a small encoder
-  (`gifenc`), render offline ~12fps/640px. Mechanical.
+- ✅ **GIF export** (2026-07-18) — gifenc (MIT), offline render 8fps/640px,
+  progress + cancel shared with the video exporter.
 - ✅ **PDF 中文** (2026-07-13) — bundled Noto Sans TC subset (Big5 + Latin,
   4.8MB lazy asset); embedded only when the doc contains CJK.
 
@@ -64,8 +64,8 @@ Status legend: ✅ done · ⬜ open · 🔶 **needs Fable** (see "Which need Fab
 
 ## Collaboration
 
-- ⬜ **Comment resolve/threads** (M) — resolving keeps old notes from drowning
-  new ones.
+- ✅ **Comment resolve** (2026-07-18) — resolved notes collapse into a fold;
+  threads still open if ever needed.
 - ✅ **Follow peer mode** (2026-07-13) — click a peer's presence dot to mirror
   their playhead + selected formation live (amber ring while following).
 
@@ -123,9 +123,8 @@ Functional:
 
 Non-functional (from user reviews, not feature lists):
 
-- ⬜ **Responsive / touch layout** (L) — the single biggest gap. The
-  competitors' core scenario is a phone on the rehearsal floor; GridStage
-  is unusable on mobile today.
+- ✅ **Responsive / touch layout** (2026-07-17, v0.6.0) — phone drawers +
+  coarse-pointer sizing + PWA on GitHub Pages (Add to Home Screen).
 - 🔶→✅ **Data-safety step 1** (2026-07-17) — JSON export/import + a weekly
   backup-nudge banner once a doc holds real work. Long term (accounts /
   cloud sync) still open.
@@ -157,12 +156,14 @@ Everything else (count ruler, GIF/PNG/walk-sheet export, groups, marquee
 drag, snap-to-grid, loop, comment threads, per-performer path) is
 well-specified execution — Sonnet or the main thread does it reliably.
 
-## Recommendation (if Ivan asks "what next?")
+## Recommendation (if Ivan asks "what next?") — updated 2026-07-18
 
-1. Individual walk sheets PDF — the printable artifact teams want most (any model).
-2. Count-based ruler — dance-audience differentiator (any model).
-3. Formation suggestions — high wow-factor, **Fable**.
-4. Stage lighting + cue sheet — biggest, **Fable plan first**.
+1. Count-based ruler — last small dance-native gap (any model).
+2. Document trash / undelete — data-safety quick win (any model).
+3. Accounts + cloud sync — the biggest remaining competitive gap; needs an
+   architecture decision from Ivan first (self-host vs hosted BaaS).
+4. M3 rehearsal-vs-plan deviation report — deepens the unique AI moat.
+5. Stage lighting + cue sheet — biggest, **Fable plan first**.
 
 ## TODO (Ivan's own list)
 
