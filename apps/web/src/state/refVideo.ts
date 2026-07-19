@@ -17,6 +17,8 @@ interface RefVideoState {
   fileName: string;
   offsetMs: number;
   layout: RefVideoLayout;
+  /** Split mode: fraction of the stage area the video pane takes (0.2–0.8). */
+  splitRatio: number;
   /**
    * Stage-corner calibration for video→formation capture: the four stage
    * corners as VIDEO-INTRINSIC pixels (videoWidth×videoHeight space), in
@@ -30,6 +32,7 @@ interface RefVideoState {
   clear: () => void;
   setOffsetMs: (ms: number) => void;
   setLayout: (layout: RefVideoLayout) => void;
+  setSplitRatio: (ratio: number) => void;
   setCorners: (corners: Point2[] | null) => void;
   setCalibrating: (on: boolean) => void;
 }
@@ -39,6 +42,7 @@ export const useRefVideo = create<RefVideoState>((set, get) => ({
   fileName: '',
   offsetMs: 0,
   layout: 'pip',
+  splitRatio: 0.5,
   corners: null,
   calibrating: false,
   load: (file) => {
@@ -59,6 +63,7 @@ export const useRefVideo = create<RefVideoState>((set, get) => ({
   },
   setOffsetMs: (ms) => set({ offsetMs: ms }),
   setLayout: (layout) => set({ layout }),
+  setSplitRatio: (ratio) => set({ splitRatio: Math.min(0.8, Math.max(0.2, ratio)) }),
   setCorners: (corners) => set({ corners }),
   setCalibrating: (on) => set({ calibrating: on }),
 }));

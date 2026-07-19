@@ -1,6 +1,7 @@
 import { exportableState } from '../state/store';
 import { formatEightCount, formatTimecode, posesAtTime, showEndMs } from '../state/interpolate';
 import { propOutline } from '../state/props';
+import { timelineMsToVideoSeconds, useRefVideo } from '../state/refVideo';
 import { safeFilename } from './filename';
 import { messages } from '../i18n';
 import type { Messages } from '../i18n';
@@ -20,10 +21,14 @@ const SANS = '"Instrument Sans", system-ui, sans-serif';
 const MONO = '"IBM Plex Mono", monospace';
 
 export type VideoMode = '2d' | '3d';
+/** How the loaded reference video appears in the exported movie (2D only). */
+export type RefVideoInExport = 'off' | 'pip' | 'side';
 
 export interface VideoExportOptions {
   /** '2d' = top-down plan, '3d' = the perspective preview. */
   mode: VideoMode;
+  /** Ignored when no reference video is loaded. Defaults to 'off'. */
+  refVideo?: RefVideoInExport;
   onProgress: (fraction: number) => void;
   signal?: AbortSignal;
 }
@@ -40,6 +45,7 @@ export interface VideoExportOptions {
  */
 export async function exportPerformanceVideo({
   mode,
+  refVideo = 'off',
   onProgress,
   signal,
 }: VideoExportOptions): Promise<void> {
@@ -63,6 +69,16 @@ export async function exportPerformanceVideo({
     positions: s.positions,
   };
 
+  // A loaded reference video is the export's SOUND (same clock ladder as
+  // playback) via its own hidden element — the visible one keeps playing for
+  // the user. Its picture is composited only for 'pip'/'side' in 2D.
+  const refState = useRefVideo.getState();
+  const refEl = refState.objectUrl !== null ? await loadHiddenVideo(refState.objectUrl) : null;
+  if (refEl !== null) {
+    refEl.currentTime = timelineMsToVideoSeconds(0, refState.offsetMs);
+  }
+  const composite = refEl !== null && mode === '2d' && refVideo !== 'off' ? refVideo : null;
+
   let dispose: (() => void) | null = null;
   try {
     let renderFrame: (tMs: number) => void;
@@ -71,11 +87,20 @@ export async function exportPerformanceVideo({
       const renderer = buildStage3dRenderer(canvas, doc);
       renderFrame = renderer.renderFrame;
       dispose = renderer.dispose;
+    } else if (composite !== null && refEl !== null) {
+      renderFrame = buildCompositeRenderer(canvas, doc, msg, refEl, composite);
     } else {
       renderFrame = build2dRenderer(canvas, doc, msg);
     }
 
-    const result = await recordCanvas({ canvas, durationMs, renderFrame, onProgress, signal });
+    const result = await recordCanvas({
+      canvas,
+      durationMs,
+      renderFrame,
+      onProgress,
+      signal,
+      ...(refEl !== null ? { audioElement: refEl, onRecordStart: () => void refEl.play() } : {}),
+    });
     if (result === null) return; // aborted
 
     const url = URL.createObjectURL(result.blob);
@@ -88,7 +113,79 @@ export async function exportPerformanceVideo({
   } finally {
     dispose?.();
     canvas.remove();
+    refEl?.remove();
   }
+}
+
+/** Off-DOM video element for the export, resolved once it can be drawn. */
+function loadHiddenVideo(src: string): Promise<HTMLVideoElement> {
+  return new Promise((resolve, reject) => {
+    const el = document.createElement('video');
+    el.preload = 'auto';
+    el.playsInline = true;
+    el.src = src;
+    el.addEventListener('loadeddata', () => resolve(el), { once: true });
+    el.addEventListener('error', () => reject(new Error('reference video failed to load')), {
+      once: true,
+    });
+  });
+}
+
+/** Fit a source rectangle into a box, preserving aspect ratio (centered). */
+function fitRect(
+  srcW: number,
+  srcH: number,
+  boxX: number,
+  boxY: number,
+  boxW: number,
+  boxH: number,
+): { x: number; y: number; w: number; h: number } {
+  const scale = srcW > 0 && srcH > 0 ? Math.min(boxW / srcW, boxH / srcH) : 1;
+  const w = srcW * scale;
+  const h = srcH * scale;
+  return { x: boxX + (boxW - w) / 2, y: boxY + (boxH - h) / 2, w, h };
+}
+
+/**
+ * 2D chart + the reference video on one canvas: 'pip' = video in the top
+ * right (~1/4 width), 'side' = video left half, chart right half.
+ */
+function buildCompositeRenderer(
+  canvas: HTMLCanvasElement,
+  doc: SceneDoc,
+  msg: Messages,
+  refEl: HTMLVideoElement,
+  layout: 'pip' | 'side',
+): (tMs: number) => void {
+  const ctx = canvas.getContext('2d');
+  if (ctx === null) throw new Error('Canvas 2D unavailable');
+  // The chart draws at its fixed 1280x720 on a base canvas, then lands here.
+  const base = document.createElement('canvas');
+  base.width = W;
+  base.height = H;
+  const drawBase = build2dRenderer(base, doc, msg);
+
+  return (tMs: number): void => {
+    drawBase(tMs);
+    ctx.fillStyle = BG;
+    ctx.fillRect(0, 0, W, H);
+    const vw = refEl.videoWidth;
+    const vh = refEl.videoHeight;
+    if (layout === 'side') {
+      const video = fitRect(vw, vh, 0, 0, W / 2, H);
+      ctx.drawImage(refEl, video.x, video.y, video.w, video.h);
+      const chart = fitRect(W, H, W / 2, 0, W / 2, H);
+      ctx.drawImage(base, chart.x, chart.y, chart.w, chart.h);
+    } else {
+      ctx.drawImage(base, 0, 0);
+      const pipW = W / 4;
+      const video = fitRect(vw, vh, W - pipW - 16, 16, pipW, (pipW * 3) / 4);
+      ctx.drawImage(refEl, video.x, video.y, video.w, video.h);
+      ctx.strokeStyle = DIM;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(video.x, video.y, video.w, video.h);
+    }
+  };
 }
 
 /**

@@ -17,6 +17,15 @@ export interface RecordOptions {
   renderFrame: (tMs: number) => void;
   onProgress: (fraction: number) => void;
   signal?: AbortSignal;
+  /**
+   * Sound source override: this element's audio is routed into the file
+   * (silently for the user) INSTEAD of the uploaded music — the reference
+   * video's sound when one is loaded. The caller seeks it; it starts
+   * playing via onRecordStart.
+   */
+  audioElement?: HTMLMediaElement;
+  /** Fires right after the recorder starts — sync external media here. */
+  onRecordStart?: () => void;
 }
 
 /**
@@ -45,16 +54,28 @@ export async function recordCanvas(opts: RecordOptions): Promise<RecordResult | 
   let audioStarted = false;
 
   try {
-    const audioBlob = getAudioBlob();
-    if (audioBlob !== null) {
+    if (opts.audioElement !== undefined) {
+      // Element audio (the reference video): reroute it into the recording —
+      // MediaElementSource detaches the element from the speakers, so the
+      // export stays silent for the user just like the buffer path.
       audioCtx = new AudioContext();
-      const decoded = await audioCtx.decodeAudioData(await audioBlob.arrayBuffer());
+      const source = audioCtx.createMediaElementSource(opts.audioElement);
       const destination = audioCtx.createMediaStreamDestination();
-      audioSource = audioCtx.createBufferSource();
-      audioSource.buffer = decoded;
-      audioSource.connect(destination); // destination only, so the export is silent
+      source.connect(destination);
       const track = destination.stream.getAudioTracks()[0];
       if (track !== undefined) stream.addTrack(track);
+    } else {
+      const audioBlob = getAudioBlob();
+      if (audioBlob !== null) {
+        audioCtx = new AudioContext();
+        const decoded = await audioCtx.decodeAudioData(await audioBlob.arrayBuffer());
+        const destination = audioCtx.createMediaStreamDestination();
+        audioSource = audioCtx.createBufferSource();
+        audioSource.buffer = decoded;
+        audioSource.connect(destination); // destination only, so the export is silent
+        const track = destination.stream.getAudioTracks()[0];
+        if (track !== undefined) stream.addTrack(track);
+      }
     }
 
     const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 6_000_000 });
@@ -67,6 +88,7 @@ export async function recordCanvas(opts: RecordOptions): Promise<RecordResult | 
     recorder.start();
     audioSource?.start();
     audioStarted = true;
+    opts.onRecordStart?.();
     const startedAt = Date.now();
 
     await new Promise<void>((resolve) => {
@@ -96,6 +118,7 @@ export async function recordCanvas(opts: RecordOptions): Promise<RecordResult | 
     };
   } finally {
     if (audioStarted) audioSource?.stop();
+    opts.audioElement?.pause();
     if (audioCtx !== null) void audioCtx.close();
     for (const track of stream.getTracks()) track.stop();
   }

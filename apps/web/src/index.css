@@ -581,13 +581,28 @@ input[type='color'] {
   width: 340px;
   border-radius: 8px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
-  /* Native corner resize — no JS. */
-  resize: both;
   overflow: hidden;
-  min-width: 220px;
-  min-height: 160px;
   max-width: 70%;
-  max-height: 80%;
+}
+/* JS resize grip (bottom-right): the old native `resize: both` handle was
+   nearly invisible and unreachable when the panel sat low. */
+.ref-video-resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  cursor: nwse-resize;
+  touch-action: none;
+  background: linear-gradient(
+    135deg,
+    transparent 0 50%,
+    var(--panel-edge) 50% 60%,
+    transparent 60% 70%,
+    var(--panel-edge) 70% 80%,
+    transparent 80% 90%,
+    var(--panel-edge) 90%
+  );
 }
 .ref-video-splitpane {
   position: absolute;
@@ -596,6 +611,20 @@ input[type='color'] {
   bottom: 0;
   width: 50%;
   border-width: 0 1px 0 0;
+}
+/* Draggable split divider along the pane's right edge. */
+.ref-video-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -5px;
+  width: 10px;
+  cursor: col-resize;
+  touch-action: none;
+}
+.ref-video-divider:hover,
+.ref-video-divider:active {
+  background: rgba(232, 168, 76, 0.3);
 }
 .ref-video-head {
   display: flex;
@@ -655,6 +684,38 @@ input[type='color'] {
   gap: 6px;
   padding: 4px 6px;
   font-size: 11.5px;
+}
+
+/* Loop range on the timeline: blue band + two draggable posts. */
+.loop-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(96, 156, 232, 0.14);
+  border-left: 1px solid rgba(96, 156, 232, 0.5);
+  border-right: 1px solid rgba(96, 156, 232, 0.5);
+  pointer-events: none;
+}
+.loop-post {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  cursor: ew-resize;
+  touch-action: none;
+  z-index: 3;
+}
+.loop-post-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 2px;
+  background: rgba(120, 175, 240, 0.9);
+}
+.loop-post:hover .loop-post-line,
+.loop-post:active .loop-post-line {
+  background: #9cc4f5;
 }
 
 /* Backup reminder: a small banner above the timeline, bottom-right. */

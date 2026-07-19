@@ -36,6 +36,7 @@ export function App(): ReactElement {
   const { togglePlay } = usePlayback();
   useAppHotkeys(togglePlay);
   const refVideoSplit = useRefVideo((s) => s.objectUrl !== null && s.layout === 'split');
+  const splitRatio = useRefVideo((s) => s.splitRatio);
   const isNarrow = useIsNarrow();
   // Phone layout: side panels become slide-in drawers, one open at a time.
   const [drawer, setDrawer] = useState<'cast' | 'props' | null>(null);
@@ -85,7 +86,10 @@ export function App(): ReactElement {
         aria-label={t.stage.canvasAria}
       >
         <RefVideo />
-        <div className="stage-canvas-slot">
+        <div
+          className="stage-canvas-slot"
+          style={refVideoSplit ? { left: `${splitRatio * 100}%` } : undefined}
+        >
           {show3d ? (
             <Suspense fallback={<p className="empty-note">{t.stage.loading3d}</p>}>
               <Stage3D />

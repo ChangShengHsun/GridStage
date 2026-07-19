@@ -465,7 +465,7 @@ test('video capture places detected dancers into the selected formation', async 
   expect(rotations).toEqual([90, 180]);
 });
 
-test('whole-video scan adds a formation per held position', async ({ page }) => {
+test('whole-video scan rebuilds the chart after a confirm', async ({ page }) => {
   test.setTimeout(90_000);
   await page.getByText('Add performer').click();
   await page.getByText('Add performer').click();
@@ -528,15 +528,27 @@ test('whole-video scan adds a formation per held position', async ({ page }) => 
     });
   });
 
+  // Playwright dismisses dialogs by default = the user clicking Cancel on
+  // the replace confirm: nothing may change.
   await page.getByRole('button', { name: 'Scan whole video' }).click();
-  await expect(page.getByText(/Added 2 formations/)).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText('Scan cancelled — nothing was changed')).toBeVisible({
+    timeout: 60_000,
+  });
+  expect((await readDoc(page)).formations).toHaveLength(1);
+
+  // Accept the confirm: the scan REPLACES the whole chart.
+  page.on('dialog', (dialog) => void dialog.accept());
+  await page.getByRole('button', { name: 'Scan whole video' }).click();
+  await expect(page.getByText(/Rebuilt the chart from the video: 2 formations/)).toBeVisible({
+    timeout: 60_000,
+  });
 
   const state = await readDoc(page);
-  // 1 default + 2 scanned.
-  expect(state.formations).toHaveLength(3);
+  // The default formation is gone — only the 2 scanned holds remain.
+  expect(state.formations).toHaveLength(2);
   const ordered = [...state.formations].sort((a, b) => a.orderIndex - b.orderIndex);
-  const holdA = ordered[1];
-  const holdB = ordered[2];
+  const holdA = ordered[0];
+  const holdB = ordered[1];
   expect(holdA?.startTimeMs).toBe(0);
   expect(holdB?.startTimeMs ?? 0).toBeGreaterThanOrEqual(6000);
   const spotsA = Object.values(state.positions[holdA?.id ?? ''] ?? {}).map((p) => ({
@@ -560,10 +572,41 @@ test('whole-video scan adds a formation per held position', async ({ page }) => 
     ]),
   );
 
-  // One Undo removes the whole scan.
+  // One Undo restores the pre-scan chart.
   await page.getByRole('button', { name: 'Undo' }).click();
   const afterUndo = await readDoc(page);
   expect(afterUndo.formations).toHaveLength(1);
+});
+
+test('loop posts appear on the timeline and are draggable', async ({ page }) => {
+  await page.getByText('Add performer').click();
+  await page.getByRole('button', { name: 'Loop', exact: true }).click();
+
+  // Posts + band render; the default range hugs the playhead (0 → +4s).
+  const startPost = page.getByRole('slider', { name: 'Loop start' });
+  const endPost = page.getByRole('slider', { name: 'Loop end' });
+  await expect(startPost).toBeVisible();
+  await expect(endPost).toBeVisible();
+  await expect(page.locator('.loop-band')).toBeVisible();
+  await expect(startPost).toHaveAttribute('aria-valuenow', '0');
+  await expect(endPost).toHaveAttribute('aria-valuenow', '4000');
+
+  // Dragging the end post right of the first formation's end snaps to it
+  // (default formation: 0–8s; timeline spans 30s).
+  const box = await endPost.boundingBox();
+  if (box === null) throw new Error('end post not rendered');
+  const content = await page.locator('.timeline-content').boundingBox();
+  if (content === null) throw new Error('timeline content not rendered');
+  const targetX = content.x + content.width * (8100 / 30_000);
+  await endPost.hover();
+  await page.mouse.down();
+  await page.mouse.move(targetX, box.y + 40, { steps: 5 });
+  await page.mouse.up();
+  await expect(endPost).toHaveAttribute('aria-valuenow', '8000');
+
+  // Toggling off hides the posts.
+  await page.getByRole('button', { name: 'Loop', exact: true }).click();
+  await expect(page.locator('.loop-band')).toHaveCount(0);
 });
 
 test('section markers: add, name, persist, remove', async ({ page }) => {
@@ -1179,6 +1222,28 @@ test('video export records the show and downloads a movie', async ({ page }) => 
   const filePath = await download.path();
   expect((await stat(filePath)).size).toBeGreaterThan(10_000);
   await expect(page.getByRole('button', { name: 'Export', exact: true })).toBeVisible();
+});
+
+test('video export can composite the reference video picture-in-picture', async ({ page }) => {
+  test.setTimeout(60_000); // realtime capture of the default 8s show
+  await page.getByText('Add performer').click();
+  await page.getByLabel('Reference video file').setInputFiles({
+    name: 'ref.webm',
+    mimeType: 'video/webm',
+    buffer: await recordTestWebm(page),
+  });
+  await expect(page.getByLabel('Reference video', { exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Export…' }).click();
+  // The option only exists because a reference video is loaded.
+  await page
+    .getByLabel('How the reference video appears in the exported movie')
+    .selectOption('pip');
+  const downloadPromise = page.waitForEvent('download', { timeout: 45_000 });
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/-preview\.(webm|mp4)$/);
+  expect((await stat(await download.path())).size).toBeGreaterThan(10_000);
 });
 
 test('3D video export records the perspective view', async ({ page }) => {

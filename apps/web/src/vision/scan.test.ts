@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { meanDisplacement, segmentHeldFormations } from './scan';
+import { advanceReference, meanDisplacement, segmentHeldFormations } from './scan';
 import type { ScanSample } from './scan';
 
 const sample = (timelineMs: number, spots: Record<string, [number, number]>): ScanSample => ({
@@ -72,5 +72,45 @@ describe('segmentHeldFormations', () => {
 
   it('handles the empty input', () => {
     expect(segmentHeldFormations([])).toEqual([]);
+  });
+
+  it('averages a partially-detected dancer over their OWN samples only', () => {
+    // Dancer b is missed in one of three samples: their mean must stay at
+    // (8, 6), not be dragged toward the origin by a phantom zero sample.
+    const held = segmentHeldFormations([
+      sample(0, { a: [2, 3], b: [8, 6] }),
+      sample(1000, { a: [2, 3] }),
+      sample(2000, { a: [2, 3], b: [8, 6] }),
+    ]);
+    expect(held).toHaveLength(1);
+    expect(held[0]?.positions['b']?.x ?? NaN).toBeCloseTo(8);
+    expect(held[0]?.positions['b']?.y ?? NaN).toBeCloseTo(6);
+  });
+});
+
+describe('advanceReference', () => {
+  it('keeps unmatched performers instead of dropping them', () => {
+    const reference = [
+      { performerId: 'a', x: 1, y: 1 },
+      { performerId: 'b', x: 5, y: 5 },
+    ];
+    // Only a was detected this sample; b must survive at their old spot.
+    const next = advanceReference(reference, { a: { x: 2, y: 2 } });
+    expect(next).toEqual([
+      { performerId: 'a', x: 2, y: 2 },
+      { performerId: 'b', x: 5, y: 5 },
+    ]);
+  });
+
+  it('never shrinks across a run of sparse detections', () => {
+    let reference = [
+      { performerId: 'a', x: 1, y: 1 },
+      { performerId: 'b', x: 5, y: 5 },
+      { performerId: 'c', x: 9, y: 2 },
+    ];
+    reference = advanceReference(reference, { a: { x: 1.5, y: 1 } });
+    reference = advanceReference(reference, { b: { x: 5, y: 5.5 } });
+    reference = advanceReference(reference, {});
+    expect(reference).toHaveLength(3);
   });
 });

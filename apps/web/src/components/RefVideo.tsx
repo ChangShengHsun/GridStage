@@ -34,17 +34,34 @@ export function RefVideo(): ReactElement | null {
   const scanAbortRef = useRef<AbortController | null>(null);
   // Rehearsal review (M3): detected-vs-plan report for the paused frame.
   const [review, setReview] = useState<{ report: ReviewReport; timecode: string } | null>(null);
-  // PiP position, draggable by the header (session-local, default bottom-left).
+  // PiP position + width, draggable/resizable (session-local, default
+  // bottom-left). Height follows the width (video keeps its aspect ratio).
   const [pos, setPos] = useState({ left: 12, bottom: 12 });
+  const [pipWidth, setPipWidth] = useState(340);
+  const splitRatio = useRefVideo((s) => s.splitRatio);
+  const setSplitRatio = useRefVideo((s) => s.setSplitRatio);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{
     startX: number;
     startY: number;
     baseLeft: number;
     baseBottom: number;
   } | null>(null);
+  const resizeRef = useRef<{ startX: number; baseWidth: number } | null>(null);
 
   if (objectUrl === null) return null;
+
+  /** Keep the PiP window fully inside the stage area (its offset parent). */
+  const clampPos = (left: number, bottom: number): { left: number; bottom: number } => {
+    const panel = panelRef.current;
+    const parent = panel?.parentElement;
+    if (panel == null || parent == null) return { left, bottom };
+    return {
+      left: Math.min(Math.max(left, 0), Math.max(0, parent.clientWidth - panel.offsetWidth)),
+      bottom: Math.min(Math.max(bottom, 0), Math.max(0, parent.clientHeight - panel.offsetHeight)),
+    };
+  };
 
   const onHeaderPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
     if (layout !== 'pip') return;
@@ -61,19 +78,48 @@ export function RefVideo(): ReactElement | null {
   const onHeaderPointerMove = (e: ReactPointerEvent<HTMLDivElement>): void => {
     const d = dragRef.current;
     if (d === null) return;
-    setPos({
-      left: d.baseLeft + (e.clientX - d.startX),
-      bottom: d.baseBottom - (e.clientY - d.startY),
-    });
+    setPos(clampPos(d.baseLeft + (e.clientX - d.startX), d.baseBottom - (e.clientY - d.startY)));
   };
   const onHeaderPointerUp = (): void => {
     dragRef.current = null;
   };
 
+  const onResizePointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
+    resizeRef.current = { startX: e.clientX, baseWidth: pipWidth };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    e.stopPropagation();
+  };
+  const onResizePointerMove = (e: ReactPointerEvent<HTMLDivElement>): void => {
+    const r = resizeRef.current;
+    if (r === null) return;
+    const parentW = panelRef.current?.parentElement?.clientWidth ?? Number.POSITIVE_INFINITY;
+    setPipWidth(Math.min(Math.max(r.baseWidth + (e.clientX - r.startX), 220), parentW * 0.7));
+  };
+  const onResizePointerUp = (): void => {
+    resizeRef.current = null;
+    setPos((p) => clampPos(p.left, p.bottom)); // wider panel may now stick out
+  };
+
+  const onDividerPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onDividerPointerMove = (e: ReactPointerEvent<HTMLDivElement>): void => {
+    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+    const parent = panelRef.current?.parentElement;
+    if (parent == null) return;
+    const rect = parent.getBoundingClientRect();
+    if (rect.width > 0) setSplitRatio((e.clientX - rect.left) / rect.width);
+  };
+
   return (
     <div
+      ref={panelRef}
       className={layout === 'pip' ? 'ref-video-pip' : 'ref-video-splitpane'}
-      style={layout === 'pip' ? { left: pos.left, bottom: pos.bottom } : undefined}
+      style={
+        layout === 'pip'
+          ? { left: pos.left, bottom: pos.bottom, width: pipWidth }
+          : { width: `${splitRatio * 100}%` }
+      }
       aria-label={t.refVideo.panelAria}
     >
       <div
@@ -244,6 +290,10 @@ export function RefVideo(): ReactElement | null {
                 setCaptureNote(t.refVideo.scanCancelled);
               } else if (held.length === 0) {
                 setCaptureNote(t.refVideo.scanNothing);
+              } else if (
+                !window.confirm(t.refVideo.scanReplaceConfirm(held.length, s.formations.length))
+              ) {
+                setCaptureNote(t.refVideo.scanCancelled);
               } else {
                 s.applyScanFormations(held);
                 setCaptureNote(t.refVideo.scanDone(held.length));
@@ -334,6 +384,27 @@ export function RefVideo(): ReactElement | null {
         </p>
       )}
       {review !== null && <ReviewNote review={review} onClose={() => setReview(null)} />}
+      {layout === 'pip' && (
+        <div
+          className="ref-video-resize"
+          role="separator"
+          aria-label={t.refVideo.resizeAria}
+          title={t.refVideo.resizeAria}
+          onPointerDown={onResizePointerDown}
+          onPointerMove={onResizePointerMove}
+          onPointerUp={onResizePointerUp}
+        />
+      )}
+      {layout === 'split' && (
+        <div
+          className="ref-video-divider"
+          role="separator"
+          aria-label={t.refVideo.splitDividerAria}
+          title={t.refVideo.splitDividerAria}
+          onPointerDown={onDividerPointerDown}
+          onPointerMove={onDividerPointerMove}
+        />
+      )}
     </div>
   );
 }

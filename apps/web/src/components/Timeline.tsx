@@ -2,7 +2,13 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import type { PointerEvent as ReactPointerEvent, ReactElement } from 'react';
 import type { Formation } from '@gridstage/shared-types';
 import { useEditor } from '../state/store';
-import { byOrder, effectiveCountSegments, eightCountMarks, showEndMs } from '../state/interpolate';
+import {
+  byOrder,
+  effectiveCountSegments,
+  eightCountMarks,
+  showEndMs,
+  snapToFormationEdges,
+} from '../state/interpolate';
 import { audioDurationMs, getAudioElement, getWaveformPeaks } from '../audio/audioPlayer';
 import { useRefVideo } from '../state/refVideo';
 import { BeatDialog } from './BeatDialog';
@@ -49,6 +55,9 @@ export function Timeline({
   const setMetronomeOn = useEditor((s) => s.setMetronomeOn);
   const loopOn = useEditor((s) => s.loopOn);
   const setLoopOn = useEditor((s) => s.setLoopOn);
+  const loopStartMs = useEditor((s) => s.loopStartMs);
+  const loopEndMs = useEditor((s) => s.loopEndMs);
+  const setLoopRange = useEditor((s) => s.setLoopRange);
   const beatMarkersMs = useEditor((s) => s.performance.beatMarkersMs);
   const bpm = useEditor((s) => s.performance.bpm);
   const selectedFormationId = useEditor((s) => s.selectedFormationId);
@@ -77,6 +86,9 @@ export function Timeline({
   const [bodyWidth, setBodyWidth] = useState(0);
   const [hasAudio, setHasAudio] = useState(false);
   const [zoom, setZoom] = useState(1);
+  // A loaded reference video is the playback clock AND the sound — uploading
+  // separate music alongside it would fight it, so the button locks.
+  const hasRefVideo = useRefVideo((s) => s.objectUrl !== null);
 
   const totalMs = Math.max(showEndMs(formations), audioDurationMs(), MIN_TIMELINE_MS);
   const contentWidth = Math.max(bodyWidth * zoom, bodyWidth);
@@ -195,6 +207,23 @@ export function Timeline({
   };
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>): void => {
     if (e.currentTarget.hasPointerCapture(e.pointerId)) scrubTo(e.clientX);
+  };
+
+  // Loop posts: drag either post; edges of formations magnetize (~8px).
+  const onLoopPostPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onLoopPostPointerMove = (
+    e: ReactPointerEvent<HTMLDivElement>,
+    which: 'start' | 'end',
+  ): void => {
+    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+    if (loopStartMs === null || loopEndMs === null) return;
+    const toleranceMs = contentWidth > 0 ? (8 / contentWidth) * totalMs : 0;
+    const ms = snapToFormationEdges(clientXToMs(e.clientX), formations, toleranceMs);
+    if (which === 'start') setLoopRange(Math.min(ms, loopEndMs - 200), loopEndMs);
+    else setLoopRange(loopStartMs, Math.max(ms, loopStartMs + 200));
   };
 
   const beatMs = bpm !== null ? 60_000 / bpm : null;
@@ -318,7 +347,13 @@ export function Timeline({
         <button type="button" className="btn edit-only" onClick={addFormation}>
           {t.timeline.addFormation}
         </button>
-        <button type="button" className="btn edit-only" onClick={onUploadAudio}>
+        <button
+          type="button"
+          className="btn edit-only"
+          disabled={hasRefVideo}
+          title={hasRefVideo ? t.timeline.audioLockedByVideo : undefined}
+          onClick={onUploadAudio}
+        >
           {hasAudio ? t.timeline.replaceAudio : t.timeline.uploadAudio}
         </button>
         {hasAudio && (
@@ -374,7 +409,17 @@ export function Timeline({
           className={`btn${loopOn ? ' btn-active' : ''}`}
           aria-pressed={loopOn}
           title={t.timeline.loopTitle}
-          onClick={() => setLoopOn(!loopOn)}
+          onClick={() => {
+            if (loopOn) {
+              setLoopOn(false);
+              return;
+            }
+            // Fresh posts around the playhead (±4s), clamped into the show.
+            const ph = useEditor.getState().playheadMs;
+            const end = Math.min(ph + 4000, totalMs);
+            setLoopRange(Math.max(0, Math.min(ph - 4000, end - 500)), end);
+            setLoopOn(true);
+          }}
         >
           {t.timeline.loop}
         </button>
@@ -481,6 +526,35 @@ export function Timeline({
               </span>
             </div>
           ))}
+          {/* loop range — blue band between two draggable posts */}
+          {loopOn && loopStartMs !== null && loopEndMs !== null && (
+            <>
+              <div
+                className="loop-band"
+                style={{
+                  left: msToPx(loopStartMs),
+                  width: Math.max(0, msToPx(loopEndMs) - msToPx(loopStartMs)),
+                }}
+              />
+              {(['start', 'end'] as const).map((which) => (
+                <div
+                  key={which}
+                  className="loop-post"
+                  data-skip-scrub="true"
+                  role="slider"
+                  aria-label={which === 'start' ? t.timeline.loopStartAria : t.timeline.loopEndAria}
+                  aria-valuemin={0}
+                  aria-valuemax={Math.round(totalMs)}
+                  aria-valuenow={Math.round(which === 'start' ? loopStartMs : loopEndMs)}
+                  style={{ left: msToPx(which === 'start' ? loopStartMs : loopEndMs) - 5 }}
+                  onPointerDown={onLoopPostPointerDown}
+                  onPointerMove={(e) => onLoopPostPointerMove(e, which)}
+                >
+                  <div className="loop-post-line" data-skip-scrub="true" />
+                </div>
+              ))}
+            </>
+          )}
           {/* section markers — faint full-height divider + a small top label */}
           {sections.map((sec) => (
             <div

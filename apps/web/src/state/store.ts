@@ -62,8 +62,11 @@ interface EditorState extends DocState {
   playbackRate: number;
   /** Session-only: click on every beat while playing (needs a BPM). */
   metronomeOn: boolean;
-  /** Session-only: loop the selected formation (transition in + hold). */
+  /** Session-only: repeat the [loopStartMs, loopEndMs] range while playing. */
   loopOn: boolean;
+  /** Loop posts on the timeline; null until the loop is first enabled. */
+  loopStartMs: number | null;
+  loopEndMs: number | null;
   /** Session-only canvas tool: draw strokes / drop pins / off. */
   annotateMode: 'off' | 'pen' | 'pin';
 
@@ -135,9 +138,9 @@ interface EditorState extends DocState {
     updates: Record<string, { x: number; y: number; rotation?: number }>,
   ) => void;
   /**
-   * Append the formations found by a whole-video scan (M2) in ONE undo
-   * step. Existing formations are never touched; durations come from how
-   * long each formation was held in the video.
+   * REPLACE the whole chart with the formations found by a whole-video scan
+   * (M2) in ONE undo step — the UI asks for confirmation first. Durations
+   * come from how long each formation was held in the video.
    */
   applyScanFormations: (
     results: readonly {
@@ -200,6 +203,8 @@ interface EditorState extends DocState {
   setPlaybackRate: (rate: number) => void;
   setMetronomeOn: (on: boolean) => void;
   setLoopOn: (on: boolean) => void;
+  /** Move the loop posts; enforces start ≥ 0 and a 200ms minimum length. */
+  setLoopRange: (startMs: number, endMs: number) => void;
   setAnnotateMode: (mode: 'off' | 'pen' | 'pin') => void;
   addAnnotation: (a: Omit<Annotation, 'id' | 'performanceId'>) => void;
   removeAnnotation: (id: string) => void;
@@ -378,6 +383,8 @@ export const useEditor = create<EditorState>()(
         playbackRate: 1,
         metronomeOn: false,
         loopOn: false,
+        loopStartMs: null,
+        loopEndMs: null,
         annotateMode: 'off',
 
         setTitle: (title) => mutateDoc((s) => ({ performance: { ...s.performance, title } })),
@@ -960,19 +967,20 @@ export const useEditor = create<EditorState>()(
           mutateDoc((s) => {
             if (results.length === 0) return {};
             const b = stageBounds(s.performance);
-            const formations = [...s.formations];
-            const positions = { ...s.positions };
-            // Dancers a hold didn't detect keep their previous spot, so every
-            // formation stays fully populated (the editor's invariant).
-            const lastExisting = [...formations].sort((x, y) => x.orderIndex - y.orderIndex)[
-              formations.length - 1
-            ];
+            // REPLACE the whole chart with the scan (the UI confirms first;
+            // one undo restores everything). Dancers a hold didn't detect
+            // keep their previous spot, seeded from the formation the scan
+            // used as its identity reference, so every formation stays
+            // fully populated (the editor's invariant).
+            const formations: Formation[] = [];
+            const positions: PositionMap = {};
             let carry: Record<string, { x: number; y: number }> = Object.fromEntries(
-              Object.entries(
-                (lastExisting !== undefined ? positions[lastExisting.id] : undefined) ?? {},
-              ).map(([pid, pos]) => [pid, { x: pos.x, y: pos.y }]),
+              Object.entries(s.positions[s.selectedFormationId] ?? {}).map(([pid, pos]) => [
+                pid,
+                { x: pos.x, y: pos.y },
+              ]),
             );
-            let nextIndex = formations.length;
+            let nextIndex = 0;
             for (const r of results) {
               const id = newId();
               const merged = { ...carry, ...r.positions };
@@ -1004,7 +1012,16 @@ export const useEditor = create<EditorState>()(
             const reindexed = [...formations]
               .sort((a, f) => a.startTimeMs - f.startTimeMs || a.orderIndex - f.orderIndex)
               .map((f, i) => ({ ...f, orderIndex: i }));
-            return { formations: reindexed, positions };
+            const first = reindexed[0];
+            return {
+              formations: reindexed,
+              positions,
+              // The old formations are gone — every comment/annotation was
+              // pinned to one, so they go too (undo restores them).
+              comments: [],
+              annotations: [],
+              ...(first !== undefined ? { selectedFormationId: first.id } : {}),
+            };
           }),
 
         setCurveControl: (formationId, performerId, x, y) =>
@@ -1256,6 +1273,10 @@ export const useEditor = create<EditorState>()(
         setPlaybackRate: (rate) => set({ playbackRate: Math.min(2, Math.max(0.5, rate)) }),
         setMetronomeOn: (on) => set({ metronomeOn: on }),
         setLoopOn: (on) => set({ loopOn: on }),
+        setLoopRange: (startMs, endMs) => {
+          const start = Math.max(0, startMs);
+          set({ loopStartMs: start, loopEndMs: Math.max(start + 200, endMs) });
+        },
         setAnnotateMode: (mode) => set({ annotateMode: mode }),
 
         addAnnotation: (a) =>

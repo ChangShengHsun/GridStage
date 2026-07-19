@@ -1,4 +1,4 @@
-yolox_nano.onnx
+yolox_s.onnx (in use since v0.8.2), yolox_nano.onnx (superseded)
 
 Source: YOLOX by Megvii, Inc. (https://github.com/Megvii-BaseDetection/YOLOX)
 Downloaded from the official release assets (tag 0.1.1rc0), unmodified.

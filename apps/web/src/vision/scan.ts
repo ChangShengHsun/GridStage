@@ -51,16 +51,22 @@ export function meanDisplacement(a: Record<string, Point2>, b: Record<string, Po
  */
 export function segmentHeldFormations(samples: readonly ScanSample[]): HeldFormation[] {
   const held: HeldFormation[] = [];
-  let hold: { startMs: number; endMs: number; sums: Record<string, Point2>; n: number } | null =
-    null;
+  let hold: {
+    startMs: number;
+    endMs: number;
+    sums: Record<string, { x: number; y: number; n: number }>;
+    n: number;
+  } | null = null;
   let previous: ScanSample | null = null;
 
   const emit = (): void => {
     const h = hold;
     hold = null;
     if (h === null || h.n < 2) return;
+    // Mean over the samples EACH dancer appeared in — dividing by the hold's
+    // total sample count dragged partially-detected dancers toward (0,0).
     const positions = Object.fromEntries(
-      Object.entries(h.sums).map(([id, p]) => [id, { x: p.x / h.n, y: p.y / h.n }]),
+      Object.entries(h.sums).map(([id, p]) => [id, { x: p.x / p.n, y: p.y / p.n }]),
     );
     const last = held[held.length - 1];
     if (last !== undefined && meanDisplacement(last.positions, positions) < CHANGE_THRESHOLD_M) {
@@ -92,12 +98,32 @@ export function segmentHeldFormations(samples: readonly ScanSample[]): HeldForma
   return held;
 }
 
-function accumulate(hold: { sums: Record<string, Point2>; n: number }, sample: ScanSample): void {
+function accumulate(
+  hold: { sums: Record<string, { x: number; y: number; n: number }>; n: number },
+  sample: ScanSample,
+): void {
   for (const [id, p] of Object.entries(sample.positions)) {
-    const s = hold.sums[id] ?? { x: 0, y: 0 };
-    hold.sums[id] = { x: s.x + p.x, y: s.y + p.y };
+    const s = hold.sums[id] ?? { x: 0, y: 0, n: 0 };
+    hold.sums[id] = { x: s.x + p.x, y: s.y + p.y, n: s.n + 1 };
   }
   hold.n += 1;
+}
+
+/**
+ * Pure: next identity-chain reference. Matched performers move to their
+ * detected spot; unmatched performers KEEP their previous spot instead of
+ * dropping out — replacing the reference with only the matched subset made
+ * the chain shrink monotonically (one missed detection lost a dancer for
+ * the rest of the scan, collapsing to a single tracked person).
+ */
+export function advanceReference(
+  reference: readonly ReferenceSpot[],
+  positions: Record<string, Point2>,
+): ReferenceSpot[] {
+  return reference.map((r) => {
+    const p = positions[r.performerId];
+    return p === undefined ? r : { performerId: r.performerId, x: p.x, y: p.y };
+  });
 }
 
 /** Seek and resolve when the frame is actually presented. */
@@ -168,12 +194,8 @@ export async function scanVideo(
       if (result === 'no-calibration') return null;
       if (result === 'no-people') continue; // gap: breaks any hold naturally
       samples.push({ timelineMs, positions: result.positions });
-      // Chain identities through the piece.
-      reference = Object.entries(result.positions).map(([performerId, p]) => ({
-        performerId,
-        x: p.x,
-        y: p.y,
-      }));
+      // Chain identities through the piece (keeps its full cardinality).
+      reference = advanceReference(reference, result.positions);
     }
     return segmentHeldFormations(samples);
   } finally {

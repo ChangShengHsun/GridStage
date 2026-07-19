@@ -166,20 +166,24 @@ export function eightCountMarks(
 }
 
 /**
- * The playback loop range while loopOn: the selected formation's walk-in
- * plus its hold — from the PREVIOUS formation's start (so you watch the
- * transition you are rehearsing) through the selected formation's end.
+ * Snap a loop post to the nearest formation edge (start or end) within
+ * toleranceMs; outside every tolerance the time passes through unchanged.
  */
-export function loopRangeMs(state: {
-  formations: readonly Formation[];
-  selectedFormationId: string;
-}): { startMs: number; endMs: number } | null {
-  const ordered = byOrder(state.formations);
-  const index = ordered.findIndex((f) => f.id === state.selectedFormationId);
-  const formation = ordered[index];
-  if (formation === undefined) return null;
-  const previous = index > 0 ? ordered[index - 1] : undefined;
-  const startMs = previous !== undefined ? previous.startTimeMs : formation.startTimeMs;
-  const endMs = formation.startTimeMs + formation.durationMs;
-  return endMs > startMs ? { startMs, endMs } : null;
+export function snapToFormationEdges(
+  ms: number,
+  formations: readonly Formation[],
+  toleranceMs: number,
+): number {
+  let best = ms;
+  let bestDistance = toleranceMs;
+  for (const f of formations) {
+    for (const edge of [f.startTimeMs, f.startTimeMs + f.durationMs]) {
+      const distance = Math.abs(edge - ms);
+      if (distance <= bestDistance) {
+        bestDistance = distance;
+        best = edge;
+      }
+    }
+  }
+  return best;
 }

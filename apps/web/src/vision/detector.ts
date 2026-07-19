@@ -1,20 +1,23 @@
 /**
  * Person detection on one video frame (M0 of
- * docs/video-to-formation-killer-app.md). YOLOX-nano (Apache-2.0, see
+ * docs/video-to-formation-killer-app.md). YOLOX-s (Apache-2.0, see
  * public/models/NOTICE-yolox.txt) via onnxruntime-web: WebGPU when the
- * browser has it, WASM otherwise. The model (3.7MB) and the runtime load
+ * browser has it, WASM otherwise. The model (34MB) and the runtime load
  * lazily on first capture, like the CJK PDF font.
  *
- * The official export is RAW head output (1×3549×85): per anchor
+ * Upgraded from yolox_nano@416 (2026-07-19): rehearsal footage shows small
+ * distant figures, where nano's recall was poor — s@640 is the accuracy
+ * jump (COCO mAP 25.8 → 40.5) at the cost of a bigger lazy download and
+ * slower frames. Same release tag, same RAW head export.
+ *
+ * The official export is RAW head output (1×8400×85): per anchor
  * [cx, cy, w, h] offsets, objectness, 80 COCO class scores — decoding
  * (grid + stride), NMS and the person filter live here.
- * ponytail: nano is the smallest usable model; if real footage recall is
- * poor, swap the asset for yolox_tiny/s — same decode, bigger download.
  */
 import type * as OrtTypes from 'onnxruntime-web';
 
-const MODEL_URL = `${import.meta.env.BASE_URL}models/yolox_nano.onnx`;
-const INPUT_SIZE = 416;
+const MODEL_URL = `${import.meta.env.BASE_URL}models/yolox_s.onnx`;
+const INPUT_SIZE = 640;
 const STRIDES = [8, 16, 32];
 const PERSON_CLASS = 0;
 const SCORE_THRESHOLD = 0.25;
@@ -99,6 +102,12 @@ export async function detectPeople(
   const output = results['output'];
   if (output === undefined) throw new Error('model returned no "output" tensor');
   const data = output.data as Float32Array;
+  // Guard the export format: a model exported WITH decode_in_inference would
+  // produce absolute boxes our grid decode silently misplaces — fail loudly.
+  const expectedAnchors = STRIDES.reduce((sum, s) => sum + (INPUT_SIZE / s) ** 2, 0);
+  if (data.length !== expectedAnchors * 85) {
+    throw new Error(`unexpected model output length ${data.length} (raw-head export required)`);
+  }
 
   const candidates = decodeRawHead(data);
   const kept = nonMaxSuppression(candidates, NMS_IOU);

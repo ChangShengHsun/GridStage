@@ -6,9 +6,9 @@ import {
   formatEightCount,
   formatTimecode,
   lerpAngle,
-  loopRangeMs,
   posesAtTime,
   showEndMs,
+  snapToFormationEdges,
 } from './interpolate';
 
 function formation(partial: Partial<Formation> & Pick<Formation, 'id' | 'orderIndex'>): Formation {
@@ -147,23 +147,19 @@ describe('helpers', () => {
   });
 });
 
-describe('loopRangeMs', () => {
-  it('spans from the previous formation start through the selected end', () => {
-    expect(loopRangeMs({ formations: [f1, f2], selectedFormationId: 'f2' })).toEqual({
-      startMs: 0,
-      endMs: 4000,
-    });
+describe('snapToFormationEdges', () => {
+  // f1 edges: 0 and 1000; f2 edges: 3000 and 4000.
+  it('snaps to the nearest edge within tolerance', () => {
+    expect(snapToFormationEdges(1080, [f1, f2], 100)).toBe(1000);
+    expect(snapToFormationEdges(2930, [f1, f2], 100)).toBe(3000);
   });
 
-  it('first formation loops just its own hold', () => {
-    expect(loopRangeMs({ formations: [f1, f2], selectedFormationId: 'f1' })).toEqual({
-      startMs: 0,
-      endMs: 1000,
-    });
+  it('passes the time through outside every tolerance', () => {
+    expect(snapToFormationEdges(2000, [f1, f2], 100)).toBe(2000);
   });
 
-  it('returns null for an unknown selection', () => {
-    expect(loopRangeMs({ formations: [f1, f2], selectedFormationId: 'nope' })).toBeNull();
+  it('handles no formations', () => {
+    expect(snapToFormationEdges(1234, [], 100)).toBe(1234);
   });
 });
 

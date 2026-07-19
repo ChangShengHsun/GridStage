@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useT } from '../i18n';
-import type { VideoMode } from '../export/video';
+import type { RefVideoInExport, VideoMode } from '../export/video';
 import { canShareDocFile, shareActiveDocFile } from '../state/docFile';
+import { useRefVideo } from '../state/refVideo';
 
 type ExportKind = 'video' | 'gif' | 'pdf-charts' | 'pdf-sheets' | 'pdf-pack' | 'png' | 'file';
 
@@ -27,6 +28,8 @@ export function ExportDialog(): ReactElement {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [kind, setKind] = useState<ExportKind>('video');
   const [videoMode, setVideoMode] = useState<VideoMode>('2d');
+  const [refVideoMode, setRefVideoMode] = useState<RefVideoInExport>('off');
+  const hasRefVideo = useRefVideo((s) => s.objectUrl !== null);
   const [videoProgress, setVideoProgress] = useState<number | null>(null);
   const [note, setNote] = useState('');
   const videoAbortRef = useRef<AbortController | null>(null);
@@ -58,6 +61,7 @@ export function ExportDialog(): ReactElement {
       .then((m) =>
         m.exportPerformanceVideo({
           mode: videoMode,
+          refVideo: refVideoMode,
           onProgress: setVideoProgress,
           signal: controller.signal,
         }),
@@ -152,6 +156,29 @@ export function ExportDialog(): ReactElement {
                     <option value="3d">3D</option>
                   </select>
                 </div>
+                {hasRefVideo && videoMode === '2d' && (
+                  <div className="field">
+                    <label htmlFor="export-ref-video">{t.export.refVideoLabel}</label>
+                    <select
+                      id="export-ref-video"
+                      aria-label={t.export.refVideoAria}
+                      value={refVideoMode}
+                      disabled={videoProgress !== null}
+                      onChange={(e) =>
+                        setRefVideoMode(
+                          e.target.value === 'pip' || e.target.value === 'side'
+                            ? e.target.value
+                            : 'off',
+                        )
+                      }
+                    >
+                      <option value="off">{t.export.refVideoOff}</option>
+                      <option value="pip">{t.export.refVideoPip}</option>
+                      <option value="side">{t.export.refVideoSide}</option>
+                    </select>
+                  </div>
+                )}
+                {hasRefVideo && <p className="empty-note">{t.export.refVideoSoundNote}</p>}
                 <p className="empty-note">{t.export.videoNote}</p>
               </>
             )}

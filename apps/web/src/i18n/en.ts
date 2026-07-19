@@ -152,12 +152,16 @@ export const en = {
         : `Placed ${placed} dancer${placed === 1 ? '' : 's'}; ${uncertain} uncertain (selected) — check who is who`,
     scan: 'Scan whole video',
     scanTitle:
-      'Sample the video every second and add a formation for every held position — a draft you then clean up',
+      'Sample the video every second and rebuild the chart from every held position — you confirm before anything is replaced',
     scanCancel: (percent: number): string => `Cancel ${percent}%`,
     scanCancelled: 'Scan cancelled — nothing was changed',
     scanNothing: 'No held formations found — try Capture on paused frames instead',
+    scanReplaceConfirm: (found: number, existing: number): string =>
+      `Replace the ${existing} existing formation${existing === 1 ? '' : 's'} with the ${found} found in the video? One Undo brings the old chart back.`,
     scanDone: (n: number): string =>
-      `Added ${n} formation${n === 1 ? '' : 's'} from the video — one Undo removes them all`,
+      `Rebuilt the chart from the video: ${n} formation${n === 1 ? '' : 's'} — one Undo restores the old one`,
+    resizeAria: 'Resize the video window (drag)',
+    splitDividerAria: 'Drag to adjust how the screen splits between video and stage',
     review: 'Review',
     reviewTitle:
       'Compare this paused frame against the planned chart at the playhead: per-dancer drift, C-spot centering and symmetry. Select ONE dancer first to designate the C-spot.',
@@ -206,6 +210,12 @@ export const en = {
       'Small animated GIF of the whole show (2D plan, 640px, 8 fps) — rendered offline, drops straight into a group chat.',
     videoViewLabel: 'View',
     videoViewAria: 'Video export view (2D or 3D)',
+    refVideoLabel: 'Reference video',
+    refVideoAria: 'How the reference video appears in the exported movie',
+    refVideoOff: 'Not included',
+    refVideoPip: 'Small window (top right)',
+    refVideoSide: 'Side by side (video left)',
+    refVideoSoundNote: 'While a reference video is loaded, its sound is the movie’s sound.',
     videoNote: 'Records the playback in real time — the export takes as long as the show.',
     chartsNote: 'One printable stage chart per formation, plus a roster page.',
     sheetsNote: 'One page per performer with their route, positions and timings.',
@@ -481,7 +491,11 @@ export const en = {
     tapBeatTitle: 'Drop a beat marker at the playhead (great while music plays)',
     loop: 'Loop',
     loopTitle:
-      'Repeat the selected formation: plays from the previous formation into this one, over and over — pick a formation to rehearse its transition',
+      'Repeat the blue range on the timeline over and over — drag the two posts to set where it starts and ends (they snap to formation edges)',
+    loopStartAria: 'Loop start',
+    loopEndAria: 'Loop end',
+    audioLockedByVideo:
+      'The reference video is the sound while it is loaded — close it to upload music',
     metronome: 'Click',
     metronomeTitle: 'Metronome: click on every beat while playing (count 1 is accented)',
     metronomeNeedsBpm: 'Set a BPM first (Stage panel)',

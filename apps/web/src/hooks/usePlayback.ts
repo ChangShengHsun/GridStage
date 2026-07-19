@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useEditor } from '../state/store';
-import { loopRangeMs, showEndMs } from '../state/interpolate';
+import { showEndMs } from '../state/interpolate';
 import { audioDurationMs, getAudioElement } from '../audio/audioPlayer';
 import {
   getVideoElement,
@@ -12,6 +12,17 @@ import { tickMetronome } from '../audio/metronome';
 
 function playbackEndMs(): number {
   return Math.max(showEndMs(useEditor.getState().formations), audioDurationMs());
+}
+
+/** The active loop range (the timeline posts), or null when looping is off. */
+function activeLoop(s: {
+  loopOn: boolean;
+  loopStartMs: number | null;
+  loopEndMs: number | null;
+}): { startMs: number; endMs: number } | null {
+  return s.loopOn && s.loopStartMs !== null && s.loopEndMs !== null
+    ? { startMs: s.loopStartMs, endMs: s.loopEndMs }
+    : null;
 }
 
 /**
@@ -59,8 +70,8 @@ export function usePlayback(): { togglePlay: () => void } {
             ? audio.currentTime * 1000
             : s.playheadMs + (now - lastTick) * s.playbackRate;
       lastTick = now;
-      // Loop the selected formation's segment: jump back instead of ending.
-      const loop = s.loopOn ? loopRangeMs(s) : null;
+      // Loop the posted range: jump back instead of ending.
+      const loop = activeLoop(s);
       if (loop !== null && (t >= loop.endMs || (media !== null && media.ended))) {
         if (video !== null) {
           video.currentTime = timelineMsToVideoSeconds(
@@ -130,7 +141,7 @@ export function usePlayback(): { togglePlay: () => void } {
     const endMs = playbackEndMs();
     if (endMs <= 0) return;
     // Looping: start from the loop's beginning when outside its range.
-    const loop = s.loopOn ? loopRangeMs(s) : null;
+    const loop = activeLoop(s);
     if (loop !== null && (s.playheadMs < loop.startMs || s.playheadMs >= loop.endMs - 10)) {
       s.setPlayhead(loop.startMs);
     } else if (s.playheadMs >= endMs - 10) {
