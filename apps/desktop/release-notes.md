@@ -1,12 +1,21 @@
-# GridStage 0.8.1
+# GridStage 0.8.2
 
-## Fix: the top-bar buttons are back
+## Video review, rebuilt
 
-Since 0.6.0, on wide screens the title box swallowed the whole top bar and
-pushed Library, Undo/Redo, Share live, Guide, Export and Preferences off the
-right edge of the window. A CSS specificity slip — the global
-`input[type=text] { width: 100% }` outranked the title's fixed width. Fixed,
-with a geometry-based regression test so it cannot silently return.
-
-Everything from 0.8.0 (the `.gridstage` file hand-off: double-click to open
-on desktop, Android share sheet in/out) is included.
+- **Whole-video scan now tracks the whole team.** Two real bugs fixed: the
+  identity chain silently shrank after any missed detection (ending up
+  following ONE dancer), and partially-detected dancers were averaged
+  toward the corner. Scans also **replace** the chart now (with a confirm
+  first — one Undo brings the old one back).
+- **Sharper detection model**: YOLOX-s at 640px replaces nano at 416px —
+  much better at the small, distant figures rehearsal footage is made of.
+  Bigger one-time model download; runs fastest on machines with WebGPU.
+- **The video window finally resizes**: a proper corner grip, the window
+  can't get stuck off-screen anymore, and the split view's divider drags.
+- **Export can include the reference video** — top-right small window or
+  side-by-side, and the movie uses the reference video's sound.
+- **Loop is now a range**: two draggable posts on the timeline with a blue
+  band between them (they snap to formation edges); press Loop and it
+  starts around the playhead.
+- While a reference video is loaded it is the sound — the upload-music
+  button locks to keep the two from fighting.
