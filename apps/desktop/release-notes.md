@@ -1,17 +1,12 @@
-# GridStage 0.8.0
+# GridStage 0.8.1
 
-## Choreography files just got easier to pass around
+## Fix: the top-bar buttons are back
 
-- The export extension is now **`.gridstage`** (one segment, so your OS can
-  own it). Old `.gridstage.json` backups still import fine.
-- **Double-click opens GridStage** — the desktop app registers the
-  `.gridstage` file type, so a file a teammate sends you opens straight
-  into your library. Already running? It lands in the open window.
-- **Android share sheet, both directions** — on the installed PWA,
-  "share" a received file to GridStage to import it, and use the new
-  **Share…** button next to Export → File to send the current
-  choreography out through any messaging app.
-- iPhone: sharing INTO a home-screen web app isn't supported by iOS —
-  save the file to Files, then Library → Import as before.
+Since 0.6.0, on wide screens the title box swallowed the whole top bar and
+pushed Library, Undo/Redo, Share live, Guide, Export and Preferences off the
+right edge of the window. A CSS specificity slip — the global
+`input[type=text] { width: 100% }` outranked the title's fixed width. Fixed,
+with a geometry-based regression test so it cannot silently return.
 
-No accounts, no cloud, nothing uploaded — the file is the whole document.
+Everything from 0.8.0 (the `.gridstage` file hand-off: double-click to open
+on desktop, Android share sheet in/out) is included.
