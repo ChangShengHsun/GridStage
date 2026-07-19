@@ -905,7 +905,11 @@ input[type='color'] {
 
 /* ---- Mobile / touch (docs/mobile.md) --------------------------------- */
 
-.topbar-title {
+/* input.topbar-title (not .topbar-title): must tie the (0,1,1) specificity of
+   the global `input[type='text'] { width: 100% }` so this later rule wins —
+   a bare class loses, 100% + flex-shrink:0 then shoves every topbar button
+   off-screen (the v0.6.0–v0.8.0 "missing Library/Export buttons" bug). */
+input.topbar-title {
   width: 200px;
   flex-shrink: 0;
 }
@@ -950,7 +954,7 @@ label {
     gap: 10px;
     padding: 0 10px;
   }
-  .topbar-title {
+  input.topbar-title {
     width: 130px;
   }
 

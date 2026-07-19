@@ -1680,6 +1680,20 @@ test('phone layout: side panels become drawers behind edge tabs', async ({ page 
   await expect(page.locator('.panel-resize')).toHaveCount(3);
 });
 
+test('topbar buttons stay inside a wide viewport', async ({ page }) => {
+  // Regression (v0.6.0–v0.8.0): the global input[type=text] width:100% beat
+  // .topbar-title's 200px, and flex-shrink:0 then pushed every button after
+  // the title off-screen. Click-based tests missed it because Playwright
+  // scrolls the target into view first — so assert geometry, not clicks.
+  const viewport = page.viewportSize();
+  if (viewport === null) throw new Error('viewport size unset');
+  for (const name of ['Library', 'Export…']) {
+    const box = await page.getByRole('button', { name, exact: true }).boundingBox();
+    if (box === null) throw new Error(`${name} button not rendered`);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+  }
+});
+
 test('understudy: unchecking "Performing this run" hides the dancer everywhere', async ({
   page,
 }) => {
