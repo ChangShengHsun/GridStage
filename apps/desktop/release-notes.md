@@ -1,3 +1,13 @@
+# GridStage 0.8.5
+
+## Calibration, unboxed
+
+- **Full screen for the video window** (⛶ in its title bar) — calibrate
+  the stage corners on the whole screen instead of a small pane.
+- **Pins can leave the picture**: while calibrating, the video shrinks to
+  the center of the frame and the corner pins drag freely outside it —
+  for footage where the camera cuts off part of the stage.
+
 # GridStage 0.8.4
 
 ## Sharper eyes, working phones
