@@ -1,4 +1,6 @@
-yolox_s.onnx (in use since v0.8.2), yolox_nano.onnx (superseded)
+yolox_l.onnx.part0/1/2 (concatenate the three parts in order to restore
+the original yolox_l.onnx — split only because GitHub rejects files over
+100MB; earlier yolox_s/yolox_nano were removed as superseded)
 
 Source: YOLOX by Megvii, Inc. (https://github.com/Megvii-BaseDetection/YOLOX)
 Downloaded from the official release assets (tag 0.1.1rc0), unmodified.

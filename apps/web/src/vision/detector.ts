@@ -1,14 +1,15 @@
 /**
  * Person detection on one video frame (M0 of
- * docs/video-to-formation-killer-app.md). YOLOX-s (Apache-2.0, see
+ * docs/video-to-formation-killer-app.md). YOLOX-L (Apache-2.0, see
  * public/models/NOTICE-yolox.txt) via onnxruntime-web: WebGPU when the
- * browser has it, WASM otherwise. The model (34MB) and the runtime load
+ * browser has it, WASM otherwise. The model (~207MB) and the runtime load
  * lazily on first capture, like the CJK PDF font.
  *
- * Upgraded from yolox_nano@416 (2026-07-19): rehearsal footage shows small
- * distant figures, where nano's recall was poor — s@640 is the accuracy
- * jump (COCO mAP 25.8 → 40.5) at the cost of a bigger lazy download and
- * slower frames. Same release tag, same RAW head export.
+ * Model history (all from the same 0.1.1rc0 release, same RAW head export):
+ * nano@416 (mAP 25.8, poor recall on small distant figures) → s@640
+ * (mAP 40.5, v0.8.2) → l@640 (mAP 50.1, 2026-07-19). The .onnx is stored
+ * split into <100MB .part files because GitHub rejects larger blobs; they
+ * are fetched in parallel and re-joined in memory before session create.
  *
  * The official export is RAW head output (1×8400×85): per anchor
  * [cx, cy, w, h] offsets, objectness, 80 COCO class scores — decoding
@@ -16,7 +17,9 @@
  */
 import type * as OrtTypes from 'onnxruntime-web';
 
-const MODEL_URL = `${import.meta.env.BASE_URL}models/yolox_s.onnx`;
+const MODEL_PART_URLS = [0, 1, 2].map(
+  (i) => `${import.meta.env.BASE_URL}models/yolox_l.onnx.part${i}`,
+);
 const INPUT_SIZE = 640;
 const STRIDES = [8, 16, 32];
 const PERSON_CLASS = 0;
@@ -43,12 +46,30 @@ export function setDetectorOverride(fn: DetectFn | null): void {
 
 let sessionPromise: Promise<OrtTypes.InferenceSession> | null = null;
 
+/** Fetch the split model parts and re-join them into one buffer. */
+async function fetchModelBytes(): Promise<Uint8Array> {
+  const parts = await Promise.all(
+    MODEL_PART_URLS.map(async (url) => {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`model download failed: ${url} (HTTP ${res.status})`);
+      return new Uint8Array(await res.arrayBuffer());
+    }),
+  );
+  const bytes = new Uint8Array(parts.reduce((total, p) => total + p.length, 0));
+  let offset = 0;
+  for (const p of parts) {
+    bytes.set(p, offset);
+    offset += p.length;
+  }
+  return bytes;
+}
+
 async function getSession(): Promise<OrtTypes.InferenceSession> {
   if (sessionPromise === null) {
     sessionPromise = (async () => {
       const ort = await import('onnxruntime-web');
       // WebGPU first; onnxruntime falls back through the list.
-      return ort.InferenceSession.create(MODEL_URL, {
+      return ort.InferenceSession.create(await fetchModelBytes(), {
         executionProviders: ['webgpu', 'wasm'],
       });
     })();
@@ -73,7 +94,7 @@ export async function detectPeople(
   const ort = await import('onnxruntime-web');
   const session = await getSession();
 
-  // Letterbox onto a 416×416 canvas, gray padding (YOLOX convention: value
+  // Letterbox onto an INPUT_SIZE² canvas, gray padding (YOLOX convention:
   // 114, BGR channel order, raw 0–255 floats, no normalization).
   const scale = Math.min(INPUT_SIZE / sourceWidth, INPUT_SIZE / sourceHeight);
   const scaledW = Math.round(sourceWidth * scale);
