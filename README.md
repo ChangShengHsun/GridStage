@@ -3,20 +3,14 @@
 Open-source collaborative stage formation & choreography editor — for choreographers,
 cheer coaches, stage managers, and dance studios.
 
-<!--
-  MEDIA — hosted on GitHub's CDN, NOT committed to the repo.
-  The GIF and promo video below are commented out until their CDN URLs exist.
-  To fill each in: open a new draft Issue on this repo, drag the file into the
-  comment box, wait for the upload, copy the URL GitHub inserts, paste it into
-  the matching line below, and uncomment that line. Discard the issue
-  afterwards — the uploaded file stays live. Files: C:\Users\ivan_chang\my-video\out\
+<!-- Media hosted on GitHub's CDN (uploaded via an issue), NOT committed to the repo. -->
 
-  readme-1280.gif (1.7 MB):
-    ![GridStage in action](PASTE_GIF_URL_HERE)
+<img alt="GridStage in action" width="880"
+     src="https://github.com/user-attachments/assets/ce746d9e-b8fd-4e75-9762-316497d29f79" />
 
-  promo.mp4 (15.8 MB) — paste the URL on its OWN line, no ![]() wrapper:
-    PASTE_PROMO_MP4_URL_HERE
--->
+<!-- promo.mp4 — bare URL on its own line renders as an inline video player. -->
+
+https://github.com/user-attachments/assets/ad08d005-feaa-490f-8fcd-8b9ab6f40284
 
 **▶ Full walkthrough:** [watch the demo on YouTube](https://youtu.be/pYeI-zq6FSQ)
 
