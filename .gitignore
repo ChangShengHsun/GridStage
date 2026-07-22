@@ -13,3 +13,5 @@ playwright-report/
 .pg-data/
 apps/desktop/renderer/
 apps/desktop/release/
+# Private working notes (AI session handoffs, unscoped idea backlog, init prompt)
+docs/internal/

@@ -3,6 +3,22 @@
 Open-source collaborative stage formation & choreography editor — for choreographers,
 cheer coaches, stage managers, and dance studios.
 
+<!--
+  MEDIA — hosted on GitHub's CDN, NOT committed to the repo.
+  To get each URL: open a new draft Issue on this repo, drag the file into the
+  comment box, wait for the upload, copy the URL GitHub inserts, then paste it
+  below. Discard the issue afterwards — the uploaded file stays live.
+-->
+
+<!-- readme-1280.gif (1.7 MB) — drag into an issue, replace the URL below -->
+![GridStage in action](REPLACE_WITH_GIF_URL)
+
+<!-- promo.mp4 (15.8 MB) — drag into an issue; GitHub renders it as a player.
+     Paste the URL on its OWN line (no ![]() wrapper) for it to embed. -->
+REPLACE_WITH_PROMO_MP4_URL
+
+**▶ Full walkthrough:** [watch the demo on YouTube](REPLACE_WITH_YOUTUBE_URL)
+
 Plan formations on a top-down 2D stage, sync them to music, preview transitions
 in 2D and 3D, capture formations straight from a rehearsal video with on-device
 AI, and export walk-chart PDFs, videos or GIFs. Real-time multi-user editing

@@ -24,8 +24,8 @@ describe('parseRoster', () => {
   });
 
   it('handles quoted fields with commas and escaped quotes', () => {
-    const rows = parseRoster('"Chang, Ivan",lead,\n"Say ""hi""",backup,');
-    expect(rows[0]?.name).toBe('Chang, Ivan');
+    const rows = parseRoster('"Doe, Jane",lead,\n"Say ""hi""",backup,');
+    expect(rows[0]?.name).toBe('Doe, Jane');
     expect(rows[1]?.name).toBe('Say "hi"');
   });
 

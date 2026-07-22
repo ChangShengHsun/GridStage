@@ -102,7 +102,7 @@ constraint; detection on a paused frame handles a full stage).
   like the CJK font.
 - **M1 — Facing**: RTMPose on each person crop → shoulder vector →
   rotation per dancer. Optional toggle.
-- **M2 — Auto-segment the whole video** (CONFIRMED by Ivan 2026-07-17 as a
+- **M2 — Auto-segment the whole video** (CONFIRMED 2026-07-17 as a
   required follow-up: one-click "render the whole video"): sample the video
   at 1s intervals, run the SAME per-frame capture on each sample, and when
   the captured positions differ clearly from the last accepted formation

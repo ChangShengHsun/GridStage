@@ -1,6 +1,6 @@
 # Reference-video synced playback — design (2026-07-17)
 
-Decided with Ivan (2026-07-17): (1) when a video is loaded its audio is the
+Decisions (2026-07-17): (1) when a video is loaded its audio is the
 master; with only music, music stays the master. (2) Both PiP and split
 layouts, switchable. (3) No persistence — the user re-picks the file each
 session.
@@ -11,7 +11,8 @@ Import a reference video (original MV, competition footage, a rehearsal
 recording) and play it in the editor sharing ONE timeline with the charts:
 press play and both move; scrub the playhead and the video follows. It is
 NOT computer vision (that is the separate "video → formation charts"
-research item in feature-ideas.md) — nothing is detected; the two views are
+research track, docs/video-to-formation-killer-app.md) — nothing is
+detected; the two views are
 merely clocked together. It is, however, the natural first step toward it.
 
 Two core scenarios:

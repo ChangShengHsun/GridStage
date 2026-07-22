@@ -9,8 +9,8 @@ describe('normalizeBadge', () => {
   });
 
   it('keeps exactly one wide (CJK) character', () => {
-    expect(normalizeBadge('勛')).toBe('勛');
-    expect(normalizeBadge('勝勛')).toBe('勝');
+    expect(normalizeBadge('舞')).toBe('舞');
+    expect(normalizeBadge('舞者')).toBe('舞');
   });
 
   it('mixed wide + ASCII keeps only the first character', () => {

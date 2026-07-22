@@ -1093,9 +1093,9 @@ test('60 performers: playback holds a usable frame rate and drag still works', a
 test('badge normalizes and persists', async ({ page }) => {
   await page.getByText('Add performer').click();
   await page.getByText('Dancer 1').first().click();
-  await page.getByLabel('Badge (inside the mark)').fill('勝勛');
+  await page.getByLabel('Badge (inside the mark)').fill('舞者');
   let doc = await readDoc(page);
-  expect((doc.performers[0] as { badge?: string }).badge).toBe('勝');
+  expect((doc.performers[0] as { badge?: string }).badge).toBe('舞');
   await page.getByLabel('Badge (inside the mark)').fill('LEADER');
   doc = await readDoc(page);
   expect((doc.performers[0] as { badge?: string }).badge).toBe('LEAD');
@@ -1374,7 +1374,7 @@ test('formation suggestions: apply changes positions, undo restores', async ({ p
 test('PDF export with Chinese names embeds the CJK font and downloads', async ({ page }) => {
   await page.getByLabel('Performance title').fill('春季舞展');
   await page.getByText('Add performer').click();
-  await page.getByLabel('Name', { exact: true }).fill('張勝勛');
+  await page.getByLabel('Name', { exact: true }).fill('陳小明');
 
   await page.getByRole('button', { name: 'Export…' }).click();
   await page.getByRole('button', { name: 'PDF · Personal sheets' }).click();
